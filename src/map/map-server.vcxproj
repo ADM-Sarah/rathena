@@ -536,6 +536,7 @@
     <ClInclude Include="skills/gunslinger/basicgrenade.hpp" />
     <ClInclude Include="skills/gunslinger/bindtrap.hpp" />
     <ClInclude Include="skills/gunslinger/bullseye.hpp" />
+    <ClInclude Include="skills/gunslinger/chainaction.hpp" />
     <ClInclude Include="skills/gunslinger/cracker.hpp" />
     <ClInclude Include="skills/gunslinger/crimsonmarker.hpp" />
     <ClInclude Include="skills/gunslinger/desperado.hpp" />
@@ -1435,6 +1436,7 @@
     <ClInclude Include="skills/thief/divesthelm.hpp" />
     <ClInclude Include="skills/thief/divestshield.hpp" />
     <ClInclude Include="skills/thief/divestweapon.hpp" />
+    <ClInclude Include="skills/thief/doubleattack.hpp" />
     <ClInclude Include="skills/thief/emergencyescape.hpp" />
     <ClInclude Include="skills/thief/enchantdeadlypoison.hpp" />
     <ClInclude Include="skills/thief/enchantpoison.hpp" />
@@ -2402,6 +2404,9 @@
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="skills/gunslinger/bullseye.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="skills/gunslinger/chainaction.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="skills/gunslinger/cracker.cpp">
@@ -5099,6 +5104,9 @@
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="skills/thief/divestweapon.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="skills/thief/doubleattack.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="skills/thief/emergencyescape.cpp">

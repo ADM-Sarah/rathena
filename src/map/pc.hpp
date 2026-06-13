@@ -371,7 +371,7 @@ struct s_bonus_script_entry {
 struct s_regen {
 	int16 value;
 	int32 rate;
-	int32 tick;
+	t_tick tick;
 };
 
 /// Item combo struct
@@ -629,13 +629,9 @@ public:
 	std::vector<s_vanish_bonus> sp_vanish, hp_vanish;
 	std::vector<s_addrace2> subrace3;
 	std::vector<std::shared_ptr<s_autobonus>> autobonus, autobonus2, autobonus3; //Auto script on attack, when attacked, on skill usage
+	std::vector<s_regen> hp_loss, sp_loss, hp_regen, sp_regen, percent_hp_regen, percent_sp_regen;
 
 	// zeroed structures start here
-	struct s_regen {
-		int16 value;
-		int32 rate;
-		t_tick tick;
-	} hp_loss, sp_loss, hp_regen, sp_regen, percent_hp_regen, percent_sp_regen;
 	struct {
 		int16 value;
 		int32 rate, tick;
@@ -1601,7 +1597,6 @@ int32 pc_insert_card(map_session_data *sd,int32 idx_card,int32 idx_equip);
 int32 pc_identifyall(map_session_data *sd, bool identify_item);
 
 bool pc_steal_item(map_session_data *sd,block_list *bl, uint16 skill_lv);
-int32 pc_steal_coin(map_session_data *sd,block_list *bl);
 
 int32 pc_modifybuyvalue( const map_session_data*, int32 orig_value );
 int32 pc_modifysellvalue( const map_session_data*,int32 orig_value );
@@ -1710,8 +1705,8 @@ map_session_data* pc_get_father( const map_session_data* sd );
 map_session_data* pc_get_mother( const map_session_data* sd );
 map_session_data* pc_get_child( const map_session_data* sd );
 
-void pc_bleeding( map_session_data* sd, t_tick diff_tick);
-void pc_regen( map_session_data* sd, t_tick diff_tick);
+void pc_bleeding( map_session_data& sd, t_tick diff_tick);
+void pc_regen( map_session_data& sd, t_tick diff_tick);
 
 bool pc_setstand( map_session_data* sd, bool force );
 bool pc_candrop( map_session_data* sd,struct item *item );

@@ -1,0 +1,110 @@
+//==================================================
+// Premium Event Schedule Board
+// 1 Hour Gap Schedule + Updated Rewards
+// Rest / Gap hidden from board
+//==================================================
+
+valmorra,154,121,4	script	Event Schedule	11009,{
+
+	mes "[Event Schedule]";
+	mes "Welcome to the ^00BFFFEvent Schedule Board^000000.";
+	mes "Check all automatic events and rewards here.";
+	next;
+
+	mes "[Event Schedule]";
+	mes "^00BFFFBombring Event^000000";
+	mes "• 12:00 AM";
+	mes "• 4:00 PM";
+	mes "^777777Join:^000000 ^0000FF@join bombring^000000";
+	mes "^777777Reward:^000000";
+	mes "^3CB371»^000000 ^i[51004] ^0055FF"+getitemname(51004)+" x 1^000000";
+	mes "^3CB371»^000000 ^i[33018] ^0055FF"+getitemname(33018)+" x 1^000000";
+	next;
+
+	mes "[Event Schedule]";
+	mes "^FF69B4Poring Catcher^000000";
+	mes "• 2:00 AM";
+	mes "• 2:00 PM";
+	mes "^777777Join:^000000 ^0000FF@join catcher^000000";
+	mes "^777777Reward:^000000";
+	mes "^3CB371»^000000 ^i[51004] ^0055FF"+getitemname(51004)+" x 1^000000";
+	mes "^3CB371»^000000 ^i[33018] ^0055FF"+getitemname(33018)+" x 1^000000";
+	next;
+
+	mes "[Event Schedule]";
+	mes "^FFA500Dice Event^000000";
+	mes "• 4:00 AM";
+	mes "• 6:00 PM";
+	mes "^777777Join:^000000 ^0000FF@join dice^000000";
+	mes "^777777Reward:^000000";
+	mes "^3CB371»^000000 ^i[51004] ^0055FF"+getitemname(51004)+" x 1^000000";
+	mes "^3CB371»^000000 ^i[33018] ^0055FF"+getitemname(33018)+" x 1^000000";
+	next;
+
+	mes "[Event Schedule]";
+	mes "^FF69B4Disguise Event^000000";
+	mes "• 6:00 AM";
+	mes "• 8:00 PM";
+	mes "^777777Join:^000000 ^0000FF@join disguise^000000";
+	mes "^777777Reward:^000000";
+	mes "^3CB371»^000000 ^i[51004] ^0055FF"+getitemname(51004)+" x 1^000000";
+	mes "^3CB371»^000000 ^i[33017] ^0055FF"+getitemname(33017)+" x 30^000000";
+	next;
+
+	mes "[Event Schedule]";
+	mes "^228B22Find the Mushroom^000000";
+	mes "• 8:00 AM";
+	mes "• 11:00 PM";
+	mes "^777777Join:^000000 ^0000FF@join mushroom^000000";
+	mes "^777777Reward:^000000";
+	mes "^3CB371»^000000 ^i[51004] ^0055FF"+getitemname(51004)+" x 1^000000";
+	mes "^3CB371»^000000 ^i[33017] ^0055FF"+getitemname(33017)+" x 30^000000";
+	next;
+
+	mes "[Event Schedule]";
+	mes "^8B4513Novice vs Zombies^000000";
+	mes "• 10:00 AM";
+	mes "^777777Join:^000000 ^0000FF@join zombie^000000";
+	mes "^777777Reward:^000000";
+	mes "^3CB371»^000000 ^i[51004] ^0055FF"+getitemname(51004)+" x 1^000000";
+	mes "^3CB371»^000000 ^i[33018] ^0055FF"+getitemname(33018)+" x 1^000000";
+	next;
+
+	mes "[Event Schedule]";
+	mes "^00CED1Stop the Clock^000000";
+	mes "• 12:00 PM";
+	mes "^777777Join:^000000 ^0000FF@join stopclock^000000";
+	mes "^777777Reward:^000000";
+	mes "^3CB371»^000000 ^i[51004] ^0055FF"+getitemname(51004)+" x 1^000000";
+	mes "^3CB371»^000000 ^i[33018] ^0055FF"+getitemname(33018)+" x 1^000000";
+	next;
+
+	mes "[Event Schedule]";
+	mes "^FFD700Schedule Summary^000000";
+	mes "^77777712:00 AM^000000 - Bombring";
+	mes "^7777772:00 AM^000000 - Poring Catcher";
+	mes "^7777774:00 AM^000000 - Dice";
+	mes "^7777776:00 AM^000000 - Disguise";
+	mes "^7777778:00 AM^000000 - Find the Mushroom";
+	mes "^77777710:00 AM^000000 - Novice vs Zombies";
+	mes "^77777712:00 PM^000000 - Stop the Clock";
+	mes "^7777772:00 PM^000000 - Poring Catcher";
+	mes "^7777774:00 PM^000000 - Bombring";
+	mes "^7777776:00 PM^000000 - Dice";
+	mes "^7777778:00 PM^000000 - Disguise";
+	mes "^77777711:00 PM^000000 - Find the Mushroom";
+	next;
+
+	mes "[Event Schedule]";
+	mes "^FFD700Reward Summary^000000";
+	mes "^00BFFFBombring / Dice / Zombie / Poring Catcher / Stop Clock:^000000";
+	mes "^3CB371»^000000 ^i[51004] ^0055FF"+getitemname(51004)+" x 1^000000";
+	mes "^3CB371»^000000 ^i[33018] ^0055FF"+getitemname(33018)+" x 1^000000";
+	mes "";
+	mes "^FF69B4Disguise / Find the Mushroom:^000000";
+	mes "^3CB371»^000000 ^i[51004] ^0055FF"+getitemname(51004)+" x 1^000000";
+	mes "^3CB371»^000000 ^i[33017] ^0055FF"+getitemname(33017)+" x 30^000000";
+	mes "";
+	mes "Enjoy and have fun!";
+	close;
+}

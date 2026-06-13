@@ -1,0 +1,199 @@
+//=========================== KafraShop.net ===============================
+//= Mini-Games : Poring Catcher
+//=========================================================================
+
+-	script	MG_PoringCatcher	FAKE_NPC,{
+	end;
+
+OnInit:
+	.evtName$ = "Poring Catcher";
+	setarray .mob_spawn[1], 1002, 1031, 1113;
+	setarray .mob_list_1$[0], "Pouring", "Proing", "Poiring", "Poing", "Poriiing", "PoriNg", "Porong", "P0ring", "Por1ng";
+	setarray .mob_list_2$[0], "Pouporing", "Proporing", "Poiporing", "Poriring", "pHe0wPh0ewring", "Poripiing", "P0poriNg", "Poporin6", "Popor1ng";
+	setarray .mob_list_3$[0], "Drop", "Drops$", "Dr0ps", "Crops", "dRoWpzS", "Drrops", "Brops", "DropsS", "Droops";
+	end;
+
+OnStart:
+	.ROUND = 0;
+	$EVT_CATCHER = 2;
+
+	mapannounce("pcatch_ev", sprintf("[%s] Welcome to the Poring Catcher Mini-Game.", .evtName$), bc_map|bc_blue);
+	sleep(2000);
+	mapannounce("pcatch_ev", sprintf("[%s] Only one of these monsters is the correct monster.", .evtName$), bc_map|bc_blue);
+	sleep(2000);
+	mapannounce("pcatch_ev", sprintf("[%s] The first ROUND will be [Poring], the second ROUND will be [Poporing], and the final ROUND will be [Drops].", .evtName$), bc_map|bc_blue);
+	sleep(2000);
+	mapannounce("pcatch_ev", sprintf("[%s] Take your time because when you kill the wrong monster, you're OUT of the game!", .evtName$), bc_map|bc_blue);
+	sleep(2000);
+	mapannounce("pcatch_ev", sprintf("[%s] Killing the correct monster means you'll be getting your reward for the event.", .evtName$), bc_map|bc_blue);
+	sleep(2000);
+	mapannounce("pcatch_ev", sprintf("[%s] Let's start the event...", .evtName$), bc_map|bc_blue);
+	sleep(2000);
+
+	if (getarraysize($EVT_CATCHER_WINNER$))
+		deletearray($EVT_CATCHER_WINNER$);
+
+	donpcevent(strnpcinfo(0)+"::OnSpawnCountdown");
+	end;
+
+OnSpawnCountdown:
+	setnpctimer(300000);
+	startnpctimer();
+
+	.ROUND++;
+
+	mapannounce("pcatch_ev", sprintf("[%s] ROUND %d !! Find [%s]. All other %s have different names.", .evtName$, .ROUND, getmonsterinfo(.mob_spawn[.ROUND], MOB_NAME), F_GetPlural(getmonsterinfo(.mob_spawn[.ROUND], MOB_NAME))), bc_map|bc_blue);
+	end;
+
+OnTimer305000:
+	mapannounce("pcatch_ev", sprintf("[%s] Starting in 5.....", .evtName$), bc_map|bc_blue);
+	end;
+
+OnTimer306000:
+	mapannounce("pcatch_ev", sprintf("[%s] Starting in 4....", .evtName$), bc_map|bc_blue);
+	end;
+
+OnTimer307000:
+	mapannounce("pcatch_ev", sprintf("[%s] Starting in 3...", .evtName$), bc_map|bc_blue);
+	end;
+
+OnTimer308000:
+	mapannounce("pcatch_ev", sprintf("[%s] Starting in 2..", .evtName$), bc_map|bc_blue);
+	end;
+
+OnTimer309000:
+	mapannounce("pcatch_ev", sprintf("[%s] Starting in 1.", .evtName$), bc_map|bc_blue);
+	end;
+
+OnTimer310000:
+	stopnpctimer();
+	mapannounce("pcatch_ev", sprintf("[%s] Go !!", .evtName$), bc_map|bc_blue);
+	donpcevent(strnpcinfo(0)+"::OnSpawnMonster");
+	end;
+
+OnSpawnMonster:
+	if (.ROUND <= 3) {
+		// Single player is allowed. Event only stops if nobody is inside.
+		if (getmapusers("pcatch_ev") < 1) {
+			donpcevent(strnpcinfo(0)+"::OnStop");
+			end;
+		}
+
+		monster("pcatch_ev", 0, 0, "--ja--", .mob_spawn[.ROUND], 1, strnpcinfo(0)+"::OnKillRealMob");
+
+		copyarray .@moblist$[0], getd(".mob_list_"+.ROUND+"$[0]"), getarraysize(getd(".mob_list_"+.ROUND+"$"));
+
+		for (.@i = 0; .@i < getarraysize(.@moblist$); .@i++)
+			monster("pcatch_ev", 0, 0, .@moblist$[.@i], .mob_spawn[.ROUND], 10, strnpcinfo(0)+"::OnKillFakeMob");
+
+		monster("pcatch_ev", 0, 0, "I am not "+getmonsterinfo(.mob_spawn[.ROUND], MOB_NAME), .mob_spawn[.ROUND], 5, strnpcinfo(0)+"::OnKillFakeMob");
+
+		switch (.ROUND) {
+			case 1:
+				monster("pcatch_ev", 0, 0, getmonsterinfo(.mob_spawn[.ROUND], MOB_NAME), 1062, 1, strnpcinfo(0)+"::OnKillFakeMob");
+				monster("pcatch_ev", 0, 0, getmonsterinfo(.mob_spawn[.ROUND], MOB_NAME), 1113, 1, strnpcinfo(0)+"::OnKillFakeMob");
+				monster("pcatch_ev", 0, 0, "Gniriop", .mob_spawn[.ROUND], 1, strnpcinfo(0)+"::OnKillFakeMob");
+				monster("pcatch_ev", 0, 0, "Porng", .mob_spawn[.ROUND], 1, strnpcinfo(0)+"::OnKillFakeMob");
+				break;
+
+			case 2:
+				monster("pcatch_ev", 0, 0, getmonsterinfo(.mob_spawn[.ROUND], MOB_NAME), 1062, 1, strnpcinfo(0)+"::OnKillFakeMob");
+				monster("pcatch_ev", 0, 0, getmonsterinfo(.mob_spawn[.ROUND], MOB_NAME), 1113, 1, strnpcinfo(0)+"::OnKillFakeMob");
+				monster("pcatch_ev", 0, 0, "Popor!ng", .mob_spawn[.ROUND], 1, strnpcinfo(0)+"::OnKillFakeMob");
+				monster("pcatch_ev", 0, 0, "Poporng", .mob_spawn[.ROUND], 1, strnpcinfo(0)+"::OnKillFakeMob");
+				break;
+
+			case 3:
+				monster("pcatch_ev", 0, 0, getmonsterinfo(.mob_spawn[.ROUND], MOB_NAME), 1062, 1, strnpcinfo(0)+"::OnKillFakeMob");
+				monster("pcatch_ev", 0, 0, getmonsterinfo(.mob_spawn[.ROUND], MOB_NAME), 1002, 1, strnpcinfo(0)+"::OnKillFakeMob");
+				monster("pcatch_ev", 0, 0, "Droqs", .mob_spawn[.ROUND], 1, strnpcinfo(0)+"::OnKillFakeMob");
+				monster("pcatch_ev", 0, 0, "I wanna be Drops", 1184, 1, strnpcinfo(0)+"::OnKillFakeMob");
+				break;
+		}
+	}
+	end;
+
+OnKillFakeMob:
+	dispbottom(sprintf("[%s] Sorry, you have killed the wrong monster! Better luck next time.", .evtName$));
+
+	if (rand(1, 2) == 1) {
+		warp("prontera", 149, 156);
+
+		if (getmapusers("pcatch_ev") < 1)
+			donpcevent(strnpcinfo(0)+"::OnStop");
+	}
+	end;
+
+OnKillRealMob:
+	killmonsterall("pcatch_ev");
+
+	if (playerattached()) {
+		if (getarraysize($EVT_CATCHER_ITEM) > 1) {
+			for (.@i = 0; .@i < getarraysize($EVT_CATCHER_ITEM); .@i += 2)
+				getitem($EVT_CATCHER_ITEM[.@i], $EVT_CATCHER_ITEM[.@i+1]);
+		}
+
+		if ($EVT_CATCHER_POINT > 0) {
+			F_PointGain(0, $EVT_CATCHER_POINT, .evtName$);
+			F_ShowCurrency("#EVENTPOINT", "Event", $EVT_CATCHER_POINT);
+			EVENTWINS += $EVT_CATCHER_POINT;
+			EVENTWINS_CATCH += $EVT_CATCHER_POINT;
+		}
+	}
+
+	if (.ROUND < 3) {
+		mapannounce("pcatch_ev", sprintf("[%s] %s has found the correct %s! Get ready for the next ROUND!", .evtName$, strcharinfo(0), getmonsterinfo(.mob_spawn[.ROUND], MOB_NAME)), bc_map|bc_blue);
+
+		setarray $EVT_CATCHER_WINNER$[getarraysize($EVT_CATCHER_WINNER$)], strcharinfo(0);
+		@EVT_CATCHER_WIN++;
+
+		donpcevent(strnpcinfo(0)+"::OnSpawnCountdown");
+	}
+	else {
+		mapannounce("pcatch_ev", sprintf("[%s] %s has found the correct %s! That concludes our event!", .evtName$, strcharinfo(0), getmonsterinfo(.mob_spawn[.ROUND], MOB_NAME)), bc_map|bc_blue);
+
+		.@cnt = getmapunits(BL_PC, "pcatch_ev", .@unit[0]);
+
+		for (.@i = 0; .@i < .@cnt; .@i++) {
+			if (attachrid(.@unit[.@i])) {
+				if (!@EVT_CATCHER_WIN) {
+					if ($EVT_CATCHER_CONSO_POINT) {
+						F_PointGain(1, $EVT_CATCHER_CONSO_POINT, .evtName$);
+						F_ShowCurrency("#EVENTPOINT", "Event", $EVT_CATCHER_CONSO_POINT);
+						EVENTWINS += $EVT_CATCHER_CONSO_POINT;
+						EVENTWINS_CATCH += $EVT_CATCHER_CONSO_POINT;
+					}
+				}
+				else {
+					@EVT_CATCHER_WIN = 0;
+				}
+
+				detachrid();
+			}
+		}
+
+		donpcevent(strnpcinfo(0)+"::OnStop");
+	}
+	end;
+
+OnStop:
+	stopnpctimer();
+	killmonsterall("pcatch_ev");
+	mapwarp("pcatch_ev", "prontera", 149, 156);
+	$EVT_CATCHER = 0;
+	.ROUND = 0;
+	end;
+}
+
+pcatch_ev	mapflag	nobranch
+pcatch_ev	mapflag	nodrop
+pcatch_ev	mapflag	noexp
+pcatch_ev	mapflag	noicewall
+pcatch_ev	mapflag	noloot
+pcatch_ev	mapflag	nomemo
+pcatch_ev	mapflag	nosave	SavePoint
+pcatch_ev	mapflag	noskill
+pcatch_ev	mapflag	noteleport
+pcatch_ev	mapflag	nowarp
+pcatch_ev	mapflag	nowarpto
+pcatch_ev	mapflag	pvp	off

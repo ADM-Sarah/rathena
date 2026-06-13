@@ -1,0 +1,289 @@
+// Shop NPCs -- supplying no argument displays entire menu.
+//	callfunc "F_qweaponnpc2"{,<shop ID>{,<shop ID>{,...}}};
+//============================================================
+valmorra,178,213,5	script	Weapon Quest V2#1	10997,{
+	callfunc "F_qweaponnpc2",1;
+	end;
+}
+
+// Script Core
+//============================================================
+-	script	qweaponnpc2	-1,{
+	function Add;
+	function Chk;
+	function Slot;
+	function Line;
+
+OnInit:
+	freeloop(1);
+
+	// -----------------------------------------------------------
+	//  Basic shop settings.
+	// -----------------------------------------------------------
+	set .Announce,1;		// Announce quest completion? (1: yes / 0: no)
+	set .ShowSlot,1;		// Show item slots? (2: all equipment / 1: if slots > 0 / 0: never)
+	set .ShowID,0;  		// Show item IDs? (1: yes / 0: no)
+	set .ShowZeny,0;		// Show Zeny cost, if any? (1: yes / 0: no)
+	set .MaxStack,1;		// Max number of quest items purchased at one time.
+	.ignore_secure_npctimeout = 1;	// ignore SECURE_NPCTIMEOUT
+
+	// -----------------------------------------------------------
+	//  Dialog visual settings.
+	// -----------------------------------------------------------
+	.DialogW = 360;
+	.DialogH = 300;
+
+	// -----------------------------------------------------------
+	//  Points variable -- optional quest requirement.
+	// -----------------------------------------------------------
+	setarray .Points$[0],"#HEADGEARPOINTS","Headgear Points";
+
+	// -----------------------------------------------------------
+	//  Shop IDs
+	// -----------------------------------------------------------
+	setarray .Shops$[1],"~ Headgear Upper","~ Headgear Middle","~ Headgear Lower";
+
+	// -----------------------------------------------------------
+	//  Quest items
+	// -----------------------------------------------------------
+	Add(1,55347,1,0,0,60038,1,7773,100,7752,200,660,150,1006,100,7117,110,969,1000);
+	Add(1,55346,1,0,0,60039,1,7773,100,7752,200,1034,150,954,100,1049,110,969,1000);
+	Add(1,55361,1,0,0,60041,1,7773,100,7752,200,1059,150,914,100,7157,110,969,1000);
+	Add(1,55358,1,0,0,60042,1,7773,100,7752,200,7047,150,7206,100,1040,110,969,1000);
+	Add(1,55359,1,0,0,60043,1,7773,100,7752,200,7166,150,994,100,990,110,969,1000);
+	Add(1,55349,1,0,0,60045,1,7773,100,7752,200,1019,150,7196,100,7198,110,969,1000);
+	Add(1,55352,1,0,0,60046,1,7773,100,7752,200,7064,150,943,100,1096,110,969,1000);
+	Add(1,55353,1,0,0,60047,1,7773,100,7752,200,7561,150,7066,100,995,110,969,1000);
+	Add(1,55355,1,0,0,60047,1,7773,100,7752,200,991,150,609,100,7277,110,969,1000);
+	Add(1,55351,1,0,0,60048,1,7773,100,7752,200,7053,150,624,100,660,110,969,1000);
+	Add(1,55348,1,0,0,60049,1,7773,100,7752,200,7150,150,746,100,7111,110,969,1000);
+	Add(1,55357,1,0,0,60050,1,7773,100,7752,200,7192,150,553,100,7151,110,969,1000);
+	Add(1,55356,1,0,0,60051,1,7773,100,7752,200,705,150,721,100,7186,110,969,1000);
+	Add(1,55350,1,0,0,60051,1,7773,100,7752,200,7194,150,7023,100,7193,110,969,1000);
+	Add(1,55068,1,0,0,60052,1,7773,100,7752,200,752,150,721,100,940,110,969,1000);
+	Add(1,55360,1,0,0,60053,1,7773,100,7752,200,992,150,7321,100,1057,110,969,1000);
+	Add(1,55271,1,0,0,60053,1,7773,100,7752,200,7119,150,1017,100,7001,110,969,1000);
+	Add(1,55354,1,0,0,60038,1,7773,100,7752,200,7001,150,6021,100,969,1000);
+	Add(1,55269,1,0,0,60044,1,7773,100,7752,200,1018,150,7101,100,906,110,969,1000);
+
+	// -----------------------------------------------------------
+
+	freeloop(0);
+	set .menu$,"";
+	for (set .@i,1; .@i <= getarraysize(.Shops$); set .@i,.@i+1) {
+		set .menu$, .menu$ + .Shops$[.@i] + ":";
+		npcshopdelitem "qweaponnpc2"+.@i,909;
+	}
+
+	end;
+
+OnMenu:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 1;
+
+	setdialogsize(.DialogW,.DialogH);
+	setdialogalign(DIALOG_ALIGN_CENTER);
+
+	set .@size, getarraysize(@i);
+	if (!.@size)
+		set @shop_index, select(.menu$);
+	else if (.@size == 1)
+		set @shop_index, @i[0];
+	else {
+		for (set .@j,0; .@j < .@size; set .@j,.@j+1)
+			set .@menu$, .@menu$ + .Shops$[@i[.@j]] + ":";
+		set @shop_index, @i[select(.@menu$)-1];
+	}
+	deletearray @i[0],getarraysize(@i);
+
+	if (.Shops$[@shop_index] == "") {
+		message strcharinfo(0),"An error has occurred.";
+		end;
+	}
+
+	dispbottom "Select one item at a time.";
+	callshop "qweaponnpc2"+@shop_index,1;
+	npcshopattach "qweaponnpc2"+@shop_index;
+	end;
+
+OnBuyItem:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 1;
+
+	setdialogsize(.DialogW,.DialogH);
+	setdialogalign(DIALOG_ALIGN_CENTER);
+
+	// .@q[] : RewardID, BoughtAmt, RewardAmt, BaseAmt, ReqZeny, ReqPts, { ReqItem, ReqAmt, ... }
+	setarray .@q[0],@bought_nameid[0],((@bought_quantity[0] > .MaxStack) ? .MaxStack : @bought_quantity[0]);
+	copyarray .@q[3],getd(".q_"+@shop_index+"_"+.@q[0]+"[0]"),getarraysize(getd(".q_"+@shop_index+"_"+.@q[0]));
+	set .@q[2],.@q[1]*.@q[3];
+
+	if (!.@q[2] || .@q[2] > 30000) {
+		message strcharinfo(0),"You can't purchase that many "+getitemname(.@q[0])+".";
+		end;
+	}
+
+	mes "<b>^000000[ ^FF7F00Quest Shop^000000 ]</b>";
+	mes "^000000Hello, ^1E90FF" + strcharinfo(0) + "^000000!";
+	mes "^000000Shop:^000000 ^FF7F00" + .Shops$[@shop_index] + "^000000";
+	mes "^000000Your Zeny:^000000 ^1E90FF" + F_InsertComma(Zeny) + "^000000";
+	mes Line();
+
+	mes "<b>^000000Reward:^000000</b> ^0055FF"
+		+ ((.@q[2] > 1) ? .@q[2] + "x " : "")
+		+ "^i[" + .@q[0] + "] "
+		+ Slot(.@q[0])
+		+ "^000000";
+
+	mes "<b>^000000Requirements:^000000</b>";
+	disable_items;
+
+	if (.@q[4])
+		mes "^3CB371»^000000 " + Chk(Zeny,.@q[4]*.@q[1]) + F_InsertComma((.@q[4]*.@q[1])) + " Zeny^000000";
+
+	if (.@q[5])
+		mes "^3CB371»^000000 "
+			+ Chk(getd(.Points$[0]),.@q[5]*.@q[1])
+			+ (.@q[5]*.@q[1]) + " " + .Points$[1]
+			+ " ^777777(" + getd(.Points$[0]) + "/" + (.@q[5]*.@q[1]) + ")^000000";
+
+	if (.@q[6]) for (set .@i,6; .@i < getarraysize(.@q); set .@i,.@i+2)
+		mes "^3CB371»^000000 "
+			+ Chk(countitem(.@q[.@i]),.@q[.@i+1]*.@q[1])
+			+ ((.ShowID) ? "{"+.@q[.@i]+"} " : "")
+			+ "^i[" + .@q[.@i] + "] "
+			+ "<ITEM>" + Slot(.@q[.@i]) + "<INFO>" + .@q[.@i] + "</INFO></ITEM> "
+			+ "^777777(" + countitem(.@q[.@i]) + "/" + (.@q[.@i+1]*.@q[1]) + ")^000000";
+
+	setdialogsize(.DialogW,.DialogH);
+	setdialogalign(DIALOG_ALIGN_CENTER);
+	next;
+
+	setarray @qe[1], getiteminfo(.@q[0],5), getiteminfo(.@q[0],11);
+	if (@qe[2] > 0 && ((@qe[1] & 1) || (@qe[1] & 256) || (@qe[1] & 512) || (@qe[1] & 1024) || (@qe[1] & 2048) || (@qe[1] & 4096) || (@qe[1] & 4) || (@qe[1] & 8192)))
+		set .@preview,1;
+
+	addtimer 1000, strnpcinfo(0)+"::OnEnd";
+	while (1) {
+		switch(select(
+			"^3CB371» Purchase ^0055FF"+getitemname(.@q[0])+"^000000"
+			+ ":"
+			+ ((.@preview && !@qe[7]) ? "^1E90FF» Preview Item^000000:" : "")
+			+ "^FF0000» Cancel^000000"
+		)) {
+		case 1:
+			if (@qe[0]) {
+				mes "<b>^000000[ ^FF7F00Quest Shop^000000 ]</b>";
+				mes "^FF0000You're missing one or more quest requirements.^000000";
+				close;
+			}
+			if (!checkweight(.@q[0],.@q[2])) {
+				mes "<b>^000000[ ^FF7F00Quest Shop^000000 ]</b>";
+				mes "^FF0000You need more weight capacity to complete this trade.^000000";
+				close;
+			}
+			if (.@q[4]) set Zeny, Zeny-(.@q[4]*.@q[1]);
+			if (.@q[5]) setd .Points$[0], getd(.Points$[0])-(.@q[5]*.@q[1]);
+			if (.@q[6]) for (set .@i,6; .@i<getarraysize(.@q); set .@i,.@i+2)
+				delitem .@q[.@i],.@q[.@i+1]*.@q[1];
+			getitem .@q[0],.@q[2];
+			if (.Announce)
+				announce strcharinfo(0)+" has created "+((.@q[2] > 1) ? .@q[2]+"x "+getitemname(.@q[0]) : callfunc("F_InsertArticle",getitemname(.@q[0])))+"!",0;
+			specialeffect2 EF_FLOWERLEAF;
+
+			mes "<b>^000000[ ^FF7F00Quest Shop^000000 ]</b>";
+			mes "^1E90FFTrade completed successfully!^000000";
+			mes "^000000You received:^000000 ^0055FF"
+				+ ((.@q[2] > 1) ? .@q[2] + "x " : "")
+				+ "^i[" + .@q[0] + "] "
+				+ Slot(.@q[0])
+				+ "^000000";
+			close;
+
+		case 2:
+			if (.@preview && !@qe[7]) {
+				setarray @qe[3], getlook(LOOK_HEAD_BOTTOM), getlook(LOOK_HEAD_TOP), getlook(LOOK_HEAD_MID), getlook(LOOK_ROBE), 1;
+				if ((@qe[1] & 1) || (@qe[1] & 4096)) changelook LOOK_HEAD_BOTTOM, @qe[2];
+				else if ((@qe[1] & 256) || (@qe[1] & 1024)) changelook LOOK_HEAD_TOP, @qe[2];
+				else if ((@qe[1] & 512) || (@qe[1] & 2048)) changelook LOOK_HEAD_MID, @qe[2];
+				else if ((@qe[1] & 4) || (@qe[1] & 8192)) changelook LOOK_ROBE, @qe[2];
+				break;
+			}
+			close;
+
+		case 3:
+			close;
+		}
+	}
+
+OnEnd:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 0;
+
+	if (@qe[7]) {
+		changelook LOOK_HEAD_BOTTOM, @qe[3];
+		changelook LOOK_HEAD_TOP, @qe[4];
+		changelook LOOK_HEAD_MID, @qe[5];
+		changelook LOOK_ROBE, @qe[6];
+	}
+	deletearray @qe[0],8;
+	end;
+
+function Add {
+	if (getitemname(getarg(1)) == "null") {
+		debugmes "Quest reward #"+getarg(1)+" invalid (skipped).";
+		return;
+	}
+	setarray .@j[0],getarg(2),getarg(3),getarg(4);
+	for (set .@i,5; .@i<getargcount(); set .@i,.@i+2) {
+		if (getitemname(getarg(.@i)) == "null") {
+			debugmes "Quest requirement #"+getarg(.@i)+" invalid (skipped).";
+			return;
+		} else
+			setarray .@j[.@i-2],getarg(.@i),getarg(.@i+1);
+	}
+	copyarray getd(".q_"+getarg(0)+"_"+getarg(1)+"[0]"),.@j[0],getarraysize(.@j);
+	npcshopadditem "qweaponnpc2"+getarg(0),getarg(1),((.ShowZeny) ? getarg(3) : 0);
+	return;
+}
+
+function Chk {
+	if (getarg(0) < getarg(1)) {
+		set @qe[0],1;
+		return "^FF0000";
+	}
+	return "^00BFFF";
+}
+
+function Slot {
+	set .@s$,getitemname(getarg(0));
+	switch(.ShowSlot) {
+		case 1:
+			if (!getitemslots(getarg(0))) return .@s$;
+		case 2:
+			if (getiteminfo(getarg(0),2) == 4 || getiteminfo(getarg(0),2) == 5)
+				return .@s$+" ["+getitemslots(getarg(0))+"]";
+		default:
+			return .@s$;
+	}
+}
+
+function Line {
+	return "^777777--------------------------------------------------^000000";
+}
+}
+
+// ====== Function wrapper untuk callfunc (nama lain supaya tak conflict) ======
+function	script	F_qweaponnpc2	{
+	deletearray @i[0],getarraysize(@i);
+	for (set .@i,0; .@i<getargcount(); set .@i,.@i+1)
+		set @i[.@i],getarg(.@i);
+	doevent "qweaponnpc2::OnMenu";
+	end;
+}
+
+// Dummy shop data -- ikut pattern qweaponnpc2 + shopID
+//============================================================
+-	shop	qweaponnpc21	-1,909:-1
+-	shop	qweaponnpc22	-1,909:-1
+-	shop	qweaponnpc23	-1,909:-1

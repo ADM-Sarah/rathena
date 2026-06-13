@@ -1,0 +1,67 @@
+//============================================================
+// Donation Coin Exchanger (FIXED + SIMPLE)
+// - Convert Nostalgic Coin (33048) <-> #CASHPOINTS
+//============================================================
+
+valmorra,139,223,5	script	Donation Coin Exchanger#NP	11007,{
+
+	// ---------- Main ----------
+	mes "[Donation Coin Exchanger]";
+	mes "Nostalgic Coin: ^0055FF"+countitem(.CoinID)+"^000000";
+	mes "Points: ^0055FF"+#CASHPOINTS+"^000000";
+	mes "Rate: ^00AA00"+.Rate+" Coin = 1 Point^000000";
+	next;
+
+	switch(select("Coin -> Points","Points -> Coin","Cancel")) {
+
+		// Coin -> Points
+		case 1:
+			mes "[Donation Coin Exchanger]";
+			mes "How many coins do you want to convert?";
+			next;
+			input .@coin;
+
+			if (.@coin <= 0) { mes "Invalid amount."; close; }
+			if (countitem(.CoinID) < .@coin) { mes "You don't have enough coins."; close; }
+
+			.@pts = .@coin / .Rate;
+			if (.@pts <= 0) { mes "Minimum "+.Rate+" coin(s) for 1 point."; close; }
+
+			.@coins_spent = .@pts * .Rate;
+
+			delitem .CoinID, .@coins_spent;
+			set #CASHPOINTS, #CASHPOINTS + .@pts;
+
+			dispbottom "Converted "+.@coins_spent+" coin -> "+.@pts+" point(s).";
+			dispbottom "Total Points: "+#CASHPOINTS+".";
+			close;
+
+		// Points -> Coin
+		case 2:
+			mes "[Donation Coin Exchanger]";
+			mes "How many points do you want to convert?";
+			next;
+			input .@pts;
+
+			if (.@pts <= 0) { mes "Invalid amount."; close; }
+			if (#CASHPOINTS < .@pts) { mes "You don't have enough points."; close; }
+
+			.@coin = .@pts * .Rate;
+			if (.@coin > 30000) { mes "Too many coins at once. Convert smaller amount."; close; }
+
+			set #CASHPOINTS, #CASHPOINTS - .@pts;
+			getitem .CoinID, .@coin;
+
+			dispbottom "Converted "+.@pts+" point(s) -> "+.@coin+" coin.";
+			dispbottom "Total Points: "+#CASHPOINTS+".";
+			close;
+
+		default:
+			close;
+	}
+
+OnInit:
+	.CoinID = 33048;	// Nostalgic Coin
+	.Rate   = 1;		// 1 coin = 1 point (ubah sini kalau nak)
+	end;
+}

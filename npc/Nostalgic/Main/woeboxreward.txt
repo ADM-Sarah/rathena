@@ -1,0 +1,96 @@
+function	script	F_WoeBoxReward	{
+	.@got = 0;
+
+	// VIP 1 Day - 5.00%
+	if (rand(10000) < 500) {
+		getitem 33034,1;
+		.@got++;
+	}
+
+	// VIP 3 Day - 1.00%
+	if (rand(10000) < 100) {
+		getitem 33035,1;
+		.@got++;
+	}
+
+	// Bloody Branch Box - 10.00%
+	if (rand(10000) < 1000) {
+		getitem 51002,1;
+		.@got++;
+	}
+
+	// Enriched Elunium - 70.00%
+	if (rand(10000) < 7000) {
+		getitem 7619,1;
+		.@got++;
+	}
+
+	// Enriched Oridecon - 70.00%
+	if (rand(10000) < 7000) {
+		getitem 7620,1;
+		.@got++;
+	}
+
+	// Nostalgic Coin - 0.01% (1 / 10000)
+	if (rand(10000) < 1) {
+		getitem 33048,1;
+		announce "[WoE Box] " + strcharinfo(0) + " obtained a Nostalgic Coin!", bc_all;
+		.@got++;
+	}
+
+	// STR Food Box - 100%
+	getitem 12903,1; .@got++;
+
+	// AGI Food Box - 100%
+	getitem 12904,1; .@got++;
+
+	// INT Food Box - 100%
+	getitem 12905,1; .@got++;
+
+	// DEX Food Box - 100%
+	getitem 12906,1; .@got++;
+
+	// LUK Food Box - 100%
+	getitem 12907,1; .@got++;
+
+	// VIT Food Box - 100%
+	getitem 12908,1; .@got++;
+
+	// WoE Ticket - 100%
+	getitem 51013,1; .@got++;
+
+	// Event Ticket - 100%
+	getitem 51004,1; .@got++;
+
+	// Job Changer Ticket - 100%
+	getitem 55683,1; .@got++;
+
+	// Potion Box - 40.00%
+	if (rand(10000) < 4000) {
+		getitem 51001,20;
+		.@got++;
+	}
+
+	// Silver Credit - 100%
+	getitem 33018,3; .@got++;
+
+	// Gold Credit - 1.00%
+	if (rand(10000) < 100) {
+		getitem 33019,1;
+		.@got++;
+	}
+
+	// Ygg Box - 100%
+	getitem 33021,5; .@got++;
+
+	// Emperium Coin - 100%
+	getitem 55812,1; .@got++;
+
+	// WoE Color Nick Box - 100%
+	getitem 55555,3; .@got++;
+
+	// Seed Box - 100%
+	getitem 33022,5; .@got++;
+
+	return;
+}

@@ -1,0 +1,1023 @@
+//===== rAthena NPC/Script  ==================================
+//= Mining System
+//===== By: ==================================================
+//= BeWan
+//https://rathena.org/board/profile/62232-bewan/
+//===== Current Version: =====================================
+//= 1.0
+//============================================================
+
+//Entrance Script
+//prontera,164,162,3	script	Mining Manager	10210,{
+-	script	Mining Manager	10210,{
+
+mes "[ Mining Manager ]";
+mes "Welcome "+strcharinfo(0)+".";
+mes " ";
+mes "Price List:";
+mes "1 Day Contract: "+F_InsertComma(.1Day)+" Zeny.";
+mes "3 Days Contract: "+F_InsertComma(.3Days)+" Zeny.";
+mes "7 Days Contract: "+F_InsertComma(.7Days)+" Zeny.";
+next;
+if(rentalcountitem(33033) < 1){
+	switch(select("~ Cancel", "~ 1 Day Contract", "~ 3 Days Contract", "~ 7 Days Contract")){
+		case 1: //Cancel
+		close;
+	
+		case 2: //1 Day
+		if(Zeny < .1Day){
+			mes "[ Mining Manager ]";
+			mes "You need "+F_InsertComma(.1Day)+" zeny to buy 1 day mining contract.";
+			close;
+		}else{
+			set Zeny,Zeny - .1Day;
+			rentitem 33033,( 1 * 24 * 3600 );
+			mes "[ Mining Manager ]";
+			mes "Thank you and talk to me again if you want to enter in mining.";
+			close;
+		}
+	
+		case 3: //3 Days
+		if(Zeny < .3Days){
+			mes "[ Mining Manager ]";
+			mes "You need "+F_InsertComma(.3Days)+" zeny to buy 1 day mining contract.";
+			close;
+		}else{
+			set Zeny,Zeny - .3Days;
+			rentitem 33033,( 3 * 24 * 3600 );
+			mes "[ Mining Manager ]";
+			mes "Thank you and talk to me again if you want to enter in mining.";
+			close;
+		}
+	
+		case 4: //7 Days
+		if(Zeny < .7Days){
+			mes "[ Mining Manager ]";
+			mes "You need "+F_InsertComma(.7Days)+" zeny to buy 1 day mining contract.";
+			close;
+		}else{
+			set Zeny,Zeny - .7Days;
+			rentitem 33033,( 7 * 24 * 3600 );
+			mes "[ Mining Manager ]";
+			mes "Thank you and talk to me again if you want to enter in mining.";
+			close;
+		}
+	}
+}else if(countitem(33033) >= 1){
+	mes "[ Mining Manager ]";
+	mes "You have permanent mining contract.";
+	mes "Please contact any gm to fix this problem.";
+	close;
+}else if(rentalcountitem(33033) >= 2){
+	mes "[ Mining Manager ]";
+	mes "You have more than one mining contract.";
+	mes "Please contact any gm to fix this problem.";
+	close;
+}else{
+	mes "[ Mining Manager ]";
+	mes "If you know you are strong enough, you can enter in PvP Mining Room for better drop rate.";
+	mes "Stick in normal mining room if you are weak.";
+	next;
+	switch(select("~ Cancel", "~ Normal Mining Room", "~ PvP Mining Room", "~ Mining Shop")){
+		case 1: //Cancel
+			close;
+			
+		case 2: //Normal Room
+			warp "mining01",0,0;
+			end;
+		
+		case 3: //PvP Room
+			warp "mining02",0,0;
+			end;
+
+		case 4: //Mining Shop
+			close2;
+			callshop "MiningShop", 1;
+			end;
+	}
+	close;
+}
+
+OnInit:
+	set .1Day, 10000000;
+	set .3Days, 50000000;
+	set .7Days, 100000000;
+	end;
+
+}
+
+//Mining Shop
+-	shop	MiningShop	-1,6010:10000000
+
+//Miner Script
+-	script	Miner	-1,{
+
+mes "[ Miner ]";
+mes "Don't disturb me, I'm busy digging.";
+close;
+
+}
+
+//Guard Script
+-	script	Guard#Mining	-1,{
+
+mes "[ Guard ]";
+mes "Keep working!";
+close;
+
+}
+
+//Miner Duplicates
+mining01,300,262,4	duplicate(Miner)	Miner1#Worker1	848
+mining01,311,240,5	duplicate(Miner)	Miner1#Worker2	848
+mining01,262,216,0	duplicate(Miner)	Miner1#Worker3	848
+mining01,288,167,0	duplicate(Miner)	Miner1#Worker4	848
+mining01,263,162,8	duplicate(Miner)	Miner1#Worker5	848
+mining01,205,243,0	duplicate(Miner)	Miner1#Worker6	848
+mining01,196,219,0	duplicate(Miner)	Miner1#Worker7	848
+mining01,188,160,4	duplicate(Miner)	Miner1#Worker8	848
+mining01,148,198,4	duplicate(Miner)	Miner1#Worker9	848
+mining01,83,221,0	duplicate(Miner)	Miner1#Worker10	848
+mining01,36,235,4	duplicate(Miner)	Miner1#Worker11	848
+mining01,30,166,4	duplicate(Miner)	Miner1#Worker12	848
+mining01,70,173,2	duplicate(Miner)	Miner1#Worker13	848
+mining01,138,153,2	duplicate(Miner)	Miner1#Worker14	848
+mining01,267,65,4	duplicate(Miner)	Miner1#Worker15	848
+mining01,217,93,4	duplicate(Miner)	Miner1#Worker16	848
+mining01,312,41,5	duplicate(Miner)	Miner1#Worker17	848
+mining01,200,87,0	duplicate(Miner)	Miner1#Worker18	848
+mining01,143,37,4	duplicate(Miner)	Miner1#Worker19	848
+mining01,133,105,0	duplicate(Miner)	Miner1#Worker20	848
+mining01,63,116,4	duplicate(Miner)	Miner1#Worker21	848
+mining01,72,98,2	duplicate(Miner)	Miner1#Worker22	848
+mining01,17,44,4	duplicate(Miner)	Miner1#Worker23	848
+mining01,87,44,5	duplicate(Miner)	Miner1#Worker24	848
+mining01,88,77,3	duplicate(Miner)	Miner1#Worker25	848
+
+mining02,300,262,4	duplicate(Miner)	Miner2#Worker1	848
+mining02,311,240,5	duplicate(Miner)	Miner2#Worker2	848
+mining02,262,216,0	duplicate(Miner)	Miner2#Worker3	848
+mining02,288,167,0	duplicate(Miner)	Miner2#Worker4	848
+mining02,263,162,8	duplicate(Miner)	Miner2#Worker5	848
+mining02,205,243,0	duplicate(Miner)	Miner2#Worker6	848
+mining02,196,219,0	duplicate(Miner)	Miner2#Worker7	848
+mining02,188,160,4	duplicate(Miner)	Miner2#Worker8	848
+mining02,148,198,4	duplicate(Miner)	Miner2#Worker9	848
+mining02,83,221,0	duplicate(Miner)	Miner2#Worker10	848
+mining02,36,235,4	duplicate(Miner)	Miner2#Worker11	848
+mining02,30,166,4	duplicate(Miner)	Miner2#Worker12	848
+mining02,70,173,2	duplicate(Miner)	Miner2#Worker13	848
+mining02,138,153,2	duplicate(Miner)	Miner2#Worker14	848
+mining02,267,65,4	duplicate(Miner)	Miner2#Worker15	848
+mining02,217,93,4	duplicate(Miner)	Miner2#Worker16	848
+mining02,312,41,5	duplicate(Miner)	Miner2#Worker17	848
+mining02,200,87,0	duplicate(Miner)	Miner2#Worker18	848
+mining02,143,37,4	duplicate(Miner)	Miner2#Worker19	848
+mining02,133,105,0	duplicate(Miner)	Miner2#Worker20	848
+mining02,63,116,4	duplicate(Miner)	Miner2#Worker21	848
+mining02,72,98,2	duplicate(Miner)	Miner2#Worker22	848
+mining02,17,44,4	duplicate(Miner)	Miner2#Worker23	848
+mining02,87,44,5	duplicate(Miner)	Miner2#Worker24	848
+mining02,88,77,3	duplicate(Miner)	Miner2#Worker25	848
+
+mining03,300,262,4	duplicate(Miner)	Miner3#Worker1	848
+mining03,311,240,5	duplicate(Miner)	Miner3#Worker2	848
+mining03,262,216,0	duplicate(Miner)	Miner3#Worker3	848
+mining03,288,167,0	duplicate(Miner)	Miner3#Worker4	848
+mining03,263,162,8	duplicate(Miner)	Miner3#Worker5	848
+mining03,205,243,0	duplicate(Miner)	Miner3#Worker6	848
+mining03,196,219,0	duplicate(Miner)	Miner3#Worker7	848
+mining03,188,160,4	duplicate(Miner)	Miner3#Worker8	848
+mining03,148,198,4	duplicate(Miner)	Miner3#Worker9	848
+mining03,83,221,0	duplicate(Miner)	Miner3#Worker10	848
+mining03,36,235,4	duplicate(Miner)	Miner3#Worker11	848
+mining03,30,166,4	duplicate(Miner)	Miner3#Worker12	848
+mining03,70,173,2	duplicate(Miner)	Miner3#Worker13	848
+mining03,138,153,2	duplicate(Miner)	Miner3#Worker14	848
+mining03,267,65,4	duplicate(Miner)	Miner3#Worker15	848
+mining03,217,93,4	duplicate(Miner)	Miner3#Worker16	848
+mining03,312,41,5	duplicate(Miner)	Miner3#Worker17	848
+mining03,200,87,0	duplicate(Miner)	Miner3#Worker18	848
+mining03,143,37,4	duplicate(Miner)	Miner3#Worker19	848
+mining03,133,105,0	duplicate(Miner)	Miner3#Worker20	848
+mining03,63,116,4	duplicate(Miner)	Miner3#Worker21	848
+mining03,72,98,2	duplicate(Miner)	Miner3#Worker22	848
+mining03,17,44,4	duplicate(Miner)	Miner3#Worker23	848
+mining03,87,44,5	duplicate(Miner)	Miner3#Worker24	848
+mining03,88,77,3	duplicate(Miner)	Miner3#Worker25	848
+
+//Guard Duplicates
+mining01,235,197,4	duplicate(Guard#Mining)	Guard#1Miner1	852
+mining01,293,191,5	duplicate(Guard#Mining)	Guard#1Miner2	939
+mining01,30,152,5	duplicate(Guard#Mining)	Guard#1Miner3	852
+mining01,58,215,4	duplicate(Guard#Mining)	Guard#1Miner4	939
+mining01,103,238,4	duplicate(Guard#Mining)	Guard#1Miner5	852
+mining01,111,159,5	duplicate(Guard#Mining)	Guard#1Miner6	939
+mining01,178,204,5	duplicate(Guard#Mining)	Guard#1Miner7	852
+mining01,231,166,4	duplicate(Guard#Mining)	Guard#1Miner8	939
+mining01,292,255,5	duplicate(Guard#Mining)	Guard#1Miner9	852
+mining01,282,109,4	duplicate(Guard#Mining)	Guard#1Miner10	939
+mining01,226,55,4	duplicate(Guard#Mining)	Guard#1Miner11	852
+mining01,180,117,5	duplicate(Guard#Mining)	Guard#1Miner12	939
+mining01,158,57,4	duplicate(Guard#Mining)	Guard#1Miner13	852
+mining01,117,115,5	duplicate(Guard#Mining)	Guard#1Miner14	939
+mining01,35,122,5	duplicate(Guard#Mining)	Guard#1Miner15	852
+mining01,103,90,5	duplicate(Guard#Mining)	Guard#1Miner16	939
+mining01,39,59,5	duplicate(Guard#Mining)	Guard#1Miner17	852
+mining01,40,41,5	duplicate(Guard#Mining)	Guard#1Miner18	939
+mining01,96,62,5	duplicate(Guard#Mining)	Guard#1Miner19	852
+mining01,159,108,4	duplicate(Guard#Mining)	Guard#1Miner20	939
+
+mining02,235,197,4	duplicate(Guard#Mining)	Guard#2Miner1	852
+mining02,293,191,5	duplicate(Guard#Mining)	Guard#2Miner2	939
+mining02,30,152,5	duplicate(Guard#Mining)	Guard#2Miner3	852
+mining02,58,215,4	duplicate(Guard#Mining)	Guard#2Miner4	939
+mining02,103,238,4	duplicate(Guard#Mining)	Guard#2Miner5	852
+mining02,111,159,5	duplicate(Guard#Mining)	Guard#2Miner6	939
+mining02,178,204,5	duplicate(Guard#Mining)	Guard#2Miner7	852
+mining02,231,166,4	duplicate(Guard#Mining)	Guard#2Miner8	939
+mining02,292,255,5	duplicate(Guard#Mining)	Guard#2Miner9	852
+mining02,282,109,4	duplicate(Guard#Mining)	Guard#2Miner10	939
+mining02,226,55,4	duplicate(Guard#Mining)	Guard#2Miner11	852
+mining02,180,117,5	duplicate(Guard#Mining)	Guard#2Miner12	939
+mining02,158,57,4	duplicate(Guard#Mining)	Guard#2Miner13	852
+mining02,117,115,5	duplicate(Guard#Mining)	Guard#2Miner14	939
+mining02,35,122,5	duplicate(Guard#Mining)	Guard#2Miner15	852
+mining02,103,90,5	duplicate(Guard#Mining)	Guard#2Miner16	939
+mining02,39,59,5	duplicate(Guard#Mining)	Guard#2Miner17	852
+mining02,40,41,5	duplicate(Guard#Mining)	Guard#2Miner18	939
+mining02,96,62,5	duplicate(Guard#Mining)	Guard#2Miner19	852
+mining02,159,108,4	duplicate(Guard#Mining)	Guard#2Miner20	939
+
+mining03,235,197,4	duplicate(Guard#Mining)	Guard#3Miner1	852
+mining03,293,191,5	duplicate(Guard#Mining)	Guard#3Miner2	939
+mining03,30,152,5	duplicate(Guard#Mining)	Guard#3Miner3	852
+mining03,58,215,4	duplicate(Guard#Mining)	Guard#3Miner4	939
+mining03,103,238,4	duplicate(Guard#Mining)	Guard#3Miner5	852
+mining03,111,159,5	duplicate(Guard#Mining)	Guard#3Miner6	939
+mining03,178,204,5	duplicate(Guard#Mining)	Guard#3Miner7	852
+mining03,231,166,4	duplicate(Guard#Mining)	Guard#3Miner8	939
+mining03,292,255,5	duplicate(Guard#Mining)	Guard#3Miner9	852
+mining03,282,109,4	duplicate(Guard#Mining)	Guard#3Miner10	939
+mining03,226,55,4	duplicate(Guard#Mining)	Guard#3Miner11	852
+mining03,180,117,5	duplicate(Guard#Mining)	Guard#3Miner12	939
+mining03,158,57,4	duplicate(Guard#Mining)	Guard#3Miner13	852
+mining03,117,115,5	duplicate(Guard#Mining)	Guard#3Miner14	939
+mining03,35,122,5	duplicate(Guard#Mining)	Guard#3Miner15	852
+mining03,103,90,5	duplicate(Guard#Mining)	Guard#3Miner16	939
+mining03,39,59,5	duplicate(Guard#Mining)	Guard#3Miner17	852
+mining03,40,41,5	duplicate(Guard#Mining)	Guard#3Miner18	939
+mining03,96,62,5	duplicate(Guard#Mining)	Guard#3Miner19	852
+mining03,159,108,4	duplicate(Guard#Mining)	Guard#3Miner20	939
+
+//Mining Function 1
+-	script	::MiningRock01	FAKE_NPC,{
+
+	//=== basic settings
+	set @tempo_main,1;	//time that will be born randomly on the map (in milliseconds). (default: 20min = 60000ms)
+	set @Tempo,20; 		//Time that can break another stone again. (in seconds). (default 20 seconds.)
+	set @equip,6010;	//necessary equipment
+	set @item,582; 		//reward item.
+	
+	//Checks
+	if(rentalcountitem(33033) <= 0){ 
+		mes "[ Mining Guardian ]";
+		mes "You don't have existing mining contract.";
+		close2;
+		warp "SavePoint",0,0; 
+		end; 
+	}
+	
+	if(getequipid(EQI_HAND_L)==@equip || getequipid(EQI_HAND_R)==@equip){ set .@eqiON,1; }
+	if(!.@eqiON){ dispbottom "[ROCK] Your miner equipment is not equipped."; end; }
+	if(pedra >= gettimetick(2)){ npctalk "You need to rest "+(pedra-gettimetick(2))+" seconds to mine again."; end; }	
+	if(getd("."+strnpcinfo(2)+"")){ dispbottom "[ROCK]Someone is already using this stone."; end; } else setd("."+strnpcinfo(2)+"",1);
+	
+	//sets
+	setd(".mapa_"+strnpcinfo(2)+"$",strnpcinfo(4));
+	setd(".name_"+strnpcinfo(2)+"$",strnpcinfo(0));
+	
+	//  Possible rewards. (random)
+	switch(rand(8))
+	{
+		default: set @reward,0; break; 	//failure value (don't add id here)
+		case 1:	set @reward,501; break; //reward 1
+		case 2:	set @reward,501; break; //reward 2
+		case 3:	set @reward,501; break; //reward 3
+		case 4:	set @reward,501; break; //reward 4
+		case 5:	set @reward,501; break; //reward 5
+		case 6:	set @reward,501; break; //reward 6
+		case 7:	set @reward,501; break; //reward 7
+		case 8:	set @reward,501; break; //reward 8
+	}
+	
+	cutin "p_00",4; sleep2 100; specialeffect2 457; cutin "p_01",4; sleep2 200; cutin "p_02",4; sleep2 500; cutin "p_03",4; sleep2 800; cutin "p_04",4; sleep2 700;
+	
+	set @rand_fruta,rand(20);
+	getitem @item,@rand_fruta;
+	set pedra,gettimetick(2)+@Tempo; specialeffect2 457;
+	cutin "p_00",4; sleep2 100; specialeffect2 457;
+	cutin "p_01",4; specialeffect2 457; sleep2 200;
+	cutin "p_02",4; specialeffect2 457; sleep2 500;
+	cutin "p_03",4; specialeffect2 457; sleep2 800;
+	cutin "p_04",4; sleep2 700;
+	specialeffect2 457;
+	cutin "p_00",4; sleep2 100; 
+	cutin "p_01",4; sleep2 200;
+	cutin "p_02",4; specialeffect2 457; sleep2 500;
+	cutin "p_03",4; specialeffect2 457; sleep2 800;
+	cutin "p_04",4; specialeffect2 457; sleep2 700;
+	cutin "p_05",4; specialeffect2 457; sleep2 500; 
+	specialeffect2 457;
+	classchange 3560,getd(".name_"+strnpcinfo(2)+"$"),bc_area;
+
+	if(!@reward){ cutin "p_fail",4; sleep2 500; cutin "",255; setd("."+strnpcinfo(2)+"",0); end; } else getitem @reward,1;
+	
+	cutin "p_06",4; specialeffect2 457; sleep2 1000; cutin "",255;
+	setd("."+strnpcinfo(2)+"",0);
+	disablenpc getd(".name_"+strnpcinfo(2)+"$");
+	sleep @tempo_main; 
+
+	//Dont touch.
+	while( !checkcell( getd(".mapa_"+strnpcinfo(2)+"$"),( .@x = rand( 1,400 ) ),( .@y = rand( 1,400 ) ),cell_chkpass ) ); 
+	//movenpc getd(".name_"+strnpcinfo(2)+"$"),.@x,.@y;
+	sleep 5000;
+	enablenpc getd(".name_"+strnpcinfo(2)+"$"); end;
+}
+
+//Duplicate Rock 1
+mining01,310,256,0	duplicate(MiningRock01)	#1rock01	3560
+mining01,298,255,0	duplicate(MiningRock01)	#1rock02	3560
+mining01,303,246,0	duplicate(MiningRock01)	#1rock03	3560
+mining01,277,253,0	duplicate(MiningRock01)	#1rock04	3560
+mining01,260,246,0	duplicate(MiningRock01)	#1rock05	3560
+mining01,275,222,0	duplicate(MiningRock01)	#1rock06	3560
+mining01,244,226,0	duplicate(MiningRock01)	#1rock07	3560
+mining01,253,209,0	duplicate(MiningRock01)	#1rock08	3560
+mining01,274,203,0	duplicate(MiningRock01)	#1rock09	3560
+mining01,261,201,0	duplicate(MiningRock01)	#1rock10	3560
+mining01,292,228,0	duplicate(MiningRock01)	#1rock11	3560
+mining01,303,219,0	duplicate(MiningRock01)	#1rock12	3560
+mining01,290,212,0	duplicate(MiningRock01)	#1rock13	3560
+mining01,307,200,0	duplicate(MiningRock01)	#1rock14	3560
+mining01,304,183,0	duplicate(MiningRock01)	#1rock15	3560
+mining01,297,169,0	duplicate(MiningRock01)	#1rock16	3560
+mining01,310,161,0	duplicate(MiningRock01)	#1rock17	3560
+mining01,278,155,0	duplicate(MiningRock01)	#1rock18	3560
+mining01,294,149,0	duplicate(MiningRock01)	#1rock19	3560
+mining01,257,133,0	duplicate(MiningRock01)	#1rock20	3560
+mining01,261,146,0	duplicate(MiningRock01)	#1rock21	3560
+mining01,254,165,0	duplicate(MiningRock01)	#1rock22	3560
+mining01,273,140,0	duplicate(MiningRock01)	#1rock23	3560
+mining01,239,148,0	duplicate(MiningRock01)	#1rock24	3560
+mining01,216,165,0	duplicate(MiningRock01)	#1rock25	3560
+mining01,223,154,0	duplicate(MiningRock01)	#1rock26	3560
+mining01,201,141,0	duplicate(MiningRock01)	#1rock27	3560
+mining01,214,146,0	duplicate(MiningRock01)	#1rock28	3560
+mining01,221,184,0	duplicate(MiningRock01)	#1rock29	3560
+mining01,237,189,0	duplicate(MiningRock01)	#1rock30	3560
+mining01,265,194,0	duplicate(MiningRock01)	#1rock31	3560
+mining01,285,197,0	duplicate(MiningRock01)	#1rock32	3560
+mining01,280,178,0	duplicate(MiningRock01)	#1rock33	3560
+mining01,247,211,0	duplicate(MiningRock01)	#1rock34	3560
+mining01,224,218,0	duplicate(MiningRock01)	#1rock35	3560
+mining01,234,229,0	duplicate(MiningRock01)	#1rock36	3560
+mining01,190,165,0	duplicate(MiningRock01)	#1rock37	3560
+mining01,177,157,0	duplicate(MiningRock01)	#1rock38	3560
+mining01,177,175,0	duplicate(MiningRock01)	#1rock39	3560
+mining01,170,186,0	duplicate(MiningRock01)	#1rock40	3560
+mining01,203,163,0	duplicate(MiningRock01)	#1rock41	3560
+mining01,196,180,0	duplicate(MiningRock01)	#1rock42	3560
+mining01,184,197,0	duplicate(MiningRock01)	#1rock43	3560
+mining01,198,204,0	duplicate(MiningRock01)	#1rock44	3560
+mining01,186,212,0	duplicate(MiningRock01)	#1rock45	3560
+mining01,169,226,0	duplicate(MiningRock01)	#1rock46	3560
+mining01,191,230,0	duplicate(MiningRock01)	#1rock47	3560
+mining01,178,237,0	duplicate(MiningRock01)	#1rock48	3560
+mining01,181,223,0	duplicate(MiningRock01)	#1rock49	3560
+mining01,177,249,0	duplicate(MiningRock01)	#1rock50	3560
+mining01,200,242,0	duplicate(MiningRock01)	#1rock51	3560
+mining01,223,245,0	duplicate(MiningRock01)	#1rock52	3560
+mining01,247,246,0	duplicate(MiningRock01)	#1rock53	3560
+mining01,305,264,0	duplicate(MiningRock01)	#1rock54	3560
+mining01,259,230,0	duplicate(MiningRock01)	#1rock55	3560
+mining01,250,198,0	duplicate(MiningRock01)	#1rock56	3560
+mining01,235,216,0	duplicate(MiningRock01)	#1rock57	3560
+mining01,225,202,0	duplicate(MiningRock01)	#1rock58	3560
+mining01,239,161,0	duplicate(MiningRock01)	#1rock59	3560
+mining01,223,140,0	duplicate(MiningRock01)	#1rock60	3560
+mining01,169,164,0	duplicate(MiningRock01)	#1rock61	3560
+
+mining02,310,256,0	duplicate(MiningRock01)	#1rockPK01	3564
+mining02,298,255,0	duplicate(MiningRock01)	#1rockPK02	3564
+mining02,303,246,0	duplicate(MiningRock01)	#1rockPK03	3564
+mining02,277,253,0	duplicate(MiningRock01)	#1rockPK04	3564
+mining02,260,246,0	duplicate(MiningRock01)	#1rockPK05	3564
+mining02,275,222,0	duplicate(MiningRock01)	#1rockPK06	3564
+mining02,244,226,0	duplicate(MiningRock01)	#1rockPK07	3564
+mining02,253,209,0	duplicate(MiningRock01)	#1rockPK08	3564
+mining02,274,203,0	duplicate(MiningRock01)	#1rockPK09	3564
+mining02,261,201,0	duplicate(MiningRock01)	#1rockPK10	3564
+mining02,292,228,0	duplicate(MiningRock01)	#1rockPK11	3564
+mining02,303,219,0	duplicate(MiningRock01)	#1rockPK12	3564
+mining02,290,212,0	duplicate(MiningRock01)	#1rockPK13	3564
+mining02,307,200,0	duplicate(MiningRock01)	#1rockPK14	3564
+mining02,304,183,0	duplicate(MiningRock01)	#1rockPK15	3564
+mining02,297,169,0	duplicate(MiningRock01)	#1rockPK16	3564
+mining02,310,161,0	duplicate(MiningRock01)	#1rockPK17	3564
+mining02,278,155,0	duplicate(MiningRock01)	#1rockPK18	3564
+mining02,294,149,0	duplicate(MiningRock01)	#1rockPK19	3564
+mining02,257,133,0	duplicate(MiningRock01)	#1rockPK20	3564
+mining02,261,146,0	duplicate(MiningRock01)	#1rockPK21	3564
+mining02,254,165,0	duplicate(MiningRock01)	#1rockPK22	3564
+mining02,273,140,0	duplicate(MiningRock01)	#1rockPK23	3564
+mining02,239,148,0	duplicate(MiningRock01)	#1rockPK24	3564
+mining02,216,165,0	duplicate(MiningRock01)	#1rockPK25	3564
+mining02,223,154,0	duplicate(MiningRock01)	#1rockPK26	3564
+mining02,201,141,0	duplicate(MiningRock01)	#1rockPK27	3564
+mining02,214,146,0	duplicate(MiningRock01)	#1rockPK28	3564
+mining02,221,184,0	duplicate(MiningRock01)	#1rockPK29	3564
+mining02,237,189,0	duplicate(MiningRock01)	#1rockPK30	3564
+mining02,265,194,0	duplicate(MiningRock01)	#1rockPK31	3564
+mining02,285,197,0	duplicate(MiningRock01)	#1rockPK32	3564
+mining02,280,178,0	duplicate(MiningRock01)	#1rockPK33	3564
+mining02,247,211,0	duplicate(MiningRock01)	#1rockPK34	3564
+mining02,224,218,0	duplicate(MiningRock01)	#1rockPK35	3564
+mining02,234,229,0	duplicate(MiningRock01)	#1rockPK36	3564
+mining02,190,165,0	duplicate(MiningRock01)	#1rockPK37	3564
+mining02,177,157,0	duplicate(MiningRock01)	#1rockPK38	3564
+mining02,177,175,0	duplicate(MiningRock01)	#1rockPK39	3564
+mining02,170,186,0	duplicate(MiningRock01)	#1rockPK40	3564
+mining02,203,163,0	duplicate(MiningRock01)	#1rockPK41	3564
+mining02,196,180,0	duplicate(MiningRock01)	#1rockPK42	3564
+mining02,184,197,0	duplicate(MiningRock01)	#1rockPK43	3564
+mining02,198,204,0	duplicate(MiningRock01)	#1rockPK44	3564
+mining02,186,212,0	duplicate(MiningRock01)	#1rockPK45	3564
+mining02,169,226,0	duplicate(MiningRock01)	#1rockPK46	3564
+mining02,191,230,0	duplicate(MiningRock01)	#1rockPK47	3564
+mining02,178,237,0	duplicate(MiningRock01)	#1rockPK48	3564
+mining02,181,223,0	duplicate(MiningRock01)	#1rockPK49	3564
+mining02,177,249,0	duplicate(MiningRock01)	#1rockPK50	3564
+mining02,200,242,0	duplicate(MiningRock01)	#1rockPK51	3564
+mining02,223,245,0	duplicate(MiningRock01)	#1rockPK52	3564
+mining02,247,246,0	duplicate(MiningRock01)	#1rockPK53	3564
+mining02,305,264,0	duplicate(MiningRock01)	#1rockPK54	3564
+mining02,259,230,0	duplicate(MiningRock01)	#1rockPK55	3564
+mining02,250,198,0	duplicate(MiningRock01)	#1rockPK56	3564
+mining02,235,216,0	duplicate(MiningRock01)	#1rockPK57	3564
+mining02,225,202,0	duplicate(MiningRock01)	#1rockPK58	3564
+mining02,239,161,0	duplicate(MiningRock01)	#1rockPK59	3564
+mining02,223,140,0	duplicate(MiningRock01)	#1rockPK60	3564
+mining02,169,164,0	duplicate(MiningRock01)	#1rockPK61	3564
+
+//Mining Function 2
+-	script	::MiningRock02	FAKE_NPC,{
+
+	//=== basic settings
+	set @tempo_main,1;	//time that will be born randomly on the map (in milliseconds). (default: 20min = 60000ms)
+	set @Tempo,20; 		//Time that can break another stone again. (in seconds). (default 20 seconds.)
+	set @equip,6010;	//necessary equipment
+	set @item,582; 		//reward item.
+	
+	//Checks
+	if(rentalcountitem(33033) <= 0){ 
+		mes "[ Mining Guardian ]";
+		mes "You don't have existing mining contract.";
+		close2;
+		warp "SavePoint",0,0; 
+		end; 
+	}
+	
+	if(getequipid(EQI_HAND_L)==@equip || getequipid(EQI_HAND_R)==@equip){ set .@eqiON,1; }
+	if(!.@eqiON){ dispbottom "[ROCK] Your miner equipment is not equipped."; end; }
+	if(pedra >= gettimetick(2)){ npctalk "You need to rest "+(pedra-gettimetick(2))+" seconds to mine again."; end; }	
+	if(getd("."+strnpcinfo(2)+"")){ dispbottom "[ROCK]Someone is already using this stone."; end; } else setd("."+strnpcinfo(2)+"",1);
+	
+	//sets
+	setd(".mapa_"+strnpcinfo(2)+"$",strnpcinfo(4));
+	setd(".name_"+strnpcinfo(2)+"$",strnpcinfo(0));
+	
+	//  Possible rewards. (random)
+	switch(rand(8))
+	{
+		default: set @reward,0; break; 	//failure value (don't add id here)
+		case 1:	set @reward,501; break; //reward 1
+		case 2:	set @reward,501; break; //reward 2
+		case 3:	set @reward,501; break; //reward 3
+		case 4:	set @reward,501; break; //reward 4
+		case 5:	set @reward,501; break; //reward 5
+		case 6:	set @reward,501; break; //reward 6
+		case 7:	set @reward,501; break; //reward 7
+		case 8:	set @reward,501; break; //reward 8
+	}
+	
+	cutin "p_00",4; sleep2 100; specialeffect2 457; cutin "p_01",4; sleep2 200; cutin "p_02",4; sleep2 500; cutin "p_03",4; sleep2 800; cutin "p_04",4; sleep2 700;
+	
+	set @rand_fruta,rand(20);
+	getitem @item,@rand_fruta;
+	set pedra,gettimetick(2)+@Tempo; specialeffect2 457;
+	cutin "p_00",4; sleep2 100; specialeffect2 457;
+	cutin "p_01",4; specialeffect2 457; sleep2 200;
+	cutin "p_02",4; specialeffect2 457; sleep2 500;
+	cutin "p_03",4; specialeffect2 457; sleep2 800;
+	cutin "p_04",4; sleep2 700;
+	specialeffect2 457;
+	cutin "p_00",4; sleep2 100; 
+	cutin "p_01",4; sleep2 200;
+	cutin "p_02",4; specialeffect2 457; sleep2 500;
+	cutin "p_03",4; specialeffect2 457; sleep2 800;
+	cutin "p_04",4; specialeffect2 457; sleep2 700;
+	cutin "p_05",4; specialeffect2 457; sleep2 500; 
+	specialeffect2 457;
+	classchange 3561,getd(".name_"+strnpcinfo(2)+"$"),bc_area;
+
+	if(!@reward){ cutin "p_fail",4; sleep2 500; cutin "",255; setd("."+strnpcinfo(2)+"",0); end; } else getitem @reward,1;
+	
+	cutin "p_06",4; specialeffect2 457; sleep2 1000; cutin "",255;
+	setd("."+strnpcinfo(2)+"",0);
+	disablenpc getd(".name_"+strnpcinfo(2)+"$");
+	sleep @tempo_main; 
+
+	//Dont touch.
+	while( !checkcell( getd(".mapa_"+strnpcinfo(2)+"$"),( .@x = rand( 1,400 ) ),( .@y = rand( 1,400 ) ),cell_chkpass ) ); 
+	//movenpc getd(".name_"+strnpcinfo(2)+"$"),.@x,.@y;
+	sleep 5000;
+	enablenpc getd(".name_"+strnpcinfo(2)+"$"); end;
+}
+
+//Duplicate Rock 2
+mining01,154,222,0	duplicate(MiningRock02)	#2rock01	3561
+mining01,155,203,0	duplicate(MiningRock02)	#2rock02	3561
+mining01,148,192,0	duplicate(MiningRock02)	#2rock03	3561
+mining01,155,184,0	duplicate(MiningRock02)	#2rock04	3561
+mining01,132,184,0	duplicate(MiningRock02)	#2rock05	3561
+mining01,146,168,0	duplicate(MiningRock02)	#2rock06	3561
+mining01,124,171,0	duplicate(MiningRock02)	#2rock07	3561
+mining01,136,174,0	duplicate(MiningRock02)	#2rock08	3561
+mining01,155,152,0	duplicate(MiningRock02)	#2rock09	3561
+mining01,134,156,0	duplicate(MiningRock02)	#2rock10	3561
+mining01,117,159,0	duplicate(MiningRock02)	#2rock11	3561
+mining01,109,146,0	duplicate(MiningRock02)	#2rock12	3561
+mining01,121,139,0	duplicate(MiningRock02)	#2rock13	3561
+mining01,138,142,0	duplicate(MiningRock02)	#2rock14	3561
+mining01,92,152,0	duplicate(MiningRock02)	#2rock15	3561
+mining01,84,167,0	duplicate(MiningRock02)	#2rock16	3561
+mining01,74,153,0	duplicate(MiningRock02)	#2rock17	3561
+mining01,57,167,0	duplicate(MiningRock02)	#2rock18	3561
+mining01,50,158,0	duplicate(MiningRock02)	#2rock19	3561
+mining01,29,145,0	duplicate(MiningRock02)	#2rock20	3561
+mining01,29,161,0	duplicate(MiningRock02)	#2rock21	3561
+mining01,50,146,0	duplicate(MiningRock02)	#2rock22	3561
+mining01,43,154,0	duplicate(MiningRock02)	#2rock23	3561
+mining01,36,185,0	duplicate(MiningRock02)	#2rock24	3561
+mining01,51,199,0	duplicate(MiningRock02)	#2rock25	3561
+mining01,44,220,0	duplicate(MiningRock02)	#2rock26	3561
+mining01,39,251,0	duplicate(MiningRock02)	#2rock27	3561
+mining01,57,232,0	duplicate(MiningRock02)	#2rock28	3561
+mining01,46,238,0	duplicate(MiningRock02)	#2rock29	3561
+mining01,34,240,0	duplicate(MiningRock02)	#2rock30	3561
+mining01,66,246,0	duplicate(MiningRock02)	#2rock31	3561
+mining01,82,239,0	duplicate(MiningRock02)	#2rock32	3561
+mining01,93,231,0	duplicate(MiningRock02)	#2rock33	3561
+mining01,106,219,0	duplicate(MiningRock02)	#2rock34	3561
+mining01,89,222,0	duplicate(MiningRock02)	#2rock35	3561
+mining01,96,211,0	duplicate(MiningRock02)	#2rock36	3561
+mining01,112,237,0	duplicate(MiningRock02)	#2rock37	3561
+mining01,70,217,0	duplicate(MiningRock02)	#2rock38	3561
+mining01,73,200,0	duplicate(MiningRock02)	#2rock39	3561
+mining01,79,209,0	duplicate(MiningRock02)	#2rock40	3561
+mining01,92,196,0	duplicate(MiningRock02)	#2rock41	3561
+mining01,110,191,0	duplicate(MiningRock02)	#2rock42	3561
+mining01,125,217,0	duplicate(MiningRock02)	#2rock43	3561
+mining01,144,209,0	duplicate(MiningRock02)	#2rock44	3561
+mining01,124,151,0	duplicate(MiningRock02)	#2rock45	3561
+mining01,69,169,0	duplicate(MiningRock02)	#2rock46	3561
+mining01,43,173,0	duplicate(MiningRock02)	#2rock47	3561
+mining01,32,195,0	duplicate(MiningRock02)	#2rock48	3561
+mining01,36,229,0	duplicate(MiningRock02)	#2rock49	3561
+mining01,73,232,0	duplicate(MiningRock02)	#2rock50	3561
+
+mining02,154,222,0	duplicate(MiningRock02)	#2rockPK01	3565
+mining02,155,203,0	duplicate(MiningRock02)	#2rockPK02	3565
+mining02,148,192,0	duplicate(MiningRock02)	#2rockPK03	3565
+mining02,155,184,0	duplicate(MiningRock02)	#2rockPK04	3565
+mining02,132,184,0	duplicate(MiningRock02)	#2rockPK05	3565
+mining02,146,168,0	duplicate(MiningRock02)	#2rockPK06	3565
+mining02,124,171,0	duplicate(MiningRock02)	#2rockPK07	3565
+mining02,136,174,0	duplicate(MiningRock02)	#2rockPK08	3565
+mining02,155,152,0	duplicate(MiningRock02)	#2rockPK09	3565
+mining02,134,156,0	duplicate(MiningRock02)	#2rockPK10	3565
+mining02,117,159,0	duplicate(MiningRock02)	#2rockPK11	3565
+mining02,109,146,0	duplicate(MiningRock02)	#2rockPK12	3565
+mining02,121,139,0	duplicate(MiningRock02)	#2rockPK13	3565
+mining02,138,142,0	duplicate(MiningRock02)	#2rockPK14	3565
+mining02,92,152,0	duplicate(MiningRock02)	#2rockPK15	3565
+mining02,84,167,0	duplicate(MiningRock02)	#2rockPK16	3565
+mining02,74,153,0	duplicate(MiningRock02)	#2rockPK17	3565
+mining02,57,167,0	duplicate(MiningRock02)	#2rockPK18	3565
+mining02,50,158,0	duplicate(MiningRock02)	#2rockPK19	3565
+mining02,29,145,0	duplicate(MiningRock02)	#2rockPK20	3565
+mining02,29,161,0	duplicate(MiningRock02)	#2rockPK21	3565
+mining02,50,146,0	duplicate(MiningRock02)	#2rockPK22	3565
+mining02,43,154,0	duplicate(MiningRock02)	#2rockPK23	3565
+mining02,36,185,0	duplicate(MiningRock02)	#2rockPK24	3565
+mining02,51,199,0	duplicate(MiningRock02)	#2rockPK25	3565
+mining02,44,220,0	duplicate(MiningRock02)	#2rockPK26	3565
+mining02,39,251,0	duplicate(MiningRock02)	#2rockPK27	3565
+mining02,57,232,0	duplicate(MiningRock02)	#2rockPK28	3565
+mining02,46,238,0	duplicate(MiningRock02)	#2rockPK29	3565
+mining02,34,240,0	duplicate(MiningRock02)	#2rockPK30	3565
+mining02,66,246,0	duplicate(MiningRock02)	#2rockPK31	3565
+mining02,82,239,0	duplicate(MiningRock02)	#2rockPK32	3565
+mining02,93,231,0	duplicate(MiningRock02)	#2rockPK33	3565
+mining02,106,219,0	duplicate(MiningRock02)	#2rockPK34	3565
+mining02,89,222,0	duplicate(MiningRock02)	#2rockPK35	3565
+mining02,96,211,0	duplicate(MiningRock02)	#2rockPK36	3565
+mining02,112,237,0	duplicate(MiningRock02)	#2rockPK37	3565
+mining02,70,217,0	duplicate(MiningRock02)	#2rockPK38	3565
+mining02,73,200,0	duplicate(MiningRock02)	#2rockPK39	3565
+mining02,79,209,0	duplicate(MiningRock02)	#2rockPK40	3565
+mining02,92,196,0	duplicate(MiningRock02)	#2rockPK41	3565
+mining02,110,191,0	duplicate(MiningRock02)	#2rockPK42	3565
+mining02,125,217,0	duplicate(MiningRock02)	#2rockPK43	3565
+mining02,144,209,0	duplicate(MiningRock02)	#2rockPK44	3565
+mining02,124,151,0	duplicate(MiningRock02)	#2rockPK45	3565
+mining02,69,169,0	duplicate(MiningRock02)	#2rockPK46	3565
+mining02,43,173,0	duplicate(MiningRock02)	#2rockPK47	3565
+mining02,32,195,0	duplicate(MiningRock02)	#2rockPK48	3565
+mining02,36,229,0	duplicate(MiningRock02)	#2rockPK49	3565
+mining02,73,232,0	duplicate(MiningRock02)	#2rockPK50	3565
+
+//Mining Function 3
+-	script	::MiningRock03	FAKE_NPC,{
+
+	//=== basic settings
+	set @tempo_main,1;	//time that will be born randomly on the map (in milliseconds). (default: 20min = 60000ms)
+	set @Tempo,20; 		//Time that can break another stone again. (in seconds). (default 20 seconds.)
+	set @equip,6010;	//necessary equipment
+	set @item,582; 		//reward item.
+	
+	//Checks
+	if(rentalcountitem(33033) <= 0){ 
+		mes "[ Mining Guardian ]";
+		mes "You don't have existing mining contract.";
+		close2;
+		warp "SavePoint",0,0; 
+		end; 
+	}
+	
+	if(getequipid(EQI_HAND_L)==@equip || getequipid(EQI_HAND_R)==@equip){ set .@eqiON,1; }
+	if(!.@eqiON){ dispbottom "[ROCK] Your miner equipment is not equipped."; end; }
+	if(pedra >= gettimetick(2)){ npctalk "You need to rest "+(pedra-gettimetick(2))+" seconds to mine again."; end; }	
+	if(getd("."+strnpcinfo(2)+"")){ dispbottom "[ROCK]Someone is already using this stone."; end; } else setd("."+strnpcinfo(2)+"",1);
+	
+	//sets
+	setd(".mapa_"+strnpcinfo(2)+"$",strnpcinfo(4));
+	setd(".name_"+strnpcinfo(2)+"$",strnpcinfo(0));
+	
+	//  Possible rewards. (random)
+	switch(rand(8))
+	{
+		default: set @reward,0; break; 	//failure value (don't add id here)
+		case 1:	set @reward,501; break; //reward 1
+		case 2:	set @reward,501; break; //reward 2
+		case 3:	set @reward,501; break; //reward 3
+		case 4:	set @reward,501; break; //reward 4
+		case 5:	set @reward,501; break; //reward 5
+		case 6:	set @reward,501; break; //reward 6
+		case 7:	set @reward,501; break; //reward 7
+		case 8:	set @reward,501; break; //reward 8
+	}
+	
+	cutin "p_00",4; sleep2 100; specialeffect2 457; cutin "p_01",4; sleep2 200; cutin "p_02",4; sleep2 500; cutin "p_03",4; sleep2 800; cutin "p_04",4; sleep2 700;
+	
+	set @rand_fruta,rand(20);
+	getitem @item,@rand_fruta;
+	set pedra,gettimetick(2)+@Tempo; specialeffect2 457;
+	cutin "p_00",4; sleep2 100; specialeffect2 457;
+	cutin "p_01",4; specialeffect2 457; sleep2 200;
+	cutin "p_02",4; specialeffect2 457; sleep2 500;
+	cutin "p_03",4; specialeffect2 457; sleep2 800;
+	cutin "p_04",4; sleep2 700;
+	specialeffect2 457;
+	cutin "p_00",4; sleep2 100; 
+	cutin "p_01",4; sleep2 200;
+	cutin "p_02",4; specialeffect2 457; sleep2 500;
+	cutin "p_03",4; specialeffect2 457; sleep2 800;
+	cutin "p_04",4; specialeffect2 457; sleep2 700;
+	cutin "p_05",4; specialeffect2 457; sleep2 500; 
+	specialeffect2 457;
+	classchange 3562,getd(".name_"+strnpcinfo(2)+"$"),bc_area;
+
+	if(!@reward){ cutin "p_fail",4; sleep2 500; cutin "",255; setd("."+strnpcinfo(2)+"",0); end; } else getitem @reward,1;
+	
+	cutin "p_06",4; specialeffect2 457; sleep2 1000; cutin "",255;
+	setd("."+strnpcinfo(2)+"",0);
+	disablenpc getd(".name_"+strnpcinfo(2)+"$");
+	sleep @tempo_main; 
+
+	//Dont touch.
+	while( !checkcell( getd(".mapa_"+strnpcinfo(2)+"$"),( .@x = rand( 1,400 ) ),( .@y = rand( 1,400 ) ),cell_chkpass ) ); 
+	//movenpc getd(".name_"+strnpcinfo(2)+"$"),.@x,.@y;
+	sleep 5000;
+	enablenpc getd(".name_"+strnpcinfo(2)+"$"); end;
+}
+
+//Duplicate Rock 3
+mining01,33,110,0	duplicate(MiningRock03)	#3rock01	3562
+mining01,38,118,0	duplicate(MiningRock03)	#3rock02	3562
+mining01,47,109,0	duplicate(MiningRock03)	#3rock03	3562
+mining01,49,130,0	duplicate(MiningRock03)	#3rock04	3562
+mining01,58,117,0	duplicate(MiningRock03)	#3rock05	3562
+mining01,61,126,0	duplicate(MiningRock03)	#3rock06	3562
+mining01,73,138,0	duplicate(MiningRock03)	#3rock07	3562
+mining01,82,132,0	duplicate(MiningRock03)	#3rock08	3562
+mining01,94,138,0	duplicate(MiningRock03)	#3rock09	3562
+mining01,93,124,0	duplicate(MiningRock03)	#3rock10	3562
+mining01,110,122,0	duplicate(MiningRock03)	#3rock11	3562
+mining01,104,109,0	duplicate(MiningRock03)	#3rock12	3562
+mining01,129,122,0	duplicate(MiningRock03)	#3rock13	3562
+mining01,139,109,0	duplicate(MiningRock03)	#3rock14	3562
+mining01,149,122,0	duplicate(MiningRock03)	#3rock15	3562
+mining01,120,104,0	duplicate(MiningRock03)	#3rock16	3562
+mining01,132,93,0	duplicate(MiningRock03)	#3rock17	3562
+mining01,113,84,0	duplicate(MiningRock03)	#3rock18	3562
+mining01,94,90,0	duplicate(MiningRock03)	#3rock19	3562
+mining01,79,85,0	duplicate(MiningRock03)	#3rock20	3562
+mining01,58,90,0	duplicate(MiningRock03)	#3rock21	3562
+mining01,68,77,0	duplicate(MiningRock03)	#3rock22	3562
+mining01,54,72,0	duplicate(MiningRock03)	#3rock23	3562
+mining01,37,58,0	duplicate(MiningRock03)	#3rock24	3562
+mining01,18,50,0	duplicate(MiningRock03)	#3rock25	3562
+mining01,30,45,0	duplicate(MiningRock03)	#3rock26	3562
+mining01,46,36,0	duplicate(MiningRock03)	#3rock27	3562
+mining01,48,51,0	duplicate(MiningRock03)	#3rock28	3562
+mining01,70,36,0	duplicate(MiningRock03)	#3rock29	3562
+mining01,57,29,0	duplicate(MiningRock03)	#3rock30	3562
+mining01,81,58,0	duplicate(MiningRock03)	#3rock31	3562
+mining01,102,52,0	duplicate(MiningRock03)	#3rock32	3562
+mining01,96,72,0	duplicate(MiningRock03)	#3rock33	3562
+mining01,111,64,0	duplicate(MiningRock03)	#3rock34	3562
+mining01,103,81,0	duplicate(MiningRock03)	#3rock35	3562
+mining01,167,106,0	duplicate(MiningRock03)	#3rock36	3562
+mining01,161,92,0	duplicate(MiningRock03)	#3rock37	3562
+mining01,147,98,0	duplicate(MiningRock03)	#3rock38	3562
+mining01,144,80,0	duplicate(MiningRock03)	#3rock39	3562
+mining01,157,76,0	duplicate(MiningRock03)	#3rock40	3562
+mining01,137,58,0	duplicate(MiningRock03)	#3rock41	3562
+mining01,158,45,0	duplicate(MiningRock03)	#3rock42	3562
+mining01,140,40,0	duplicate(MiningRock03)	#3rock43	3562
+mining01,152,56,0	duplicate(MiningRock03)	#3rock44	3562
+mining01,130,104,0	duplicate(MiningRock03)	#3rock45	3562
+mining01,67,51,0	duplicate(MiningRock03)	#3rock46	3562
+mining01,57,41,0	duplicate(MiningRock03)	#3rock47	3562
+mining01,71,92,0	duplicate(MiningRock03)	#3rock48	3562
+mining01,74,125,0	duplicate(MiningRock03)	#3rock49	3562
+mining01,154,109,0	duplicate(MiningRock03)	#3rock50	3562
+
+mining02,33,110,0	duplicate(MiningRock03)	#3rockPK01	3566
+mining02,38,118,0	duplicate(MiningRock03)	#3rockPK02	3566
+mining02,47,109,0	duplicate(MiningRock03)	#3rockPK03	3566
+mining02,49,130,0	duplicate(MiningRock03)	#3rockPK04	3566
+mining02,58,117,0	duplicate(MiningRock03)	#3rockPK05	3566
+mining02,61,126,0	duplicate(MiningRock03)	#3rockPK06	3566
+mining02,73,138,0	duplicate(MiningRock03)	#3rockPK07	3566
+mining02,82,132,0	duplicate(MiningRock03)	#3rockPK08	3566
+mining02,94,138,0	duplicate(MiningRock03)	#3rockPK09	3566
+mining02,93,124,0	duplicate(MiningRock03)	#3rockPK10	3566
+mining02,110,122,0	duplicate(MiningRock03)	#3rockPK11	3566
+mining02,104,109,0	duplicate(MiningRock03)	#3rockPK12	3566
+mining02,129,122,0	duplicate(MiningRock03)	#3rockPK13	3566
+mining02,139,109,0	duplicate(MiningRock03)	#3rockPK14	3566
+mining02,149,122,0	duplicate(MiningRock03)	#3rockPK15	3566
+mining02,120,104,0	duplicate(MiningRock03)	#3rockPK16	3566
+mining02,132,93,0	duplicate(MiningRock03)	#3rockPK17	3566
+mining02,113,84,0	duplicate(MiningRock03)	#3rockPK18	3566
+mining02,94,90,0	duplicate(MiningRock03)	#3rockPK19	3566
+mining02,79,85,0	duplicate(MiningRock03)	#3rockPK20	3566
+mining02,58,90,0	duplicate(MiningRock03)	#3rockPK21	3566
+mining02,68,77,0	duplicate(MiningRock03)	#3rockPK22	3566
+mining02,54,72,0	duplicate(MiningRock03)	#3rockPK23	3566
+mining02,37,58,0	duplicate(MiningRock03)	#3rockPK24	3566
+mining02,18,50,0	duplicate(MiningRock03)	#3rockPK25	3566
+mining02,30,45,0	duplicate(MiningRock03)	#3rockPK26	3566
+mining02,46,36,0	duplicate(MiningRock03)	#3rockPK27	3566
+mining02,48,51,0	duplicate(MiningRock03)	#3rockPK28	3566
+mining02,70,36,0	duplicate(MiningRock03)	#3rockPK29	3566
+mining02,57,29,0	duplicate(MiningRock03)	#3rockPK30	3566
+mining02,81,58,0	duplicate(MiningRock03)	#3rockPK31	3566
+mining02,102,52,0	duplicate(MiningRock03)	#3rockPK32	3566
+mining02,96,72,0	duplicate(MiningRock03)	#3rockPK33	3566
+mining02,111,64,0	duplicate(MiningRock03)	#3rockPK34	3566
+mining02,103,81,0	duplicate(MiningRock03)	#3rockPK35	3566
+mining02,167,106,0	duplicate(MiningRock03)	#3rockPK36	3566
+mining02,161,92,0	duplicate(MiningRock03)	#3rockPK37	3566
+mining02,147,98,0	duplicate(MiningRock03)	#3rockPK38	3566
+mining02,144,80,0	duplicate(MiningRock03)	#3rockPK39	3566
+mining02,157,76,0	duplicate(MiningRock03)	#3rockPK40	3566
+mining02,137,58,0	duplicate(MiningRock03)	#3rockPK41	3566
+mining02,158,45,0	duplicate(MiningRock03)	#3rockPK42	3566
+mining02,140,40,0	duplicate(MiningRock03)	#3rockPK43	3566
+mining02,152,56,0	duplicate(MiningRock03)	#3rockPK44	3566
+mining02,130,104,0	duplicate(MiningRock03)	#3rockPK45	3566
+mining02,67,51,0	duplicate(MiningRock03)	#3rockPK46	3566
+mining02,57,41,0	duplicate(MiningRock03)	#3rockPK47	3566
+mining02,71,92,0	duplicate(MiningRock03)	#3rockPK48	3566
+mining02,74,125,0	duplicate(MiningRock03)	#3rockPK49	3566
+mining02,154,109,0	duplicate(MiningRock03)	#3rockPK50	3566
+
+//Mining Function 4
+-	script	::MiningRock04	FAKE_NPC,{
+
+	//=== basic settings
+	set @tempo_main,1;	//time that will be born randomly on the map (in milliseconds). (default: 20min = 60000ms)
+	set @Tempo,20; 		//Time that can break another stone again. (in seconds). (default 20 seconds.)
+	set @equip,6010;	//necessary equipment
+	set @item,582; 		//reward item.
+	
+	//Checks
+	if(rentalcountitem(33033) <= 0){ 
+		mes "[ Mining Guardian ]";
+		mes "You don't have existing mining contract.";
+		close2;
+		warp "SavePoint",0,0; 
+		end; 
+	}
+	
+	if(getequipid(EQI_HAND_L)==@equip || getequipid(EQI_HAND_R)==@equip){ set .@eqiON,1; }
+	if(!.@eqiON){ dispbottom "[ROCK] Your miner equipment is not equipped."; end; }
+	if(pedra >= gettimetick(2)){ npctalk "You need to rest "+(pedra-gettimetick(2))+" seconds to mine again."; end; }	
+	if(getd("."+strnpcinfo(2)+"")){ dispbottom "[ROCK]Someone is already using this stone."; end; } else setd("."+strnpcinfo(2)+"",1);
+	
+	//sets
+	setd(".mapa_"+strnpcinfo(2)+"$",strnpcinfo(4));
+	setd(".name_"+strnpcinfo(2)+"$",strnpcinfo(0));
+	
+	//  Possible rewards. (random)
+	switch(rand(8))
+	{
+		default: set @reward,0; break; 	//failure value (don't add id here)
+		case 1:	set @reward,501; break; //reward 1
+		case 2:	set @reward,501; break; //reward 2
+		case 3:	set @reward,501; break; //reward 3
+		case 4:	set @reward,501; break; //reward 4
+		case 5:	set @reward,501; break; //reward 5
+		case 6:	set @reward,501; break; //reward 6
+		case 7:	set @reward,501; break; //reward 7
+		case 8:	set @reward,501; break; //reward 8
+	}
+	
+	cutin "p_00",4; sleep2 100; specialeffect2 457; cutin "p_01",4; sleep2 200; cutin "p_02",4; sleep2 500; cutin "p_03",4; sleep2 800; cutin "p_04",4; sleep2 700;
+	
+	set @rand_fruta,rand(20);
+	getitem @item,@rand_fruta;
+	set pedra,gettimetick(2)+@Tempo; specialeffect2 457;
+	cutin "p_00",4; sleep2 100; specialeffect2 457;
+	cutin "p_01",4; specialeffect2 457; sleep2 200;
+	cutin "p_02",4; specialeffect2 457; sleep2 500;
+	cutin "p_03",4; specialeffect2 457; sleep2 800;
+	cutin "p_04",4; sleep2 700;
+	specialeffect2 457;
+	cutin "p_00",4; sleep2 100; 
+	cutin "p_01",4; sleep2 200;
+	cutin "p_02",4; specialeffect2 457; sleep2 500;
+	cutin "p_03",4; specialeffect2 457; sleep2 800;
+	cutin "p_04",4; specialeffect2 457; sleep2 700;
+	cutin "p_05",4; specialeffect2 457; sleep2 500; 
+	specialeffect2 457;
+	classchange 3563,getd(".name_"+strnpcinfo(2)+"$"),bc_area;
+
+	if(!@reward){ cutin "p_fail",4; sleep2 500; cutin "",255; setd("."+strnpcinfo(2)+"",0); end; } else getitem @reward,1;
+	
+	cutin "p_06",4; specialeffect2 457; sleep2 1000; cutin "",255;
+	setd("."+strnpcinfo(2)+"",0);
+	disablenpc getd(".name_"+strnpcinfo(2)+"$");
+	sleep @tempo_main; 
+
+	//Dont touch.
+	while( !checkcell( getd(".mapa_"+strnpcinfo(2)+"$"),( .@x = rand( 1,400 ) ),( .@y = rand( 1,400 ) ),cell_chkpass ) ); 
+	//movenpc getd(".name_"+strnpcinfo(2)+"$"),.@x,.@y;
+	sleep 5000;
+	enablenpc getd(".name_"+strnpcinfo(2)+"$"); end;
+}
+
+//Duplicate Rock 4
+mining01,288,108,0	duplicate(MiningRock04)	#4rock01	3563
+mining01,275,111,0	duplicate(MiningRock04)	#4rock02	3563
+mining01,288,89,0	duplicate(MiningRock04)	#4rock03	3563
+mining01,275,97,0	duplicate(MiningRock04)	#4rock04	3563
+mining01,258,118,0	duplicate(MiningRock04)	#4rock05	3563
+mining01,259,98,0	duplicate(MiningRock04)	#4rock06	3563
+mining01,280,78,0	duplicate(MiningRock04)	#4rock07	3563
+mining01,267,70,0	duplicate(MiningRock04)	#4rock08	3563
+mining01,296,70,0	duplicate(MiningRock04)	#4rock09	3563
+mining01,275,57,0	duplicate(MiningRock04)	#4rock10	3563
+mining01,313,60,0	duplicate(MiningRock04)	#4rock11	3563
+mining01,308,41,0	duplicate(MiningRock04)	#4rock12	3563
+mining01,298,48,0	duplicate(MiningRock04)	#4rock13	3563
+mining01,282,42,0	duplicate(MiningRock04)	#4rock14	3563
+mining01,291,57,0	duplicate(MiningRock04)	#4rock15	3563
+mining01,257,55,0	duplicate(MiningRock04)	#4rock16	3563
+mining01,266,40,0	duplicate(MiningRock04)	#4rock17	3563
+mining01,237,55,0	duplicate(MiningRock04)	#4rock18	3563
+mining01,232,41,0	duplicate(MiningRock04)	#4rock19	3563
+mining01,222,35,0	duplicate(MiningRock04)	#4rock20	3563
+mining01,210,33,0	duplicate(MiningRock04)	#4rock21	3563
+mining01,216,46,0	duplicate(MiningRock04)	#4rock22	3563
+mining01,218,61,0	duplicate(MiningRock04)	#4rock23	3563
+mining01,199,55,0	duplicate(MiningRock04)	#4rock24	3563
+mining01,188,41,0	duplicate(MiningRock04)	#4rock25	3563
+mining01,179,57,0	duplicate(MiningRock04)	#4rock26	3563
+mining01,172,69,0	duplicate(MiningRock04)	#4rock27	3563
+mining01,200,73,0	duplicate(MiningRock04)	#4rock28	3563
+mining01,179,86,0	duplicate(MiningRock04)	#4rock29	3563
+mining01,188,74,0	duplicate(MiningRock04)	#4rock30	3563
+mining01,186,100,0	duplicate(MiningRock04)	#4rock31	3563
+mining01,178,114,0	duplicate(MiningRock04)	#4rock32	3563
+mining01,194,119,0	duplicate(MiningRock04)	#4rock33	3563
+mining01,207,113,0	duplicate(MiningRock04)	#4rock34	3563
+mining01,211,126,0	duplicate(MiningRock04)	#4rock35	3563
+mining01,225,122,0	duplicate(MiningRock04)	#4rock36	3563
+mining01,217,118,0	duplicate(MiningRock04)	#4rock37	3563
+mining01,230,112,0	duplicate(MiningRock04)	#4rock38	3563
+mining01,240,118,0	duplicate(MiningRock04)	#4rock39	3563
+mining01,251,107,0	duplicate(MiningRock04)	#4rock40	3563
+mining01,257,86,0	duplicate(MiningRock04)	#4rock41	3563
+mining01,237,87,0	duplicate(MiningRock04)	#4rock42	3563
+mining01,248,80,0	duplicate(MiningRock04)	#4rock43	3563
+mining01,222,88,0	duplicate(MiningRock04)	#4rock44	3563
+mining01,212,80,0	duplicate(MiningRock04)	#4rock45	3563
+mining01,224,76,0	duplicate(MiningRock04)	#4rock46	3563
+mining01,202,40,0	duplicate(MiningRock04)	#4rock47	3563
+mining01,283,67,0	duplicate(MiningRock04)	#4rock48	3563
+mining01,271,89,0	duplicate(MiningRock04)	#4rock49	3563
+mining01,195,87,0	duplicate(MiningRock04)	#4rock50	3563
+
+mining02,288,108,0	duplicate(MiningRock04)	#4rockPK01	3566
+mining02,275,111,0	duplicate(MiningRock04)	#4rockPK02	3566
+mining02,288,89,0	duplicate(MiningRock04)	#4rockPK03	3566
+mining02,275,97,0	duplicate(MiningRock04)	#4rockPK04	3566
+mining02,258,118,0	duplicate(MiningRock04)	#4rockPK05	3566
+mining02,259,98,0	duplicate(MiningRock04)	#4rockPK06	3566
+mining02,280,78,0	duplicate(MiningRock04)	#4rockPK07	3566
+mining02,267,70,0	duplicate(MiningRock04)	#4rockPK08	3566
+mining02,296,70,0	duplicate(MiningRock04)	#4rockPK09	3566
+mining02,275,57,0	duplicate(MiningRock04)	#4rockPK10	3566
+mining02,313,60,0	duplicate(MiningRock04)	#4rockPK11	3566
+mining02,308,41,0	duplicate(MiningRock04)	#4rockPK12	3566
+mining02,298,48,0	duplicate(MiningRock04)	#4rockPK13	3566
+mining02,282,42,0	duplicate(MiningRock04)	#4rockPK14	3566
+mining02,291,57,0	duplicate(MiningRock04)	#4rockPK15	3566
+mining02,257,55,0	duplicate(MiningRock04)	#4rockPK16	3566
+mining02,266,40,0	duplicate(MiningRock04)	#4rockPK17	3566
+mining02,237,55,0	duplicate(MiningRock04)	#4rockPK18	3566
+mining02,232,41,0	duplicate(MiningRock04)	#4rockPK19	3566
+mining02,222,35,0	duplicate(MiningRock04)	#4rockPK20	3566
+mining02,210,33,0	duplicate(MiningRock04)	#4rockPK21	3566
+mining02,216,46,0	duplicate(MiningRock04)	#4rockPK22	3566
+mining02,218,61,0	duplicate(MiningRock04)	#4rockPK23	3566
+mining02,199,55,0	duplicate(MiningRock04)	#4rockPK24	3566
+mining02,188,41,0	duplicate(MiningRock04)	#4rockPK25	3566
+mining02,179,57,0	duplicate(MiningRock04)	#4rockPK26	3566
+mining02,172,69,0	duplicate(MiningRock04)	#4rockPK27	3566
+mining02,200,73,0	duplicate(MiningRock04)	#4rockPK28	3566
+mining02,179,86,0	duplicate(MiningRock04)	#4rockPK29	3566
+mining02,188,74,0	duplicate(MiningRock04)	#4rockPK30	3566
+mining02,186,100,0	duplicate(MiningRock04)	#4rockPK31	3566
+mining02,178,114,0	duplicate(MiningRock04)	#4rockPK32	3566
+mining02,194,119,0	duplicate(MiningRock04)	#4rockPK33	3566
+mining02,207,113,0	duplicate(MiningRock04)	#4rockPK34	3566
+mining02,211,126,0	duplicate(MiningRock04)	#4rockPK35	3566
+mining02,225,122,0	duplicate(MiningRock04)	#4rockPK36	3566
+mining02,217,118,0	duplicate(MiningRock04)	#4rockPK37	3566
+mining02,230,112,0	duplicate(MiningRock04)	#4rockPK38	3566
+mining02,240,118,0	duplicate(MiningRock04)	#4rockPK39	3566
+mining02,251,107,0	duplicate(MiningRock04)	#4rockPK40	3566
+mining02,257,86,0	duplicate(MiningRock04)	#4rockPK41	3566
+mining02,237,87,0	duplicate(MiningRock04)	#4rockPK42	3566
+mining02,248,80,0	duplicate(MiningRock04)	#4rockPK43	3566
+mining02,222,88,0	duplicate(MiningRock04)	#4rockPK44	3566
+mining02,212,80,0	duplicate(MiningRock04)	#4rockPK45	3566
+mining02,224,76,0	duplicate(MiningRock04)	#4rockPK46	3566
+mining02,202,40,0	duplicate(MiningRock04)	#4rockPK47	3566
+mining02,283,67,0	duplicate(MiningRock04)	#4rockPK48	3566
+mining02,271,89,0	duplicate(MiningRock04)	#4rockPK49	3566
+mining02,195,87,0	duplicate(MiningRock04)	#4rockPK50	3566
+
+//Mapflag
+mining01	mapflag	nosave
+mining01	mapflag	nowarp
+mining01	mapflag	nowarpto
+mining01	mapflag	nobranch
+mining01	mapflag	noicewall
+mining01	mapflag	nomemo
+
+mining02	mapflag	nosave
+mining02	mapflag	nowarp
+mining02	mapflag	nowarpto
+mining02	mapflag	nobranch
+mining02	mapflag	noicewall
+mining02	mapflag	nomemo
+mining02	mapflag	pvp
+mining02	mapflag	pvp_noguild
+mining02	mapflag	pvp_noparty

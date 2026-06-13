@@ -1,0 +1,7 @@
+-	script	GuildDungeonPvP	-1,{
+
+OnInit:
+	setmapflag "gld_dun01", mf_pvp;
+	setmapflag "gld_dun01", mf_nopenalty;
+	end;
+}

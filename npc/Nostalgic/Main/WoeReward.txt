@@ -1,0 +1,413 @@
+//===== rAthena Script =======================================
+//= WoE Reward - FIXED VERSION
+//= - Only active castle from WOE Controller can open reward
+//= - NO participation timer
+//= - Winning guild only
+//= - One claim per character per WoE session
+//= - GM Panel + Reset Logs
+//============================================================
+
+function	script	F_WOE_InitSQL	{
+	query_sql("CREATE TABLE IF NOT EXISTS `woe_reward_sessions` (`id` INT NOT NULL AUTO_INCREMENT, `woe_session` INT NOT NULL, `castle_map` VARCHAR(30) NOT NULL DEFAULT '', `guild_id` INT NOT NULL DEFAULT 0, `guild_name` VARCHAR(100) NOT NULL DEFAULT '', `reward_open` TINYINT(1) NOT NULL DEFAULT 0, `ended_at` DATETIME NOT NULL, PRIMARY KEY (`id`), KEY (`woe_session`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+	query_sql("CREATE TABLE IF NOT EXISTS `woe_reward_claim_logs` (`id` INT NOT NULL AUTO_INCREMENT, `woe_session` INT NOT NULL, `castle_map` VARCHAR(30) NOT NULL DEFAULT '', `guild_id` INT NOT NULL DEFAULT 0, `guild_name` VARCHAR(100) NOT NULL DEFAULT '', `account_id` INT NOT NULL DEFAULT 0, `char_id` INT NOT NULL DEFAULT 0, `char_name` VARCHAR(30) NOT NULL DEFAULT '', `claimed_at` DATETIME NOT NULL, PRIMARY KEY (`id`), KEY (`woe_session`), KEY (`char_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+	query_sql("CREATE TABLE IF NOT EXISTS `woe_reward_config` (`id` INT NOT NULL AUTO_INCREMENT, `item_id` INT NOT NULL DEFAULT 0, `amount` INT NOT NULL DEFAULT 1, `sort_order` INT NOT NULL DEFAULT 0, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+	query_sql("CREATE TABLE IF NOT EXISTS `woe_reward_state` (`id` TINYINT NOT NULL, `current_session` INT NOT NULL DEFAULT 0, `active` TINYINT(1) NOT NULL DEFAULT 0, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+	query_sql("INSERT IGNORE INTO `woe_reward_state` (`id`,`current_session`,`active`) VALUES (1,0,0)");
+	return;
+}
+
+function	script	F_WOE_SaveSession	{
+	query_sql("INSERT INTO `woe_reward_sessions` (`woe_session`,`castle_map`,`guild_id`,`guild_name`,`reward_open`,`ended_at`) VALUES ("+getarg(0)+",'"+escape_sql(getarg(1))+"',"+getarg(2)+",'"+escape_sql(getarg(3))+"',"+getarg(4)+",NOW())");
+	return;
+}
+
+function	script	F_WOE_GetActiveMask	{
+	.@mask = 0;
+	.@size = getarraysize($WOE_CONTROL);
+
+	for (.@i = 0; .@i < .@size; .@i += 4) {
+		if (gettime(4) == $WOE_CONTROL[.@i] &&
+		    gettime(3) >= $WOE_CONTROL[.@i+1] &&
+		    gettime(3) < $WOE_CONTROL[.@i+2]) {
+			.@mask = $WOE_CONTROL[.@i+3];
+			break;
+		}
+	}
+
+	return .@mask;
+}
+
+valmorra,201,160,4	script	WoE Reward	4_GEFFEN_08,{
+
+Main:
+	mes .n$;
+	mes "WoE reward is available for the ^0055FFwinning guild members^000000 only.";
+	mes "Reward Status: "+($WOE_RewardOpen ? "^00AA00Open^000000" : "^FF0000Closed^000000");
+	next;
+
+	if (getgmlevel() >= .gm_level)
+		.@m = select("Claim Reward:View Rewards:View Last Winner:^FF0000[GM PANEL]^000000:Cancel");
+	else
+		.@m = select("Claim Reward:View Rewards:View Last Winner:Cancel");
+
+	if (.@m == 1) goto Claim;
+	if (.@m == 2) goto ViewRewards;
+	if (.@m == 3) goto LastWinner;
+	if (.@m == 4 && getgmlevel() >= .gm_level) goto GMPanel;
+	close;
+
+ViewRewards:
+	mes .n$;
+	.@rows = query_sql("SELECT `item_id`,`amount` FROM `woe_reward_config` ORDER BY `sort_order` ASC, `id` ASC", .@item, .@amt);
+
+	if (.@rows <= 0) {
+		mes "^777777No reward configured.^000000";
+		close;
+	}
+
+	for (.@i = 0; .@i < .@rows; .@i++)
+		mes "> "+.@amt[.@i]+"x "+getitemname(.@item[.@i]);
+	close;
+
+LastWinner:
+	mes .n$;
+	.@rows = query_sql("SELECT `woe_session`,`castle_map`,`guild_id`,`guild_name`,`reward_open`,DATE_FORMAT(`ended_at`, '%Y-%m-%d %H:%i:%s') FROM `woe_reward_sessions` ORDER BY `id` DESC LIMIT 1", .@s, .@castle$, .@gid, .@gname$, .@open, .@date$);
+
+	if (.@rows <= 0) {
+		mes "No WoE session log found.";
+		close;
+	}
+
+	mes "Session: ^0055FF"+.@s+"^000000";
+	mes "Castle: ^0055FF"+.@castle$+"^000000";
+	mes "Guild: "+(.@gid > 0 ? "^0055FF"+.@gname$+"^000000" : "^FF0000No winner^000000");
+	mes "Reward Open: "+(.@open ? "^00AA00Yes^000000" : "^FF0000No^000000");
+	mes "Logged: "+.@date$;
+	close;
+
+Claim:
+	mes .n$;
+
+	if (agitcheck() || agitcheck2() || agitcheck3()) {
+		mes "You can only claim after WoE ends.";
+		close;
+	}
+
+	if (!$WOE_RewardOpen || $WOE_LastSession <= 0) {
+		mes "No WoE reward is available right now.";
+		close;
+	}
+
+	if (!getcharid(2)) {
+		mes "You are not in a guild.";
+		close;
+	}
+
+	if (getcharid(2) != $WOE_LastWinnerGuild) {
+		mes "Only members of the winning guild can claim this reward.";
+		close;
+	}
+
+	query_sql("SELECT COUNT(*) FROM `woe_reward_claim_logs` WHERE `woe_session`="+$WOE_LastSession+" AND `char_id`="+getcharid(0), .@claimed);
+
+	if (.@claimed > 0) {
+		mes "You already claimed this WoE reward.";
+		close;
+	}
+
+	.@rows = query_sql("SELECT `item_id`,`amount` FROM `woe_reward_config` ORDER BY `sort_order` ASC, `id` ASC", .@item, .@amt);
+
+	if (.@rows <= 0) {
+		mes "No reward configured. Please contact GM.";
+		close;
+	}
+
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		if (!checkweight(.@item[.@i], .@amt[.@i])) {
+			mes "Not enough inventory space or weight.";
+			close;
+		}
+	}
+
+	mes "Winning Guild: ^0055FF"+$WOE_LastWinnerGuildName$+"^000000";
+	mes "Castle: ^0055FF"+$WOE_LastWinnerCastle$+"^000000";
+	mes "Claim reward now?";
+	next;
+
+	for (.@i = 0; .@i < .@rows; .@i++)
+		mes "> "+.@amt[.@i]+"x "+getitemname(.@item[.@i]);
+	next;
+
+	if (select("Claim Reward:Cancel") == 2)
+		close;
+
+	query_sql("INSERT INTO `woe_reward_claim_logs` (`woe_session`,`castle_map`,`guild_id`,`guild_name`,`account_id`,`char_id`,`char_name`,`claimed_at`) VALUES ("+$WOE_LastSession+",'"+escape_sql($WOE_LastWinnerCastle$)+"',"+$WOE_LastWinnerGuild+",'"+escape_sql($WOE_LastWinnerGuildName$)+"',"+getcharid(3)+","+getcharid(0)+",'"+escape_sql(strcharinfo(0))+"',NOW())");
+
+	for (.@i = 0; .@i < .@rows; .@i++)
+		getitem .@item[.@i], .@amt[.@i];
+
+	mes .n$;
+	mes "Reward claimed successfully.";
+	close;
+
+GMPanel:
+	mes .n$;
+	mes "^FF0000[GM PANEL]^000000";
+	next;
+
+	switch(select("Add Reward:Remove Reward:Clear Rewards:View Claim Logs:Reset All Logs:Back")) {
+	case 1: goto GMAdd;
+	case 2: goto GMRemove;
+	case 3: goto GMClear;
+	case 4: goto GMLogs;
+	case 5: goto GMResetAllLogs;
+	default: goto Main;
+	}
+
+GMAdd:
+	mes .n$;
+	mes "Enter Item ID:";
+	input .@item;
+
+	if (.@item <= 0 || getitemname(.@item) == "null") {
+		mes "Invalid item ID.";
+		close;
+	}
+
+	mes "Enter Amount:";
+	input .@amt;
+
+	if (.@amt <= 0) {
+		mes "Invalid amount.";
+		close;
+	}
+
+	query_sql("SELECT IFNULL(MAX(`sort_order`),0)+1 FROM `woe_reward_config`", .@sort);
+	query_sql("INSERT INTO `woe_reward_config` (`item_id`,`amount`,`sort_order`) VALUES ("+.@item+","+.@amt+","+.@sort+")");
+
+	mes "Added: "+.@amt+"x "+getitemname(.@item);
+	close;
+
+GMRemove:
+	mes .n$;
+	.@rows = query_sql("SELECT `id`,`item_id`,`amount` FROM `woe_reward_config` ORDER BY `sort_order` ASC, `id` ASC", .@id, .@item, .@amt);
+
+	if (.@rows <= 0) {
+		mes "No rewards configured.";
+		close;
+	}
+
+	for (.@i = 0; .@i < .@rows; .@i++)
+		mes "ID "+.@id[.@i]+": "+.@amt[.@i]+"x "+getitemname(.@item[.@i]);
+	next;
+
+	mes "Enter Config ID to remove:";
+	input .@del;
+
+	query_sql("DELETE FROM `woe_reward_config` WHERE `id`="+.@del);
+	mes "Reward removed if ID existed.";
+	close;
+
+GMClear:
+	mes .n$;
+	mes "Clear all rewards?";
+	next;
+
+	if (select("Yes:No") == 2)
+		close;
+
+	query_sql("TRUNCATE TABLE `woe_reward_config`");
+	mes "All rewards cleared.";
+	close;
+
+GMLogs:
+	mes .n$;
+	.@rows = query_sql("SELECT `char_name`,`guild_name`,`castle_map`,DATE_FORMAT(`claimed_at`, '%Y-%m-%d %H:%i:%s') FROM `woe_reward_claim_logs` ORDER BY `id` DESC LIMIT 30", .@name$, .@guild$, .@castle$, .@date$);
+
+	if (.@rows <= 0) {
+		mes "No claim logs.";
+		close;
+	}
+
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		mes "^0055FF"+.@name$[.@i]+"^000000";
+		mes "Guild: "+.@guild$[.@i];
+		mes "Castle: "+.@castle$[.@i];
+		mes "Claimed: "+.@date$[.@i];
+
+		if (.@i < .@rows - 1)
+			next;
+	}
+	close;
+
+GMResetAllLogs:
+	mes .n$;
+	mes "^FF0000WARNING:^000000 This will clear all WoE logs.";
+	mes "Reward config will NOT be deleted.";
+	next;
+
+	if (select("Yes, reset all logs:Cancel") == 2)
+		close;
+
+	query_sql("TRUNCATE TABLE `woe_reward_sessions`");
+	query_sql("TRUNCATE TABLE `woe_reward_claim_logs`");
+	query_sql("UPDATE `woe_reward_state` SET `current_session`=0, `active`=0 WHERE `id`=1");
+
+	$WOE_CurrentSession = 0;
+	$WOE_LastSession = 0;
+	$WOE_RewardOpen = 0;
+	$WOE_LastWinnerGuild = 0;
+	$WOE_LastWinnerGuildName$ = "";
+	$WOE_LastWinnerCastle$ = "";
+	$WOE_LastActiveMask = 0;
+
+	mes .n$;
+	mes "All WoE logs have been reset.";
+	close;
+
+
+//============================================================
+// WOE START / END
+//============================================================
+OnAgitStart:
+OnAgitStart2:
+OnAgitStart3:
+	callfunc("F_WOE_InitSQL");
+
+	.@mask = callfunc("F_WOE_GetActiveMask");
+
+	// If no active castle from WOE Controller schedule, do not create reward session.
+	if (.@mask <= 0) {
+		$WOE_RewardOpen = 0;
+		$WOE_LastActiveMask = 0;
+		end;
+	}
+
+	query_sql("SELECT `current_session`,`active` FROM `woe_reward_state` WHERE `id`=1", .@session, .@active);
+
+	if (.@active == 1) {
+		announce "[WoE Reward] WoE reward session is already active.", bc_all;
+		end;
+	}
+
+	$WOE_CurrentSession = .@session + 1;
+	$WOE_RewardOpen = 0;
+	$WOE_LastWinnerGuild = 0;
+	$WOE_LastWinnerGuildName$ = "";
+	$WOE_LastWinnerCastle$ = "";
+	$WOE_LastActiveMask = .@mask;
+
+	query_sql("UPDATE `woe_reward_state` SET `current_session`="+$WOE_CurrentSession+", `active`=1 WHERE `id`=1");
+
+	announce "[WoE Reward] WoE reward session has started.", bc_all;
+	end;
+
+OnAgitEnd:
+OnAgitEnd2:
+OnAgitEnd3:
+	callfunc("F_WOE_InitSQL");
+
+	query_sql("SELECT `current_session` FROM `woe_reward_state` WHERE `id`=1", .@session);
+
+	if (.@session > 0)
+		$WOE_CurrentSession = .@session;
+
+	if ($WOE_LastActiveMask <= 0) {
+		$WOE_RewardOpen = 0;
+		$WOE_LastSession = 0;
+		$WOE_LastWinnerGuild = 0;
+		$WOE_LastWinnerGuildName$ = "";
+		$WOE_LastWinnerCastle$ = "";
+
+		callfunc("F_WOE_SaveSession", $WOE_CurrentSession, "", 0, "", 0);
+		query_sql("UPDATE `woe_reward_state` SET `active`=0 WHERE `id`=1");
+
+		announce "[WoE Reward] No active WoE castle detected from controller. No reward available.", bc_all;
+		end;
+	}
+
+	.@found = 0;
+
+	for (.@i = 0; .@i < getarraysize(.castle_maps$); .@i++) {
+
+		// IMPORTANT FIX:
+		// Only check castle active from WOE Controller.
+		if (!( $WOE_LastActiveMask & (1 << .@i) ))
+			continue;
+
+		.@gid = getcastledata(.castle_maps$[.@i], CD_GUILD_ID);
+
+		if (.@gid > 0) {
+			.@found = 1;
+			$WOE_LastWinnerGuild = .@gid;
+			$WOE_LastWinnerGuildName$ = getguildname(.@gid);
+			$WOE_LastWinnerCastle$ = .castle_maps$[.@i];
+			break;
+		}
+	}
+
+	if (!.@found) {
+		$WOE_RewardOpen = 0;
+		$WOE_LastSession = 0;
+
+		callfunc("F_WOE_SaveSession", $WOE_CurrentSession, "", 0, "", 0);
+		query_sql("UPDATE `woe_reward_state` SET `active`=0 WHERE `id`=1");
+
+		announce "[WoE Reward] No winning guild detected from active WoE castle. No reward available.", bc_all;
+		end;
+	}
+
+	$WOE_LastSession = $WOE_CurrentSession;
+	$WOE_RewardOpen = 1;
+
+	callfunc("F_WOE_SaveSession", $WOE_LastSession, $WOE_LastWinnerCastle$, $WOE_LastWinnerGuild, $WOE_LastWinnerGuildName$, 1);
+	query_sql("UPDATE `woe_reward_state` SET `active`=0 WHERE `id`=1");
+
+	announce "[WoE Reward] Guild "+$WOE_LastWinnerGuildName$+" won "+$WOE_LastWinnerCastle$+".", bc_all;
+	announce "[WoE Reward] Winning guild members may now claim their reward.", bc_all;
+	end;
+
+
+//============================================================
+// INIT
+//============================================================
+OnInit:
+	.n$ = "[WoE Reward]";
+	.gm_level = 99;
+
+	// Castle order MUST follow WOE Controller order.
+	setarray .castle_maps$[0],
+		"prtg_cas01","prtg_cas02","prtg_cas03","prtg_cas04","prtg_cas05",
+		"payg_cas01","payg_cas02","payg_cas03","payg_cas04","payg_cas05",
+		"gefg_cas01","gefg_cas02","gefg_cas03","gefg_cas04","gefg_cas05",
+		"aldeg_cas01","aldeg_cas02","aldeg_cas03","aldeg_cas04","aldeg_cas05",
+		"arug_cas01","arug_cas02","arug_cas03","arug_cas04","arug_cas05",
+		"schg_cas01","schg_cas02","schg_cas03","schg_cas04","schg_cas05";
+
+	callfunc("F_WOE_InitSQL");
+
+	query_sql("SELECT `current_session`,`active` FROM `woe_reward_state` WHERE `id`=1", .@state_session, .@state_active);
+
+	$WOE_CurrentSession = .@state_session;
+
+	// Reloadscript safety during active WoE
+	if (.@state_active && (agitcheck() || agitcheck2() || agitcheck3())) {
+		$WOE_LastActiveMask = callfunc("F_WOE_GetActiveMask");
+	}
+
+	.@rows = query_sql("SELECT `woe_session`,`castle_map`,`guild_id`,`guild_name`,`reward_open` FROM `woe_reward_sessions` ORDER BY `id` DESC LIMIT 1", .@s, .@castle$, .@gid, .@gname$, .@open);
+
+	if (.@rows > 0 && !.@state_active) {
+		$WOE_LastSession = .@s;
+		$WOE_LastWinnerCastle$ = .@castle$;
+		$WOE_LastWinnerGuild = .@gid;
+		$WOE_LastWinnerGuildName$ = .@gname$;
+		$WOE_RewardOpen = .@open;
+	}
+
+	end;
+}

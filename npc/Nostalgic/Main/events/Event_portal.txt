@@ -1,0 +1,6 @@
+//==================================================
+// Event Map Warp Portal
+//==================================================
+// Format: source_map,x,y,span_x,span_y[tab]warp[tab]npc_name[tab]target_x,target_y,target_map,dest_x,dest_y
+
+valmorra,171,125,2,2	warp	event_portal_warp	1,1,poring_w02,81,83

@@ -1,0 +1,227 @@
+//==============================================================
+// Beta Tester System FINAL CLEAN (NO ERROR)
+// Location: valmorra 198 175
+//==============================================================
+
+valmorra,198,175,4	script	Beta Tester Reward	10816,{
+
+	.@aid  = getcharid(3);
+	.@name$ = strcharinfo(0);
+
+	//==========================================================
+	// GM PANEL
+	//==========================================================
+	if (getgmlevel() >= 99) {
+
+		mes "^FF0000==============================^000000";
+		mes "^FF0000        GM CONTROL PANEL^000000";
+		mes "^FF0000==============================^000000";
+
+		.@sel = select(
+			"^00CC00[Beta]^000000 Open Beta Register",
+			"^FF0000[Beta]^000000 Close Beta Register",
+			"^00CC00[Claim]^000000 Open Claim",
+			"^FF0000[Claim]^000000 Close Claim",
+			"^AAAAAA---------------------------^000000",
+			"Add Reward",
+			"Clear Reward List",
+			"Show Reward List",
+			"^AAAAAA---------------------------^000000",
+			"Search Code by IGN",
+			"Reset Player Claim",
+			"Reset ALL Claims",
+			"Exit"
+		);
+
+		switch(.@sel) {
+
+		case 1:
+			.beta_register_open = 1;
+			announce "[Beta Tester] Registration OPEN.", bc_all;
+			close;
+
+		case 2:
+			.beta_register_open = 0;
+			announce "[Beta Tester] Registration CLOSED.", bc_all;
+			close;
+
+		case 3:
+			.official_claim_open = 1;
+			announce "[Beta Tester] Claim OPEN.", bc_all;
+			close;
+
+		case 4:
+			.official_claim_open = 0;
+			announce "[Beta Tester] Claim CLOSED.", bc_all;
+			close;
+
+		case 6:
+			mes "[Add Reward]";
+			mes "Enter Item ID:";
+			input .@item;
+			mes "Enter Amount:";
+			input .@amt;
+
+			if (.@item <= 0 || .@amt <= 0) {
+				mes "Invalid input.";
+				close;
+			}
+
+			query_sql "INSERT INTO beta_claim_rewards VALUES (NULL,"+.@item+","+.@amt+")";
+			mes "Added: "+getitemname(.@item)+" x"+.@amt;
+			close;
+
+		case 7:
+			mes "[Clear Reward]";
+			if (select("Yes","No") == 2) close;
+
+			query_sql "DELETE FROM beta_claim_rewards";
+			mes "All rewards cleared.";
+			close;
+
+		case 8:
+			query_sql "SELECT item_id,amount FROM beta_claim_rewards", .@i,.@a;
+
+			mes "[Reward List]";
+			if (!getarraysize(.@i)) {
+				mes "No reward set.";
+			} else {
+				for (.@x=0; .@x<getarraysize(.@i); .@x++)
+					mes "^00AA00- "+getitemname(.@i[.@x])+" x"+.@a[.@x];
+			}
+			close;
+
+		case 10:
+			mes "[Search Code]";
+			mes "Enter IGN:";
+			input .@n$;
+
+			query_sql "SELECT char_name,code,claimed FROM beta_claim_codes WHERE char_name='"+escape_sql(.@n$)+"'",
+				.@n2$,.@c$,.@cl;
+
+			if (!getarraysize(.@n2$)) {
+				mes "Player not found.";
+				close;
+			}
+
+			mes "IGN: "+.@n2$[0];
+			mes "Code: "+.@c$[0];
+			mes "Status: "+(.@cl[0]?"^00CC00CLAIMED^000000":"^FF0000NOT CLAIMED^000000");
+			close;
+
+		case 11:
+			mes "[Reset Player Claim]";
+			mes "Enter IGN:";
+			input .@n$;
+
+			query_sql "SELECT COUNT(*) FROM beta_claim_codes WHERE char_name='"+escape_sql(.@n$)+"'", .@c;
+
+			if (!.@c) {
+				mes "Player not found.";
+				close;
+			}
+
+			query_sql "UPDATE beta_claim_codes SET claimed=0 WHERE char_name='"+escape_sql(.@n$)+"'";
+			mes "Player claim reset.";
+			close;
+
+		case 12:
+			mes "[Reset ALL Claims]";
+			if (select("YES","Cancel") == 2) close;
+
+			query_sql "UPDATE beta_claim_codes SET claimed=0";
+			mes "All claims reset.";
+			close;
+
+		default:
+			close;
+		}
+	} // <<< GM PANEL CLOSED PROPERLY
+
+	//==========================================================
+	// PLAYER FLOW
+	//==========================================================
+	mes "[Beta Tester Reward]";
+
+	//==============================
+	// BETA REGISTER
+	//==============================
+	if (.beta_register_open) {
+
+		query_sql "SELECT COUNT(*) FROM beta_claim_codes WHERE account_id="+.@aid, .@exist;
+
+		if (.@exist == 0) {
+
+			for (.@i=0; .@i<20; .@i++) {
+				.@code$ = sprintf("BETA-%06d-%06d", rand(100000,999999), rand(100000,999999));
+				query_sql "SELECT COUNT(*) FROM beta_claim_codes WHERE code='"+.@code$+"'", .@c;
+				if (!.@c) break;
+			}
+
+			query_sql "INSERT INTO beta_claim_codes (account_id,char_name,code) VALUES ("+.@aid+",'"+escape_sql(.@name$)+"','"+.@code$+"')";
+
+			mes "You are registered as Beta Tester!";
+			mes "Your Code:";
+			mes "^FF0000"+.@code$+"^000000";
+			mes "Please SAVE this code!";
+			close;
+		}
+
+		mes "You already registered.";
+		close;
+	}
+
+	//==============================
+	// CLAIM MODE
+	//==============================
+	if (.official_claim_open) {
+
+		.@sel = select("Claim Beta Tester Reward","Reward List","Cancel");
+
+		if (.@sel == 1) {
+
+			mes "Enter your Beta Code:";
+			input .@code$;
+
+			query_sql "SELECT claimed FROM beta_claim_codes WHERE code='"+escape_sql(.@code$)+"'", .@cl;
+
+			if (.@cl != 0) {
+				mes "Invalid or used code.";
+				close;
+			}
+
+			query_sql "SELECT item_id,amount FROM beta_claim_rewards", .@i,.@a;
+
+			for (.@x=0; .@x<getarraysize(.@i); .@x++)
+				getitem .@i[.@x], .@a[.@x];
+
+			query_sql "UPDATE beta_claim_codes SET claimed=1, claimed_by='"+escape_sql(.@name$)+"', claimed_at=NOW() WHERE code='"+escape_sql(.@code$)+"'";
+
+			mes "Reward claimed successfully!";
+			close;
+
+		} else if (.@sel == 2) {
+
+			query_sql "SELECT item_id,amount FROM beta_claim_rewards", .@i,.@a;
+
+			mes "[Reward List]";
+			for (.@x=0; .@x<getarraysize(.@i); .@x++)
+				mes getitemname(.@i[.@x])+" x"+.@a[.@x];
+			close;
+		}
+
+		close;
+	}
+
+	//==============================
+	// CLOSED
+	//==============================
+	mes "Beta registration is closed.";
+	mes "Please wait for official launch.";
+	close;
+
+OnInit:
+	.beta_register_open = 0;
+	.official_claim_open = 0;
+	end;
+}

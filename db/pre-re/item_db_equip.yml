@@ -8987,7 +8987,7 @@ Body:
     Weight: 600
     Attack: 85
     Range: 1
-    Slots: 3
+    Slots: 4
     Jobs:
       Priest: true
       Sage: true
@@ -11233,7 +11233,7 @@ Body:
       Rogue: true
       Thief: true
     Locations:
-      Both_Hand: true
+      Right_Hand: true
     WeaponLevel: 1
     EquipLevelMin: 4
     Refineable: true
@@ -11308,7 +11308,7 @@ Body:
       Rogue: true
       Thief: true
     Locations:
-      Both_Hand: true
+      Right_Hand: true
     WeaponLevel: 1
     EquipLevelMin: 4
     Refineable: true
@@ -11370,7 +11370,7 @@ Body:
       Rogue: true
       Thief: true
     Locations:
-      Both_Hand: true
+      Right_Hand: true
     WeaponLevel: 2
     EquipLevelMin: 18
     Refineable: true
@@ -11591,7 +11591,7 @@ Body:
       Hunter: true
       Rogue: true
     Locations:
-      Both_Hand: true
+      Right_Hand: true
     WeaponLevel: 4
     EquipLevelMin: 48
     Refineable: true
@@ -11654,7 +11654,7 @@ Body:
     Jobs:
       Hunter: true
     Locations:
-      Both_Hand: true
+      Right_Hand: true
     WeaponLevel: 3
     EquipLevelMin: 30
     Refineable: true
@@ -11676,7 +11676,7 @@ Body:
       Rogue: true
       Thief: true
     Locations:
-      Both_Hand: true
+      Right_Hand: true
     WeaponLevel: 4
     EquipLevelMin: 60
     Refineable: true
@@ -11697,7 +11697,7 @@ Body:
       BardDancer: true
       Hunter: true
     Locations:
-      Both_Hand: true
+      Right_Hand: true
     WeaponLevel: 4
     EquipLevelMin: 70
     Refineable: true
@@ -14678,6 +14678,12 @@ Body:
       All: true
       Novice: false
       SuperNovice: false
+    Classes:
+      All_Third: true
+      Normal: true
+      Upper: true
+      Baby: true
+      All_Upper: true
     Locations:
       Left_Hand: true
     ArmorLevel: 1
@@ -14875,17 +14881,9 @@ Body:
     Defense: 4
     Slots: 1
     Jobs:
-      Alchemist: true
-      Assassin: true
-      Blacksmith: true
-      Crusader: true
-      Knight: true
-      Merchant: true
-      Rogue: true
-      Swordman: true
-      Thief: true
+      All: true
     Classes:
-      Upper: true
+      All: true
     Locations:
       Left_Hand: true
     ArmorLevel: 1
@@ -15219,33 +15217,33 @@ Body:
     ArmorLevel: 1
     EquipLevelMin: 99
     View: 1
-  - Id: 2199
-    AegisName: Ahura_Mazda
-    Name: Ahura Mazdah
-    Type: Armor
-    Buy: 1
-    Weight: 10
-    Defense: 100
-    Locations:
-      Left_Hand: true
-    ArmorLevel: 1
-    EquipLevelMin: 1
-    View: 1
-    Script: |
-      bonus bAllStats,50;
-      bonus bMdef,99;
-      bonus bUnbreakableShield;
-      bonus bShortWeaponDamageReturn,100;
-      bonus2 bSubRace,RC_DemiHuman,95;
-      bonus2 bSubRace,RC_Player_Human,95;
-      skill "CR_FULLPROTECTION",5;
-      Skill "WZ_ESTIMATION",1;
-      Skill "ST_FULLSTRIP",5;
-      Skill "HW_MAGICPOWER",10;
-      bonus bMaxHPRate,200;
-      bonus bNoGemStone;
-      bonus bSpeedRate,25;
-      bonus bNoWalkDelay;
+#  - Id: 2199
+#    AegisName: Ahura_Mazda
+#    Name: Ahura Mazdah
+#    Type: Armor
+#    Buy: 1
+#    Weight: 10
+#    Defense: 100
+#    Locations:
+#      Left_Hand: true
+#    ArmorLevel: 1
+#    EquipLevelMin: 1
+#    View: 1
+#    Script: |
+#      bonus bAllStats,50;
+#      bonus bMdef,99;
+#      bonus bUnbreakableShield;
+#      bonus bShortWeaponDamageReturn,100;
+#      bonus2 bSubRace,RC_DemiHuman,95;
+#      bonus2 bSubRace,RC_Player_Human,95;
+#      skill "CR_FULLPROTECTION",5;
+#      Skill "WZ_ESTIMATION",1;
+#      Skill "ST_FULLSTRIP",5;
+#      Skill "HW_MAGICPOWER",10;
+#      bonus bMaxHPRate,200;
+#      bonus bNoGemStone;
+#      bonus bSpeedRate,25;
+#      bonus bNoWalkDelay;
   - Id: 2201
     AegisName: Sunglasses
     Name: Sunglasses
@@ -17779,7 +17777,10 @@ Body:
       Novice: false
       SuperNovice: false
     Classes:
+      Normal: true
       Upper: true
+      Baby: true
+      All_Upper: true
     Locations:
       Armor: true
     ArmorLevel: 1
@@ -18072,17 +18073,14 @@ Body:
     Defense: 6
     Slots: 1
     Jobs:
-      Acolyte: true
-      Archer: true
-      BardDancer: true
-      Hunter: true
-      Mage: true
-      Monk: true
-      Priest: true
-      Sage: true
-      Wizard: true
+      All: true
+      Novice: false
+      SuperNovice: false
     Classes:
+      Normal: true
       Upper: true
+      Baby: true
+      All_Upper: true
     Locations:
       Armor: true
     ArmorLevel: 1
@@ -18102,17 +18100,14 @@ Body:
     Defense: 7
     Slots: 1
     Jobs:
-      Alchemist: true
-      Assassin: true
-      Blacksmith: true
-      Crusader: true
-      Knight: true
-      Merchant: true
-      Rogue: true
-      Swordman: true
-      Thief: true
+      All: true
+      Novice: false
+      SuperNovice: false
     Classes:
+      Normal: true
       Upper: true
+      Baby: true
+      All_Upper: true
     Locations:
       Armor: true
     ArmorLevel: 1
@@ -18325,25 +18320,25 @@ Body:
       bonus bMdef,2;
       bonus2 bSubRace,RC_DemiHuman,2;
       bonus2 bSubRace,RC_Player_Human,2;
-  - Id: 2383
-    AegisName: Brynhild
-    Name: Brynhild
-    Type: Armor
-    Buy: 20
-    Weight: 400
-    Defense: 10
-    Locations:
-      Armor: true
-    ArmorLevel: 1
-    EquipLevelMin: 94
-    Script: |
-      bonus bMdef,10;
-      bonus bMaxHP,20*BaseLevel;
-      bonus bMaxSP,5*BaseLevel;
-      bonus2 bAddClass,Class_All,10;
-      bonus bMatkRate,10;
-      bonus bUnbreakableArmor;
-      bonus bNoKnockback;
+#  - Id: 2383
+#    AegisName: Brynhild
+#    Name: Brynhild
+#    Type: Armor
+#    Buy: 20
+#    Weight: 400
+#    Defense: 10
+#    Locations:
+#      Armor: true
+#    ArmorLevel: 1
+#    EquipLevelMin: 94
+#    Script: |
+#      bonus bMdef,10;
+#      bonus bMaxHP,20*BaseLevel;
+#      bonus bMaxSP,5*BaseLevel;
+#      bonus2 bAddClass,Class_All,10;
+#      bonus bMatkRate,10;
+#      bonus bUnbreakableArmor;
+#      bonus bNoKnockback;
   - Id: 2384
     AegisName: Spritual_Tunic
     Name: Spiritual Tunic
@@ -18894,23 +18889,23 @@ Body:
     Refineable: true
     Script: |
       bonus bMdef,5;
-  - Id: 2410
-    AegisName: Sleipnir
-    Name: Sleipnir
-    Type: Armor
-    Buy: 20
-    Weight: 3500
-    Defense: 5
-    Locations:
-      Shoes: true
-    ArmorLevel: 1
-    EquipLevelMin: 94
-    Script: |
-      bonus bMdef,10;
-      bonus bMaxHPrate,20;
-      bonus bMaxSPrate,20;
-      bonus bSPrecovRate,15;
-      bonus bSpeedRate,25;
+#  - Id: 2410
+#    AegisName: Sleipnir
+#    Name: Sleipnir
+#    Type: Armor
+#    Buy: 20
+#    Weight: 3500
+#    Defense: 5
+#    Locations:
+#      Shoes: true
+#    ArmorLevel: 1
+#    EquipLevelMin: 94
+#    Script: |
+#      bonus bMdef,10;
+#      bonus bMaxHPrate,20;
+#      bonus bMaxSPrate,20;
+#      bonus bSPrecovRate,15;
+#      bonus bSpeedRate,25;
   - Id: 2411
     AegisName: Grave
     Name: Greaves
@@ -19096,7 +19091,11 @@ Body:
       Novice: false
       SuperNovice: false
     Classes:
+      All_Third: true
+      Normal: true
       Upper: true
+      Baby: true
+      All_Upper: true
     Locations:
       Shoes: true
     ArmorLevel: 1
@@ -19141,9 +19140,8 @@ Body:
     Jobs:
       All: true
       Novice: false
-      SuperNovice: false
     Classes:
-      Upper: true
+      All: true
     Locations:
       Shoes: true
     ArmorLevel: 1
@@ -19350,22 +19348,14 @@ Body:
     Defense: 4
     Slots: 1
     Jobs:
-      Alchemist: true
-      Assassin: true
-      BardDancer: true
-      Blacksmith: true
-      Crusader: true
-      Hunter: true
-      Knight: true
-      Monk: true
-      Priest: true
-      Rogue: true
-      Sage: true
-      SoulLinker: true
-      StarGladiator: true
-      Wizard: true
+      All: true
+      Novice: false
+      SuperNovice: false
     Classes:
+      Normal: true
       Upper: true
+      Baby: true
+      All_Upper: true
     Locations:
       Shoes: true
     ArmorLevel: 1
@@ -20188,7 +20178,11 @@ Body:
       Novice: false
       SuperNovice: false
     Classes:
+      All_Third: true
+      Normal: true
       Upper: true
+      Baby: true
+      All_Upper: true
     Locations:
       Garment: true
     ArmorLevel: 1
@@ -20452,22 +20446,14 @@ Body:
     Defense: 5
     Slots: 1
     Jobs:
-      Alchemist: true
-      Assassin: true
-      BardDancer: true
-      Blacksmith: true
-      Crusader: true
-      Hunter: true
-      Knight: true
-      Monk: true
-      Priest: true
-      Rogue: true
-      Sage: true
-      SoulLinker: true
-      StarGladiator: true
-      Wizard: true
+      All: true
+      Novice: false
+      SuperNovice: false
     Classes:
+      Normal: true
       Upper: true
+      Baby: true
+      All_Upper: true
     Locations:
       Garment: true
     ArmorLevel: 1
@@ -20881,7 +20867,10 @@ Body:
       Novice: false
       SuperNovice: false
     Classes:
+      Normal: true
       Upper: true
+      Baby: true
+      All_Upper: true
     Locations:
       Garment: true
     ArmorLevel: 1
@@ -21308,38 +21297,38 @@ Body:
       Both_Accessory: true
     ArmorLevel: 1
     EquipLevelMin: 1
-  - Id: 2629
-    AegisName: Magingiorde
-    Name: Megingjard
-    Type: Armor
-    Buy: 20
-    Weight: 8000
-    Defense: 2
-    Locations:
-      Both_Accessory: true
-    ArmorLevel: 1
-    EquipLevelMin: 94
-    Script: |
-      bonus bStr,40;
-      bonus bMdef,7;
-  - Id: 2630
-    AegisName: Brysinggamen
-    Name: Brisingamen
-    Type: Armor
-    Buy: 20
-    Weight: 1500
-    Defense: 1
-    Locations:
-      Both_Accessory: true
-    ArmorLevel: 1
-    EquipLevelMin: 94
-    Script: |
-      bonus bStr,6;
-      bonus bAgi,6;
-      bonus bVit,6;
-      bonus bInt,6;
-      bonus bLuk,10;
-      bonus bMdef,5;
+#  - Id: 2629
+#    AegisName: Magingiorde
+#    Name: Megingjard
+#    Type: Armor
+#    Buy: 20
+#    Weight: 8000
+#    Defense: 2
+#    Locations:
+#      Both_Accessory: true
+#    ArmorLevel: 1
+#    EquipLevelMin: 94
+#    Script: |
+#      bonus bStr,40;
+#      bonus bMdef,7;
+#  - Id: 2630
+#    AegisName: Brysinggamen
+#    Name: Brisingamen
+#    Type: Armor
+#    Buy: 20
+#    Weight: 1500
+#    Defense: 1
+#    Locations:
+#      Both_Accessory: true
+#    ArmorLevel: 1
+#    EquipLevelMin: 94
+#    Script: |
+#      bonus bStr,6;
+#      bonus bAgi,6;
+#      bonus bVit,6;
+#      bonus bInt,6;
+#      bonus bLuk,10;
+#      bonus bMdef,5;
   - Id: 2631
     AegisName: First_Age_Ring
     Name: Celebration Ring
@@ -22120,22 +22109,9 @@ Body:
     Buy: 20
     Weight: 100
     Jobs:
-      Alchemist: true
-      Assassin: true
-      BardDancer: true
-      Blacksmith: true
-      Crusader: true
-      Hunter: true
-      Knight: true
-      Monk: true
-      Priest: true
-      Rogue: true
-      Sage: true
-      SoulLinker: true
-      StarGladiator: true
-      Wizard: true
+      All: true
     Classes:
-      Upper: true
+      All: true
     Locations:
       Both_Accessory: true
     ArmorLevel: 1
@@ -22157,22 +22133,9 @@ Body:
     Weight: 100
     Defense: 2
     Jobs:
-      Alchemist: true
-      Assassin: true
-      BardDancer: true
-      Blacksmith: true
-      Crusader: true
-      Hunter: true
-      Knight: true
-      Monk: true
-      Priest: true
-      Rogue: true
-      Sage: true
-      SoulLinker: true
-      StarGladiator: true
-      Wizard: true
+      All: true
     Classes:
-      Upper: true
+      All: true
     Locations:
       Both_Accessory: true
     ArmorLevel: 1
@@ -23174,22 +23137,10 @@ Body:
     Weight: 50
     Slots: 1
     Jobs:
-      Alchemist: true
-      Assassin: true
-      BardDancer: true
-      Blacksmith: true
-      Crusader: true
-      Hunter: true
-      Knight: true
-      Monk: true
-      Priest: true
-      Rogue: true
-      Sage: true
-      SoulLinker: true
-      StarGladiator: true
-      Wizard: true
+      All: true
+      Novice: false
     Classes:
-      Upper: true
+      All: true
     Locations:
       Both_Accessory: true
     ArmorLevel: 1
@@ -24051,15 +24002,15 @@ Body:
       NoAuction: true
     Script: |
       bonus bAllStats,1;
-  - Id: 2775
-    AegisName: Lure
-    Name: Lure
-    Type: Armor
-    Buy: 20
-    Weight: 100
-    Locations:
-      Both_Accessory: true
-    ArmorLevel: 1
+#  - Id: 2775
+#    AegisName: Lure
+#    Name: Lure
+#    Type: Armor
+#    Buy: 20
+#    Weight: 100
+#    Locations:
+#      Both_Accessory: true
+#    ArmorLevel: 1
   - Id: 2776
     AegisName: Cool_Towel
     Name: Adventurer's Trusty Towel
@@ -25614,17 +25565,17 @@ Body:
     ArmorLevel: 1
     Refineable: true
     View: 132
-  - Id: 5049
-    AegisName: Stripe_Band
-    Name: Striped Hairband
-    Type: Armor
-    Buy: 20
-    Weight: 150
-    Defense: 1
-    Locations:
-      Head_Top: true
-    ArmorLevel: 1
-    View: 133
+#  - Id: 5049
+#    AegisName: Stripe_Band
+#    Name: Striped Hairband
+#    Type: Armor
+#    Buy: 20
+#    Weight: 150
+#    Defense: 1
+#    Locations:
+#      Head_Top: true
+#    ArmorLevel: 1
+#    View: 133
   - Id: 5050
     AegisName: Mystery_Fruit_Shell
     Name: Wonder Nutshell

@@ -1,0 +1,260 @@
+// Shop NPCs -- supplying no argument displays entire menu.
+//	callfunc "freebiesnpc1"{,<shop ID>{,<shop ID>{,...}}};
+//============================================================
+valmorra,164,123,4	script	Freebies#1	10986,{
+	callfunc "freebiesnpc1";
+	end;
+
+OnInit:
+	end;
+}
+
+// Script Core
+//============================================================
+-	script	freebies_npc1	-1,{
+function Add; function Chk; function Slot;
+
+OnInit:
+	freeloop(1);
+
+	// -----------------------------------------------------------
+	//  Basic shop settings.
+	// -----------------------------------------------------------
+	.Announce = 0;		// Announce quest completion? (1: yes / 0: no)
+	.ShowSlot = 1;		// Show item slots? (2: all equipment / 1: if slots > 0 / 0: never)
+	.ShowID = 0;  		// Show item IDs? (1: yes / 0: no)
+	.ShowZeny = 0;		// Show Zeny cost, if any? (1: yes / 0: no)
+	.MaxStack = 100;	// Max number of quest items purchased at one time.
+	.ignore_secure_npctimeout = 1;	// ignore SECURE_NPCTIMEOUT
+
+	// -----------------------------------------------------------
+	//  Points variable -- optional quest requirement.
+	//	setarray .Points$[0],"<variable name>","<display name>";
+	// -----------------------------------------------------------
+	setarray .Points$[0],"#HEADGEARPOINTS","Headgear Points";
+
+	// -----------------------------------------------------------
+	//  Shop IDs -- to add shops, copy dummy data at bottom of file.
+	//	setarray .Shops$[1],"<Shop 1>","<Shop 2>"{,...};
+	// -----------------------------------------------------------
+	setarray .Shops$[1],"~ Headgear Upper","~ Headgear Middle","~ Headgear Lower", "~ Armor Set", "~ Accessories";
+
+	// -----------------------------------------------------------
+	//  Quest items -- do NOT use a reward item more than once!
+	//	Add(<shop ID>,<reward ID>,<reward amount>,
+	//	    <Zeny cost>,<point cost>,
+	//	    <required item ID>,<required item amount>{,...});
+	// -----------------------------------------------------------
+
+	Add(1,37155,1,1,0);
+	Add(1,37157,1,1,0);
+	Add(1,37158,1,1,0);
+	Add(1,37161,1,1,0);
+	Add(1,37162,1,1,0);
+	Add(1,37163,1,1,0);
+
+	Add(2,37594,1,1,0);
+	Add(2,37593,1,1,0);
+	Add(2,37592,1,1,0);
+	Add(2,37591,1,1,0);
+	Add(2,37590,1,1,0);
+	Add(2,37589,1,1,0);
+
+	Add(3,37749,1,1,0);
+	Add(3,37747,1,1,0);
+	Add(3,37746,1,1,0);
+	Add(3,37743,1,1,0);
+	Add(3,37742,1,1,0);
+	Add(3,37741,1,1,0);
+
+	Add(4,2374,1,1,0);
+	Add(4,2375,1,1,0);
+	Add(4,2433,1,1,0);
+	Add(4,2537,1,1,0);
+	Add(4,2115,1,1,0);
+	Add(4,2357,1,1,0);
+	Add(4,2421,1,1,0);
+	Add(4,2524,1,1,0);
+
+	Add(5,38151,1,1,0);
+	Add(5,38152,1,1,0);
+	Add(5,38153,1,1,0);
+	Add(5,38154,1,1,0);
+	Add(5,38155,1,1,0);
+	Add(5,38157,1,1,0);
+
+	// -----------------------------------------------------------
+
+	freeloop(0);
+	.menu$ = "";
+	for(.@i = 1; .@i <= getarraysize(.Shops$); .@i++) {
+		.menu$ += .Shops$[.@i] + ":";
+		npcshopdelitem "freebiesnpc1"+.@i,909;
+	}
+	end;
+
+OnMenu:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 1;
+
+	.@size = getarraysize(@i);
+	if (!.@size) @shop_index = select(.menu$);
+	else if (.@size == 1) @shop_index = @i[0];
+	else {
+		.@menu$ = "";
+		for(.@j = 0; .@j < .@size; .@j++)
+			.@menu$ += .Shops$[@i[.@j]] + ":";
+		@shop_index = @i[select(.@menu$)-1];
+	}
+	deletearray @i[0],getarraysize(@i);
+
+	if (.Shops$[@shop_index] == "") {
+		message strcharinfo(0),"An error has occurred.";
+		end;
+	}
+
+	// Opens shop natively, enabling users to bundle items in their cart tray
+	callshop "freebiesnpc1"+@shop_index,0;
+	end;
+
+OnBuyItem:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 1;
+
+	.@total_zeny = 0;
+	.@total_pts = 0;
+
+	// Loop through cart arrays populated by the client checkout window
+	for (.@idx = 0; .@idx < getarraysize(@bought_nameid); .@idx++) {
+		.@item_id = @bought_nameid[.@idx];
+		.@item_qty = @bought_quantity[.@idx];
+
+		if (.@item_qty > .MaxStack) {
+			mes "[Quest Shop]";
+			mes "You cannot purchase more than " + .MaxStack + "x of " + getitemname(.@item_id) + " at once.";
+			close;
+		}
+
+		deletearray .@q[0], getarraysize(.@q);
+		copyarray .@q[0], getd(".q_"+@shop_index+"_"+.@item_id+"[0]"), getarraysize(getd(".q_"+@shop_index+"_"+.@item_id));
+
+		// Accumulate total baseline costs across the checkout array
+		.@total_zeny += (.@q[1] * .@item_qty); 
+		.@total_pts  += (.@q[2] * .@item_qty); 
+
+		// Verify additional item requirements per product slot if mapped
+		if (getarraysize(.@q) > 3) {
+			for (.@i = 3; .@i < getarraysize(.@q); .@i += 2) {
+				if (countitem(.@q[.@i]) < (.@q[.@i+1] * .@item_qty)) {
+					mes "[Quest Shop]";
+					mes "Missing component requirements to complete your bulk order.";
+					close;
+				}
+			}
+		}
+	}
+
+	// Verify wallet totals before balance deductions
+	if (Zeny < .@total_zeny) {
+		mes "[Quest Shop]";
+		mes "Insufficient funds. Total needed: " + F_InsertComma(.@total_zeny) + " Zeny.";
+		close;
+	}
+	if (getd(.Points$[0]) < .@total_pts) {
+		mes "[Quest Shop]";
+		mes "Insufficient balance. Total needed: " + .@total_pts + " " + .Points$[1] + ".";
+		close;
+	}
+
+	// Balance Deductions
+	if (.@total_zeny) Zeny -= .@total_zeny;
+	if (.@total_pts)  setd .Points$[0], getd(.Points$[0]) - .@total_pts;
+
+	// Item Deductions and Fulfillment Loop
+	for (.@idx = 0; .@idx < getarraysize(@bought_nameid); .@idx++) {
+		.@item_id = @bought_nameid[.@idx];
+		.@item_qty = @bought_quantity[.@idx];
+
+		deletearray .@q[0], getarraysize(.@q);
+		copyarray .@q[0], getd(".q_"+@shop_index+"_"+.@item_id+"[0]"), getarraysize(getd(".q_"+@shop_index+"_"+.@item_id));
+
+		if (getarraysize(.@q) > 3) {
+			for (.@i = 3; .@i < getarraysize(.@q); .@i += 2) {
+				delitem .@q[.@i], (.@q[.@i+1] * .@item_qty);
+			}
+		}
+
+		// Delivers final reward payload modified by cart quantities
+		getitem .@item_id, (.@q[0] * .@item_qty);
+		
+		if (.Announce)
+			announce strcharinfo(0) + " has acquired " + .@item_qty + "x " + getitemname(.@item_id) + "!", 0;
+	}
+
+	specialeffect2 EF_FLOWERLEAF;
+	end;
+
+OnEnd:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 0;
+	end;
+
+function Add {
+	if (getitemname(getarg(1)) == "null") {
+		debugmes "Quest reward #"+getarg(1)+" invalid (skipped).";
+		return;
+	}
+	// Data Map array template: [0]=Reward Amt, [1]=Zeny Cost, [2]=Points Cost, [3...]=Req Items
+	setarray .@j[0],getarg(2),getarg(3),getarg(4); 
+	for(.@i = 5; .@i < getargcount(); .@i += 2) {
+		if (getitemname(getarg(.@i)) == "null") {
+			debugmes "Quest requirement #"+getarg(.@i)+" invalid (skipped).";
+			return;
+		}
+		setarray .@j[.@i-2], getarg(.@i), getarg(.@i+1);
+	}
+	copyarray getd(".q_"+getarg(0)+"_"+getarg(1)+"[0]"), .@j[0], getarraysize(.@j);
+	npcshopadditem "freebiesnpc1"+getarg(0), getarg(1), ((.ShowZeny) ? getarg(3) : 0);
+	return;
+}
+
+function Chk {
+	if (getarg(0) < getarg(1)) {
+		return "^FF0000";
+	}
+	return "^00FF00";
+}
+
+function Slot {
+	.@s$ = getitemname(getarg(0));
+	switch(.ShowSlot) {
+		case 1: if (!getitemslots(getarg(0))) return .@s$;
+		case 2:
+			if (getiteminfo(getarg(0),2) == 4 || getiteminfo(getarg(0),2) == 5)
+				return .@s$+" ["+getitemslots(getarg(0))+"]";
+		default:
+			return .@s$;
+	}
+}
+}
+
+// Main entry function
+function	script	freebiesnpc1	{
+	deletearray @i[0],getarraysize(@i);
+	for(.@i = 0; .@i < getargcount(); .@i++)
+		@i[.@i] = getarg(.@i);
+	doevent "freebies_npc1::OnMenu";
+	end;
+}
+
+// Dummy shop data -- copy as needed.
+//============================================================
+-	shop	freebiesnpc11	-1,909:-1
+-	shop	freebiesnpc12	-1,909:-1
+-	shop	freebiesnpc13	-1,909:-1
+-	shop	freebiesnpc14	-1,909:-1
+-	shop	freebiesnpc15	-1,909:-1
+-	shop	freebiesnpc16	-1,909:-1
+-	shop	freebiesnpc17	-1,909:-1
+-	shop	freebiesnpc18	-1,909:-1
+-	shop	freebiesnpc19	-1,909:-1

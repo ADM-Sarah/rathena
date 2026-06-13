@@ -1,0 +1,612 @@
+//========================================================
+// NostalgicRO Death Match Battleground - 3vs3 FINAL
+//========================================================
+// - 6 players only
+// - 3 Red vs 3 Blue
+// - IP check, same IP cannot join
+// - GM 99 bypass IP check
+// - Battleground team system
+// - Same team cannot attack
+// - No item drop on death
+// - Best of 3 rounds
+// - 100 points per round
+// - 5 seconds base lock before fight
+// - Enemy protected area removed during fight
+//========================================================
+
+pvp_n_3-5,99,144,0	script	DeathMatchManager::alabadm	HIDDEN_WARP_NPC,2,2,{
+	end;
+
+OnInit:
+	set $deathMatchMap$, "pvp_n_3-5";
+
+	set $maxDMMemberCount, 6;
+	set $DMEntryPrice, 10000;
+
+	set .pointPerKill, 10;
+	set .winScore, 100;
+	set .spawnPenalty, 10;
+	set .leavePenaltyMin, 30;
+
+	setarray $warpPointRed[0], 134, 100;
+	setarray $warpPointBlue[0], 64, 100;
+
+	set .ExitMap$, "prontera";
+	set .ExitX, 156;
+	set .ExitY, 191;
+
+	set .teamRedScore, 0;
+	set .teamBlueScore, 0;
+	set .redRoundWin, 0;
+	set .blueRoundWin, 0;
+	set .roundNumber, 0;
+	set $deathmatchon, 0;
+
+	deletearray $@DMMembers[0], getarraysize($@DMMembers);
+	deletearray $@DMIPs$[0], getarraysize($@DMIPs$);
+	deletearray $@dmTeamRed[0], getarraysize($@dmTeamRed);
+	deletearray $@dmTeamBlue[0], getarraysize($@dmTeamBlue);
+
+	bindatcmd "dmboard", strnpcinfo(3) + "::OnBoardAsked";
+	end;
+
+OnStartDM:
+	set $deathmatchon, 4;
+	set .teamRedScore, 0;
+	set .teamBlueScore, 0;
+	set .redRoundWin, 0;
+	set .blueRoundWin, 0;
+	set .roundNumber, 1;
+
+	donpcevent strnpcinfo(3) + "::OnCreateBGTeams";
+	donpcevent strnpcinfo(3) + "::OnPrepareRound";
+	end;
+
+OnCreateBGTeams:
+	if (.bgRed) bg_destroy .bgRed;
+	if (.bgBlue) bg_destroy .bgBlue;
+
+	set .bgRed, bg_create($deathMatchMap$, $warpPointRed[0], $warpPointRed[1], strnpcinfo(3) + "::OnBGQuit", strnpcinfo(3) + "::OnBGDie");
+	set .bgBlue, bg_create($deathMatchMap$, $warpPointBlue[0], $warpPointBlue[1], strnpcinfo(3) + "::OnBGQuit", strnpcinfo(3) + "::OnBGDie");
+
+	for (set .@i,0; .@i<getarraysize($@dmTeamRed); set .@i,.@i+1) {
+		if (attachrid($@dmTeamRed[.@i])) {
+			set DM_TEAM, 1;
+			set DM_TEAM$, "Red Team";
+			bg_join .bgRed;
+		}
+	}
+
+	for (set .@i,0; .@i<getarraysize($@dmTeamBlue); set .@i,.@i+1) {
+		if (attachrid($@dmTeamBlue[.@i])) {
+			set DM_TEAM, 2;
+			set DM_TEAM$, "Blue Team";
+			bg_join .bgBlue;
+		}
+	}
+	end;
+
+OnPrepareRound:
+	set $deathmatchon, 4;
+	set .teamRedScore, 0;
+	set .teamBlueScore, 0;
+
+	for (set .@i,0; .@i<getarraysize($@dmTeamRed); set .@i,.@i+1) {
+		if (attachrid($@dmTeamRed[.@i])) {
+			set DMPOINTS, 0;
+			set DM_TEAM, 1;
+			set DM_TEAM$, "Red Team";
+			set DM_ProtectCooldown, 0;
+			set DM_OriginalClothColor, getlook(LOOK_CLOTHES_COLOR);
+			changelook LOOK_CLOTHES_COLOR,692;
+			percentheal 100,100;
+			callsub S_GiveBuff;
+			warp $deathMatchMap$, $warpPointRed[0], $warpPointRed[1];
+			dispbottom "[Death Match] You are Red Team.";
+		}
+	}
+
+	for (set .@i,0; .@i<getarraysize($@dmTeamBlue); set .@i,.@i+1) {
+		if (attachrid($@dmTeamBlue[.@i])) {
+			set DMPOINTS, 0;
+			set DM_TEAM, 2;
+			set DM_TEAM$, "Blue Team";
+			set DM_ProtectCooldown, 0;
+			set DM_OriginalClothColor, getlook(LOOK_CLOTHES_COLOR);
+			changelook LOOK_CLOTHES_COLOR,399;
+			percentheal 100,100;
+			callsub S_GiveBuff;
+			warp $deathMatchMap$, $warpPointBlue[0], $warpPointBlue[1];
+			dispbottom "[Death Match] You are Blue Team.";
+		}
+	}
+
+	mapannounce $deathMatchMap$, "[Death Match] Round " + .roundNumber + " will begin shortly. Stay inside your base!", bc_map, 0xC3FF00;
+	sleep 1000;
+	mapannounce $deathMatchMap$, "[Death Match] This battle will start in 5...", bc_map, 0xC3FF00;
+	sleep 1000;
+	mapannounce $deathMatchMap$, "[Death Match] This battle will start in 4...", bc_map, 0xC3FF00;
+	sleep 1000;
+	mapannounce $deathMatchMap$, "[Death Match] This battle will start in 3...", bc_map, 0xC3FF00;
+	sleep 1000;
+	mapannounce $deathMatchMap$, "[Death Match] This battle will start in 2...", bc_map, 0xC3FF00;
+	sleep 1000;
+	mapannounce $deathMatchMap$, "[Death Match] This battle will start in 1...", bc_map, 0xC3FF00;
+	sleep 1000;
+	mapannounce $deathMatchMap$, "[Death Match] FIGHT!", bc_map, 0xFFCC00;
+
+	set $deathmatchon, 2;
+	end;
+
+OnPCDieEvent:
+	if (strcharinfo(3) != $deathMatchMap$) end;
+	if ($deathmatchon != 2) end;
+
+	set .@victimTeam, DM_TEAM;
+
+	if (.@victimTeam == 1) {
+		set .teamBlueScore, .teamBlueScore + .pointPerKill;
+		addtimer 1000, strnpcinfo(3) + "::OnRespawnRed";
+	}
+	else if (.@victimTeam == 2) {
+		set .teamRedScore, .teamRedScore + .pointPerKill;
+		addtimer 1000, strnpcinfo(3) + "::OnRespawnBlue";
+	}
+
+	if (attachrid(killerrid)) {
+		if (DM_TEAM != .@victimTeam) {
+			set DMPOINTS, DMPOINTS + .pointPerKill;
+			dispbottom "[Death Match] You earned " + .pointPerKill + " points.";
+		}
+	}
+
+	mapannounce $deathMatchMap$, "[Death Match] Round " + .roundNumber + " Score - Red: " + .teamRedScore + " | Blue: " + .teamBlueScore, bc_map, 0xC3FF00;
+
+	if (.teamRedScore >= .winScore || .teamBlueScore >= .winScore)
+		donpcevent strnpcinfo(3) + "::OnFinishRound";
+	end;
+
+OnRespawnRed:
+	if ($deathmatchon != 2) end;
+	percentheal 100,100;
+	callsub S_GiveBuff;
+	warp $deathMatchMap$, $warpPointRed[0], $warpPointRed[1];
+	end;
+
+OnRespawnBlue:
+	if ($deathmatchon != 2) end;
+	percentheal 100,100;
+	callsub S_GiveBuff;
+	warp $deathMatchMap$, $warpPointBlue[0], $warpPointBlue[1];
+	end;
+
+OnFinishRound:
+	if ($deathmatchon != 2) end;
+	set $deathmatchon, 3;
+
+	if (.teamBlueScore > .teamRedScore) {
+		set .blueRoundWin, .blueRoundWin + 1;
+		mapannounce $deathMatchMap$, "[Death Match] Blue Team wins Round " + .roundNumber + "!", bc_map, 0x3399FF;
+	}
+	else if (.teamRedScore > .teamBlueScore) {
+		set .redRoundWin, .redRoundWin + 1;
+		mapannounce $deathMatchMap$, "[Death Match] Red Team wins Round " + .roundNumber + "!", bc_map, 0xFF6060;
+	}
+	else {
+		mapannounce $deathMatchMap$, "[Death Match] Round " + .roundNumber + " ended in a draw.", bc_map, 0xC3FF00;
+	}
+
+	mapannounce $deathMatchMap$, "[Death Match] Match Score - Red: " + .redRoundWin + " | Blue: " + .blueRoundWin + ". First team to win 2 rounds wins.", bc_map, 0xC3FF00;
+
+	if (.redRoundWin >= 2 || .blueRoundWin >= 2) {
+		sleep 3000;
+		donpcevent strnpcinfo(3) + "::OnFinishDM";
+		end;
+	}
+
+	set .roundNumber, .roundNumber + 1;
+
+	if (.roundNumber > 3) {
+		sleep 3000;
+		donpcevent strnpcinfo(3) + "::OnFinishDM";
+		end;
+	}
+
+	sleep 5000;
+	donpcevent strnpcinfo(3) + "::OnPrepareRound";
+	end;
+
+OnFinishDM:
+	set $deathmatchon, 3;
+
+	if (.redRoundWin > .blueRoundWin)
+		announce "[Death Match] Red Team wins the match!", bc_all, 0xFF6060;
+	else if (.blueRoundWin > .redRoundWin)
+		announce "[Death Match] Blue Team wins the match!", bc_all, 0x3399FF;
+	else
+		announce "[Death Match] The match ended in a draw!", bc_all, 0xC3FF00;
+
+	sleep 4000;
+	donpcevent strnpcinfo(3) + "::OnRewardAndWarp";
+	end;
+
+OnRewardAndWarp:
+	if (.redRoundWin > .blueRoundWin) {
+		callsub S_RewardTeam, 1, 15;
+		callsub S_RewardTeam, 2, 10;
+	}
+	else if (.blueRoundWin > .redRoundWin) {
+		callsub S_RewardTeam, 2, 15;
+		callsub S_RewardTeam, 1, 10;
+	}
+	else {
+		callsub S_RewardTeam, 1, 10;
+		callsub S_RewardTeam, 2, 10;
+	}
+
+	mapwarp $deathMatchMap$, .ExitMap$, .ExitX, .ExitY;
+	sleep 500;
+	donpcevent strnpcinfo(3) + "::OnCleanupDM";
+	end;
+
+S_RewardTeam:
+	set .@team, getarg(0);
+	set .@amount, getarg(1);
+
+	if (.@team == 1) {
+		for (set .@i,0; .@i<getarraysize($@dmTeamRed); set .@i,.@i+1) {
+			if (attachrid($@dmTeamRed[.@i])) {
+				getitem 7773, .@amount;
+				dispbottom "[Death Match] You received " + .@amount + " War Badge.";
+			}
+		}
+	}
+	else {
+		for (set .@i,0; .@i<getarraysize($@dmTeamBlue); set .@i,.@i+1) {
+			if (attachrid($@dmTeamBlue[.@i])) {
+				getitem 7773, .@amount;
+				dispbottom "[Death Match] You received " + .@amount + " War Badge.";
+			}
+		}
+	}
+	return;
+
+OnCleanupDM:
+	if (.bgRed) bg_destroy .bgRed;
+	if (.bgBlue) bg_destroy .bgBlue;
+
+	set .bgRed, 0;
+	set .bgBlue, 0;
+
+	for (set .@i,0; .@i<getarraysize($@DMMembers); set .@i,.@i+1) {
+		if (attachrid($@DMMembers[.@i])) {
+			changelook LOOK_CLOTHES_COLOR,DM_OriginalClothColor;
+			bg_leave;
+			set DMPOINTS, 0;
+			set DM_TEAM, 0;
+			set DM_TEAM$, "";
+			set DM_ProtectCooldown, 0;
+			set DM_OriginalClothColor,0;
+		}
+	}
+
+	deletearray $@DMMembers[0], getarraysize($@DMMembers);
+	deletearray $@DMIPs$[0], getarraysize($@DMIPs$);
+	deletearray $@dmTeamRed[0], getarraysize($@dmTeamRed);
+	deletearray $@dmTeamBlue[0], getarraysize($@dmTeamBlue);
+
+	set .teamRedScore, 0;
+	set .teamBlueScore, 0;
+	set .redRoundWin, 0;
+	set .blueRoundWin, 0;
+	set .roundNumber, 0;
+	set $deathmatchon, 0;
+	end;
+
+OnPCLoadMapEvent:
+	if (
+		DM_OriginalClothColor &&
+		strcharinfo(3) != $deathMatchMap$
+	) {
+		changelook LOOK_CLOTHES_COLOR,DM_OriginalClothColor;
+		set DM_OriginalClothColor,0;
+		set DM_TEAM,0;
+		set DM_TEAM$,"";
+	}
+	if (
+		strcharinfo(3) == $deathMatchMap$ &&
+		$deathmatchon == 0
+	) {
+		changelook LOOK_CLOTHES_COLOR,DM_OriginalClothColor;
+		set DM_OriginalClothColor,0;
+		set DM_TEAM,0;
+		set DM_TEAM$,"";
+		warp .ExitMap$, .ExitX, .ExitY;
+		end;
+	}
+	end;
+
+OnPCLogoutEvent:
+	if ($deathmatchon == 2 || $deathmatchon == 3 || $deathmatchon == 4) {
+		if (callfunc("CheckDMPlayerInMatch") == 1) {
+			changelook LOOK_CLOTHES_COLOR,DM_OriginalClothColor;
+			set DM_OriginalClothColor,0;
+			set DM_LeavePenalty, gettimetick(2) + (.leavePenaltyMin * 60);
+			callsub S_RemovePlayer, getcharid(3);
+		}
+	}
+	end;
+
+OnForceResetDM:
+	set $deathmatchon, 0;
+	mapwarp $deathMatchMap$, .ExitMap$, .ExitX, .ExitY;
+	donpcevent strnpcinfo(3) + "::OnCleanupDM";
+	announce "[Death Match] Battleground has been reset by a GM.", bc_all, 0x00FFAA;
+	end;
+
+OnBoardAsked:
+	dispbottom "========== Death Match Board ==========";
+	dispbottom "Round: " + .roundNumber + " / 3";
+	dispbottom "Round Wins - Red: " + .redRoundWin + " | Blue: " + .blueRoundWin;
+	dispbottom "Current Round Score - Red: " + .teamRedScore + " | Blue: " + .teamBlueScore;
+	dispbottom "=======================================";
+	end;
+
+OnBGQuit:
+	end;
+
+OnBGDie:
+	end;
+
+S_RemovePlayer:
+	set .@cid, getarg(0);
+
+	for (set .@i,0; .@i<getarraysize($@DMMembers); set .@i,.@i+1) {
+		if ($@DMMembers[.@i] == .@cid) {
+			deletearray $@DMMembers[.@i], 1;
+			break;
+		}
+	}
+
+	for (set .@i,0; .@i<getarraysize($@dmTeamRed); set .@i,.@i+1) {
+		if ($@dmTeamRed[.@i] == .@cid) {
+			deletearray $@dmTeamRed[.@i], 1;
+			break;
+		}
+	}
+
+	for (set .@i,0; .@i<getarraysize($@dmTeamBlue); set .@i,.@i+1) {
+		if ($@dmTeamBlue[.@i] == .@cid) {
+			deletearray $@dmTeamBlue[.@i], 1;
+			break;
+		}
+	}
+
+	return;
+
+S_GiveBuff:
+	specialeffect2 EF_INCAGILITY;
+	sc_start SC_INC_AGI, 240000, 10;
+	specialeffect2 EF_BLESSING;
+	sc_start SC_BLESSING, 240000, 10;
+	return;
+}
+
+//========================================================
+// Main NPC
+//========================================================
+valmorra,164,116,4	script	DeathMatch Battleground::aladment	10818,{
+	set .@npcname$, "[Death Match Manager]";
+
+	if (DM_LeavePenalty > gettimetick(2)) {
+		set .@remain, DM_LeavePenalty - gettimetick(2);
+		mes .@npcname$;
+		mes "Penalty active.";
+		mes "Remaining time: ^FF0000" + (.@remain / 60) + " min " + (.@remain % 60) + " sec^000000";
+		close;
+	}
+
+	mes .@npcname$;
+	mes "Welcome to the ^3366CC3vs3 Death Match Battleground^000000.";
+	mes "Required players: ^00AA003 vs 3^000000.";
+	mes "Best of 3 rounds.";
+	mes "Each round needs ^FF0000100 points^000000.";
+	next;
+
+	mes .@npcname$;
+	mes "Entry fee: ^FF6600" + $DMEntryPrice + " Zeny^000000.";
+	mes "Same IP address cannot join together.";
+	mes "GM Level 99 can bypass IP check.";
+	next;
+
+	if (getgmlevel() >= 99) {
+		switch(select("Continue:^FF0000[GM] Reset Death Match^000000")) {
+		case 1:
+			break;
+		case 2:
+			donpcevent "alabadm::OnForceResetDM";
+			close;
+		}
+	}
+
+	if (($deathmatchon == 2 || $deathmatchon == 3 || $deathmatchon == 4) && getmapusers($deathMatchMap$) > 0) {
+		mes .@npcname$;
+		mes "A match is already active.";
+		close;
+	}
+
+	if (($deathmatchon == 2 || $deathmatchon == 3 || $deathmatchon == 4) && getmapusers($deathMatchMap$) <= 0) {
+		donpcevent "alabadm::OnCleanupDM";
+	}
+
+	if ($deathmatchon == 1) {
+		if (callfunc("CheckDMPlayers") == 1) {
+			mes .@npcname$;
+			mes "You are already registered.";
+			close;
+		}
+
+		if (select("Join Death Match:Cancel") == 1)
+			callsub OnJoin;
+		close;
+	}
+
+	if (select("Start Death Match Registration:Cancel") == 1)
+		callsub OnJoin;
+	close;
+
+OnJoin:
+	if (Zeny < $DMEntryPrice) {
+		mes .@npcname$;
+		mes "You need ^FF0000" + $DMEntryPrice + " Zeny^000000.";
+		close;
+	}
+
+	if (callfunc("CheckDMPlayers") == 1) {
+		mes .@npcname$;
+		mes "You are already registered.";
+		close;
+	}
+
+	set .@myip$, getcharip();
+
+	if (getgmlevel() < 99) {
+		for (set .@i,0; .@i<getarraysize($@DMIPs$); set .@i,.@i+1) {
+			if ($@DMIPs$[.@i] == .@myip$) {
+				mes .@npcname$;
+				mes "^FF0000Another player with the same IP address is already registered.^000000";
+				mes "Only one player per IP address can join this Death Match.";
+				close;
+			}
+		}
+	}
+
+	set Zeny, Zeny - $DMEntryPrice;
+
+	if ($deathmatchon == 0) {
+		deletearray $@DMMembers[0], getarraysize($@DMMembers);
+		deletearray $@DMIPs$[0], getarraysize($@DMIPs$);
+		deletearray $@dmTeamRed[0], getarraysize($@dmTeamRed);
+		deletearray $@dmTeamBlue[0], getarraysize($@dmTeamBlue);
+		set $deathmatchon, 1;
+	}
+
+	set $@DMMembers[getarraysize($@DMMembers)], getcharid(3);
+	set $@DMIPs$[getarraysize($@DMIPs$)], .@myip$;
+
+	announce "[Death Match] " + strcharinfo(0) + " joined 3vs3 Death Match. Need " + ($maxDMMemberCount - getarraysize($@DMMembers)) + " more player(s).", bc_all, 0xC3FF00;
+
+	if (getarraysize($@DMMembers) >= $maxDMMemberCount) {
+		announce "[Death Match] 3vs3 Death Match is full! Preparing teams...", bc_all, 0xC3FF00;
+
+		deletearray $@dmTeamRed[0], getarraysize($@dmTeamRed);
+		deletearray $@dmTeamBlue[0], getarraysize($@dmTeamBlue);
+
+		set .@half, $maxDMMemberCount / 2;
+
+		for (set .@i,0; .@i<getarraysize($@DMMembers); set .@i,.@i+1) {
+			if (.@i < .@half)
+				set $@dmTeamBlue[getarraysize($@dmTeamBlue)], $@DMMembers[.@i];
+			else
+				set $@dmTeamRed[getarraysize($@dmTeamRed)], $@DMMembers[.@i];
+		}
+
+		donpcevent "alabadm::OnStartDM";
+	}
+	close;
+}
+
+//========================================================
+// Helper Functions
+//========================================================
+function	script	CheckDMTeamRedPlayer	{
+	for (set .@i,0; .@i<getarraysize($@dmTeamRed); set .@i,.@i+1)
+		if ($@dmTeamRed[.@i] == getcharid(3)) return 1;
+	return 0;
+}
+
+function	script	CheckDMTeamBluePlayer	{
+	for (set .@i,0; .@i<getarraysize($@dmTeamBlue); set .@i,.@i+1)
+		if ($@dmTeamBlue[.@i] == getcharid(3)) return 1;
+	return 0;
+}
+
+function	script	CheckDMPlayers	{
+	for (set .@i,0; .@i<getarraysize($@DMMembers); set .@i,.@i+1)
+		if ($@DMMembers[.@i] == getcharid(3)) return 1;
+	return 0;
+}
+
+function	script	CheckDMPlayerInMatch	{
+	if (callfunc("CheckDMTeamRedPlayer") == 1) return 1;
+	if (callfunc("CheckDMTeamBluePlayer") == 1) return 1;
+	return 0;
+}
+
+//========================================================
+// Guard System
+//========================================================
+-	script	DM_Guard_System	HIDDEN_NPC,{
+
+OnInit:
+	initnpctimer;
+	startnpctimer;
+	end;
+
+OnTimer500:
+	stopnpctimer;
+
+	// Before FIGHT
+	if ($deathmatchon == 4) {
+
+		for (set .@i,0; .@i<getarraysize($@dmTeamBlue); set .@i,.@i+1) {
+			if (attachrid($@dmTeamBlue[.@i])) {
+				if (strcharinfo(3) == $deathMatchMap$) {
+					getmapxy(.@map$, .@x, .@y, BL_PC);
+
+					if (.@x >= 73) {
+						dispbottom "[Death Match] Please wait until the battle starts.";
+						warp $deathMatchMap$, $warpPointBlue[0], $warpPointBlue[1];
+					}
+				}
+			}
+		}
+
+		for (set .@i,0; .@i<getarraysize($@dmTeamRed); set .@i,.@i+1) {
+			if (attachrid($@dmTeamRed[.@i])) {
+				if (strcharinfo(3) == $deathMatchMap$) {
+					getmapxy(.@map$, .@x, .@y, BL_PC);
+
+					if (.@x <= 126) {
+						dispbottom "[Death Match] Please wait until the battle starts.";
+						warp $deathMatchMap$, $warpPointRed[0], $warpPointRed[1];
+					}
+				}
+			}
+		}
+	}
+
+	// During fight
+	// Protected/restricted base area has been removed.
+	// Players will no longer be warped back or lose points when entering any base area.
+	if ($deathmatchon == 2) {
+		// No base protection during fight.
+	}
+
+	initnpctimer;
+	startnpctimer;
+	end;
+}
+
+//========================================================
+// Mapflags
+//========================================================
+pvp_n_3-5	mapflag	loadevent
+pvp_n_3-5	mapflag	battleground
+pvp_n_3-5	mapflag	nodrop
+pvp_n_3-5	mapflag	nowarp
+pvp_n_3-5	mapflag	nowarpto
+pvp_n_3-5	mapflag	nomemo
+pvp_n_3-5	mapflag	noteleport
+pvp_n_3-5	mapflag	nobranch
+pvp_n_3-5	mapflag	nosave	SavePoint

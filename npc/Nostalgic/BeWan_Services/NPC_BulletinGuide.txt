@@ -1,0 +1,66 @@
+1@def01,42,31,5	script	Bulletin Guide	858,{
+
+mes "Welcome to ^006699Nostalgic Ragnarok Online^000000";
+mes "Custom Command List:";
+mes " ";
+mes "^FF0000@mall^000000 - Open the mall NPC shop in any location except for PvP/GvG areas.";
+mes "^FF0000@donate^000000 - Access the donation NPC shop in any location except for PvP/GvG areas..";
+mes "^FF0000@quest^000000 - Warp to the designated area where the quest and donation NPCs are located.";
+mes "^FF0000@joinbg^000000 - Participate in the battleground event and join the ongoing matches.";
+mes "^FF0000@eventjoin^000000 - Instantly teleport to the designated area where the automated event is taking place.";
+mes "^FF0000@woe^000000 - Instantly teleport to the active castle location.";
+next;
+
+mes "Welcome to ^006699Nostalgic Ragnarok Online^000000";
+mes "Custom Command List:";
+mes " ";
+mes "^FF0000@security^000000 - to restrict storage access, disable item dropping, trading, etc.";
+mes "^FF0000@pk^000000 - display the current PvP Point(s).";
+mes "^FF0000@chjoin^000000 - to join in any channel available.";
+mes "^FF0000@chleave^000000 - to leave your currently joined channel.";
+mes "^FF0000@chlist^000000 - to display the list of available channels in the server..";
+next;
+
+mes "Welcome to ^006699Nostalgic Ragnarok Online^000000";
+mes "Custom Command List:";
+mes " ";
+mes "^FF0000@afk^000000 - to stay connected to the game like @autotrade.";
+mes "^FF0000@resist^000000 - to check the elemental resistances of your character.";
+mes "^FF0000@daily^000000 - to collect and view your total login rewards.";
+mes "^FF0000@vipstatus^000000 - to view VIP status and benefits [Exclusive to VIP MEMBERS]";
+mes "^FF0000@autovend^000000 - to activate autotrade mode and concurrently engage with another character [Exclusive to VIP MEMBERS]";
+next;
+
+mes "Welcome to ^006699Nostalgic Ragnarok Online^000000";
+mes "Custom Command List:";
+mes " ";
+mes "^FF0000@spb^000000 - to display buffs in your party window.";
+mes "^FF0000@nobc^000000 - to mute specific announcements in the server.";
+mes "^FF0000@nobc2^000000 - to disable all notifications and broadcasts in the server, including GM broadcasts.";
+mes "^FF0000@hold^000000 - to lock your current position.";
+mes "^FF0000@seeitems^000000 - Enable/disable visibility of dropped items.";
+mes "^FF0000@equipon and @equipoff^000000 - Enable/disable display of headgear upper, middle, and lower sprites.";
+next;
+
+mes "Welcome to ^006699Nostalgic Ragnarok Online^000000";
+mes "Custom Command List:";
+mes " ";
+mes "^FF0000!ping^000000 - Display your current latency (ms).";
+mes "^FF0000!vsync^000000 - is the technology that avoids screen tearing, it locks your fps depending on the frequency of your monitor.";
+mes "^FF0000@lgp^000000 - Lite Graphics Plugin";
+mes "^FF0000@packetfilter^000000 - Optimize Skill Animations.";
+mes " ";
+mes "Enjoy your stay and Welcome to ^006699Nostalgic Ragnarok Online^000000!";
+close;
+
+OnInit:
+	set .message$, "Bulletin Guide!     ";
+	while (1) {
+		set .message$, delchar(.message$+charat(.message$,0),0);
+		delwaitingroom;
+		waitingroom .message$, 0;
+		sleep 200;
+	}
+end;
+	
+}

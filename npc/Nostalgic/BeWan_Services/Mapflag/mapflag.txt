@@ -1,0 +1,109 @@
+thana_boss	mapflag	nosave
+thana_boss	mapflag	noreturn
+
+1@def01	mapflag	pvp	off
+1@def01	mapflag	notrade
+1@def01	mapflag	nodrop
+
+turbo_room	mapflag	pvp	off
+
+quiz_01	mapflag	pvp	off
+quiz_02	mapflag	pvp	off
+poring_w01	mapflag	pvp	off
+pvp_n_1-2	mapflag	pvp	off
+
+
+old_payon	mapflag	nosave
+old_payon	mapflag	nowarp
+old_payon	mapflag	nowarpto
+old_payon	mapflag	noteleport
+old_payon	mapflag	noreturn
+old_payon	mapflag	pvp	on
+
+izlude2	mapflag	nosave
+izlude2	mapflag	nowarp
+izlude2	mapflag	nowarpto
+izlude2	mapflag	noteleport
+izlude2	mapflag	noreturn
+izlude2	mapflag	pvp	on
+izlude2	mapflag	pvp_noparty
+izlude2	mapflag	pvp_noguild
+
+1@tower	mapflag	noloot
+1@tower	mapflag	nodrop
+2@tower	mapflag	noloot
+2@tower	mapflag	nodrop
+3@tower	mapflag	noloot
+3@tower	mapflag	nodrop
+4@tower	mapflag	noloot
+4@tower	mapflag	nodrop
+
+//============================================================
+// WoE:FE Castles
+//============================================================
+aldeg_cas01	mapflag	notrade
+aldeg_cas02	mapflag	notrade
+aldeg_cas03	mapflag	notrade
+aldeg_cas04	mapflag	notrade
+aldeg_cas05	mapflag	notrade
+gefg_cas01	mapflag	notrade
+gefg_cas02	mapflag	notrade
+gefg_cas03	mapflag	notrade
+gefg_cas04	mapflag	notrade
+gefg_cas05	mapflag	notrade
+payg_cas01	mapflag	notrade
+payg_cas02	mapflag	notrade
+payg_cas03	mapflag	notrade
+payg_cas04	mapflag	notrade
+payg_cas05	mapflag	notrade
+prtg_cas01	mapflag	notrade
+prtg_cas02	mapflag	notrade
+prtg_cas03	mapflag	notrade
+prtg_cas04	mapflag	notrade
+prtg_cas05	mapflag	notrade
+
+aldeg_cas01	mapflag	notrade
+aldeg_cas02	mapflag	notrade
+aldeg_cas03	mapflag	notrade
+aldeg_cas04	mapflag	notrade
+aldeg_cas05	mapflag	notrade
+gefg_cas01	mapflag	notrade
+gefg_cas02	mapflag	notrade
+gefg_cas03	mapflag	notrade
+gefg_cas04	mapflag	notrade
+gefg_cas05	mapflag	notrade
+payg_cas01	mapflag	notrade
+payg_cas02	mapflag	notrade
+payg_cas03	mapflag	notrade
+payg_cas04	mapflag	notrade
+payg_cas05	mapflag	notrade
+prtg_cas01	mapflag	notrade
+prtg_cas02	mapflag	notrade
+prtg_cas03	mapflag	notrade
+prtg_cas04	mapflag	notrade
+prtg_cas05	mapflag	notrade
+
+//============================================================
+// WoE:SE Castles
+//============================================================
+schg_cas01	mapflag	notrade
+schg_cas02	mapflag	notrade
+schg_cas03	mapflag	notrade
+schg_cas04	mapflag	notrade
+schg_cas05	mapflag	notrade
+arug_cas01	mapflag	notrade
+arug_cas02	mapflag	notrade
+arug_cas03	mapflag	notrade
+arug_cas04	mapflag	notrade
+arug_cas05	mapflag	notrade
+
+schg_cas01	mapflag	notrade
+schg_cas02	mapflag	notrade
+schg_cas03	mapflag	notrade
+schg_cas04	mapflag	notrade
+schg_cas05	mapflag	notrade
+arug_cas01	mapflag	notrade
+arug_cas02	mapflag	notrade
+arug_cas03	mapflag	notrade
+arug_cas04	mapflag	notrade
+arug_cas05	mapflag	notrade

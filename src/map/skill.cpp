@@ -99,6 +99,9 @@ struct s_skill_nounit_layout skill_nounit_layout[MAX_SKILL_UNIT_LAYOUT2];
 
 char dir_ka = -1; // Holds temporary direction to the target for SR_KNUCKLEARROW
 
+std::unordered_map<uint16, int32> skill_adjustment_db;
+SkillAdjustmentDatabase skill_adjustment_yaml_db;
+
 //Early declaration
 bool skill_strip_equip(block_list *src, block_list *target, uint16 skill_id, uint16 skill_lv);
 static int32 skill_check_unit_range (block_list *bl, int32 x, int32 y, uint16 skill_id, uint16 skill_lv);
@@ -1340,8 +1343,71 @@ int32 skill_additional_effect( block_list* src, block_list *bl, uint16 skill_id,
 	}
 
 	switch(skill_id) {
+		case ASC_BREAKER:
+			{
+				if (!battle_config.sd_freeze_active)
+					break;
+				map_session_data* sd = BL_CAST(BL_PC, src);
+				if (sd) {
+					bool has_card = false;
+					for (int i = 0; i < EQI_MAX; i++) {
+						int16 idx = sd->equip_index[i];
+						if (idx < 0)
+							continue;
+						struct item* it = &sd->inventory.u.items_inventory[idx];
+						for (int j = 0; j < MAX_SLOTS; j++) {
+							if (it->card[j] == 4318) {
+								has_card = true;
+								break;
+							}
+						}
+						if (has_card)
+							break;
+					}
+					if (!has_card)
+						break;
+					if (!(attack_type & BF_MAGIC)) {
+						if (rnd() % 10000 < battle_config.sd_freeze) {
+							sc_start(src, bl, SC_FREEZE, 100, skill_lv, battle_config.sd_freeze_duration * 1000);
+						}
+					}
+				}
+			}
+			break;
+		case WS_CARTTERMINATION:
+			{
+				if (!battle_config.ct_freeze_active)
+					break;
+				map_session_data* sd = BL_CAST(BL_PC, src);
+				if (sd) {
+					bool has_card = false;
+					for (int i = 0; i < EQI_MAX; i++) {
+						int16 idx = sd->equip_index[i];
+						if (idx < 0)
+							continue;
+						struct item* it = &sd->inventory.u.items_inventory[idx];
+						for (int j = 0; j < MAX_SLOTS; j++) {
+							if (it->card[j] == 4318) {
+								has_card = true;
+								break;
+							}
+						}
+						if (has_card)
+							break;
+					}
+					if (!has_card)
+						break;
+					if (rnd() % 10000 < battle_config.ct_freeze) {
+						sc_start(src, bl, SC_FREEZE, 100, skill_lv, battle_config.ct_freeze_duration * 1000);
+					}
+				}
+			}
+			break;
 		case 0:
 			{ // Normal attacks (no skill used)
+				if (sd)
+        			sd->sb_autocast_chain = 0;
+
 				if( attack_type&BF_SKILL )
 					break; // If a normal attack is a skill, it's splash damage. [Inkfish]
 				if(sd) {
@@ -1536,9 +1602,10 @@ int32 skill_additional_effect( block_list* src, block_list *bl, uint16 skill_id,
 			if (skill == PF_SPIDERWEB) //Special case, due to its nature of coding.
 				type = CAST_GROUND;
 #ifndef RENEWAL
-			else if( skill == AS_SONICBLOW ){
-				// Special case, Sonic Blow autospell should stop the player attacking.
-				unit_stop_attack( sd );
+			else if (skill == AS_SONICBLOW) {
+				if (sd->sb_autocast_chain >= 3)
+					continue;
+				sd->sb_autocast_chain++;
 			}
 #endif
 
@@ -1558,20 +1625,28 @@ int32 skill_additional_effect( block_list* src, block_list *bl, uint16 skill_id,
 					skill_castend_damage_id(src, tbl, skill, autospl_skill_lv, tick, 0);
 					break;
 			}
-			sd->state.autocast = 0;
 
-			//Set canact delay. [Skotlex]
 			unit_data *ud = unit_bl2ud(src);
 
 			if (ud) {
-				int32 delay = skill_delayfix(src, skill, autospl_skill_lv);
 
-				if (DIFF_TICK(ud->canact_tick, tick + delay) < 0){
-					ud->canact_tick = i64max(tick + delay, ud->canact_tick);
-					if ( battle_config.display_status_timers && sd )
-						clif_status_change(src, EFST_POSTDELAY, 1, delay, 0, 0, 0);
+				if (skill == AS_SONICBLOW) {
+					ud->canact_tick = tick;
+					ud->attackabletime = tick;
+				}
+				else {
+					int32 delay = skill_delayfix(src, skill, autospl_skill_lv);
+
+					if (DIFF_TICK(ud->canact_tick, tick + delay) < 0){
+						ud->canact_tick = i64max(tick + delay, ud->canact_tick);
+
+						if (battle_config.display_status_timers && sd)
+							clif_status_change(src, EFST_POSTDELAY, 1, delay, 0, 0, 0);
+					}
 				}
 			}
+
+			sd->state.autocast = 0;
 		}
 	}
 
@@ -4608,6 +4683,27 @@ int32 skill_castend_nodamage_id (block_list *src, block_list *bl, uint16 skill_i
 				skill_castend_nodamage_id);
 		}
 		break;
+	case NV_AUTOATTACK:
+		npc_event(sd, "bot_at::OnDo", 0);
+		break;
+	case SL_NINJA:
+	case SL_GUNNER:
+		if( sc_start2( src, bl, type, 100, skill_lv, skill_id, skill_get_time( skill_id, skill_lv ) ) ){
+			clif_skill_nodamage(src, *bl, skill_id, skill_lv);
+
+			if( skill_id == SL_SUPERNOVICE && dstsd && dstsd->die_counter && rnd_chance( 1, 100 )  ){
+				pc_setparam( dstsd, SP_PCDIECOUNTER, 0 );
+				clif_specialeffect( bl, EF_ANGEL2, AREA );
+				status_calc_pc( dstsd, SCO_NONE );
+			}
+
+			sc_start( src, src, SC_SMA, 100, skill_lv, skill_get_time( SL_SMA, skill_lv ) );
+		}else{
+			if( sd ){
+				clif_skill_fail( *sd, skill_id );
+			}
+		}
+		break;
 	default: {
 		std::shared_ptr<s_skill_db> skill = skill_db.find(skill_id);
 
@@ -5192,10 +5288,10 @@ TIMER_FUNC(skill_castend_id){
 				sc->getSCE(SC_SPIRIT)->val3 == ud->skill_id &&
 				ud->skill_id != WZ_WATERBALL)
 				sc->getSCE(SC_SPIRIT)->val3 = 0; //Clear bounced spell check.
-#ifndef RENEWAL
-			if( sc->getSCE(SC_DANCING) && sd && skill_get_inf2(ud->skill_id, INF2_ISSONG) )
-				skill_blockpc_start(*sd,BD_ADAPTATION,3000);
-#endif
+// #ifndef RENEWAL
+// 			if( sc->getSCE(SC_DANCING) && sd && skill_get_inf2(ud->skill_id, INF2_ISSONG) )
+// 				skill_blockpc_start(*sd,BD_ADAPTATION,3000);
+// #endif
 		}
 
 		if (sd && ud->skill_id != SA_ABRACADABRA) // they just set the data so leave it as it is.[Inkfish]
@@ -10408,6 +10504,13 @@ int32 skill_delayfix(block_list *bl, uint16 skill_id, uint16 skill_lv)
 {
 	nullpo_ret(bl);
 
+	if (skill_id == AS_SONICBLOW) {
+		map_session_data* sd = BL_CAST(BL_PC, bl);
+
+		if (sd && sd->state.autocast)
+			return 0;
+	}
+
 	if (skill_id == SA_ABRACADABRA)
 		return 0; //Will use picked skill's delay.
 
@@ -10607,6 +10710,27 @@ void skill_identify(map_session_data *sd, int32 idx)
 		pc_setreg(sd, add_str("@identify_idx"), idx);
 		npc_script_event( *sd, NPCE_IDENTIFY );
 	}
+}
+
+int skill_vending(struct map_session_data *sd, t_itemid nameid) {
+	struct item_data *item;
+	char output[1024];
+	nullpo_ret(sd);
+
+	if (!pc_can_give_items(sd) || (nameid <= 0 || nameid >= (INT32_MAX)) || (item = itemdb_search(nameid)) == NULL) {
+		sd->state.prevend = 0;
+		sd->vend_loot = 0;
+		sd->state.workinprogress = WIP_DISABLE_NONE;
+		clif_skill_fail(*sd, MC_VENDING, USESKILL_FAIL_LEVEL);
+	}
+	else {
+		sd->vend_loot = nameid;
+		sd->state.prevend = 1;
+		clif_openvendingreq(*sd, 2 + sd->vend_lvl);
+		sprintf(output, msg_txt(sd, 1594), item->ename.c_str());
+		clif_messagecolor(sd, color_table[COLOR_CYAN], output, false, SELF);
+	}
+	return 0;
 }
 
 /*==========================================
@@ -16248,6 +16372,51 @@ static bool skill_parse_row_skilldamage( char* split[], size_t columns, size_t c
 	return true;
 }
 
+const std::string SkillAdjustmentDatabase::getDefaultLocation() {
+	return std::string(db_path) + "/skill_adjustment.yml";
+}
+
+uint64 SkillAdjustmentDatabase::parseBodyNode(const ryml::NodeRef& node) {
+	std::string skill_name;
+
+	if (!this->asString(node, "Skill", skill_name))
+		return 0;
+
+	uint16 skill_id = skill_name2id(skill_name.c_str());
+
+	if (skill_id == 0) {
+		this->invalidWarning(node["Skill"], "Invalid skill name \"%s\", skipping.\n", skill_name.c_str());
+		return 0;
+	}
+
+	std::shared_ptr<s_skill_adjustment_db> entry = this->find(skill_id);
+	bool exists = entry != nullptr;
+
+	if (!exists) {
+		if (!this->nodesExist(node, { "Rate" }))
+			return 0;
+
+		entry = std::make_shared<s_skill_adjustment_db>();
+		entry->skill_id = skill_id;
+	}
+
+	if (this->nodeExists(node, "Rate")) {
+		int32 rate;
+
+		if (!this->asInt32(node, "Rate", rate))
+			return 0;
+
+		entry->rate = cap_value(rate, -100, 100000);
+		skill_adjustment_db[skill_id] = entry->rate;
+	}
+
+	if (!exists)
+		this->put(skill_id, entry);
+
+	return 1;
+}
+
+
 /** Reads skill database files */
 static void skill_readdb(void) {
 	int32 i;
@@ -16291,6 +16460,9 @@ static void skill_readdb(void) {
 	magic_mushroom_db.load();
 	reading_spellbook_db.load();
 	skill_arrow_db.load();
+
+	skill_adjustment_db.clear();
+	skill_adjustment_yaml_db.load();
 
 	skill_init_unit_layout();
 	skill_init_nounit_layout();

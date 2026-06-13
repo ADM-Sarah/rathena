@@ -9,3 +9,8 @@
  **/
 
 //ACMD_DEF(newcommand),
+
+ACMD_DEF(hatredreset),
+ACMD_DEF(afk),
+ACMD_DEF(vipstatus),
+ACMD_DEF2("seeitems", seeitems), // @seeitems [Geezy]

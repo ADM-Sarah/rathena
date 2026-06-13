@@ -1,0 +1,221 @@
+//==================================================
+// LMS Event - FINAL FIXED
+// Reward:
+// - 33017 x2 (Credit)
+// - 51001 x2 (Nostalgic Pot Box)
+// Warp all to SavePoint
+//==================================================
+
+function	script	F_LMSWarpAllToSave	{
+	.@map$ = getarg(0);
+
+	.@count = getmapunits(BL_PC, .@map$, .@aid);
+	for (.@i = 0; .@i < .@count; .@i++) {
+		if (attachrid(.@aid[.@i])) {
+			warp "SavePoint",0,0;
+			detachrid;
+		}
+	}
+	return;
+}
+
+-	script	Event_LMS	-1,{
+OnInit:
+	// Reward
+	setarray .item,
+		33017, 2, // Credit
+		51001, 2; // Nostalgic Pot Box
+
+	// @lmsstart - gm manual start
+	bindatcmd "lmsstart", strnpcinfo(0)+"::OnStart",60,60;
+
+	// @lms - player join event
+	bindatcmd "lms", strnpcinfo(0)+"::OnJoinEvent";
+
+	// Event cooldown
+	.event_cd = 60 * 60 * 5; // 5 hours
+
+	// Map
+	.Map$ = "06guild_01";
+
+	// Mapflags
+	setarray .@mapflag,
+		mf_nowarp,
+		mf_nowarpto,
+		mf_noskill,
+		mf_noteleport,
+		mf_nomemo,
+		mf_nosave,
+		mf_noicewall,
+		mf_nobranch,
+		mf_noreturn;
+
+	for ( .@i = 0; .@i < getarraysize(.@mapflag); .@i++ )
+		setmapflag .Map$, .@mapflag[.@i];
+
+	.@min = gettime(DT_MINUTE) * 60;
+	.@sec = gettime(DT_SECOND);
+	.event_time = (gettimetick(2) - (.@min + .@sec)) + .event_cd - 5;
+
+	.start = 0;
+	.timer = 0;
+	end;
+
+//==================================================
+// JOIN EVENT
+//==================================================
+OnJoinEvent:
+	mes " [ Event Status ] ";
+	if ( !.start ) mes "Next schedule starts in ^FF0000" + Time2Str(.event_time) + "^000000.";
+	if ( .start == 1 ) mes "Event is currently active.";
+	if ( .start == 2 ) mes "Event is currently on-going.";
+	next;
+
+	switch(select(
+		"Last Man Standing Event - " + ((.start == 1) ? "^00ff00Join Event" : ((.start == 2) ? "^00ff00Event On-Going" : "^ff0000Not Available")) + "^000000"
+	)) {
+	case 1:
+		if ( !.start ) {
+			mes "Event is not available.";
+			close;
+		}
+		else if ( .start == 2 ) {
+			mes "Event is on-going.";
+			close;
+		}
+		else {
+			warp .Map$,0,0;
+			close;
+		}
+	}
+	end;
+
+//==================================================
+// START EVENT
+//==================================================
+OnStart:
+	.@force = true;
+OnMinute00:
+	.@time = gettimetick(2);
+	.@min = gettime(DT_MINUTE) * 60;
+	.@sec = gettime(DT_SECOND);
+
+	if ( (.event_time > .@time && !.@force) || (.start && !.@force) )
+		end;
+
+	.event_time = (.@time - (.@min + .@sec)) + .event_cd - 5;
+	.start = 1;
+
+	pvpoff .Map$;
+	killmonsterall .Map$;
+
+	announce "LMS: We are going to have a Last Man Standing event.",0;
+	sleep 10000;
+	announce "LMS: For those who want to join, use @lms.",0;
+	sleep 10000;
+	announce "LMS: After 1 minute the event entry will close.",0;
+	sleep 10000;
+	announce "LMS: So please if you want to join, use @lms.",0;
+	sleep 60000;
+
+	announce "LMS: The entry to the event is now closed.",bc_all,0x0ceedb;
+
+	if ( getmapusers(.Map$) < 2 ) {
+		announce "LMS: Not enough participants.",bc_all,0x0ceedb;
+		.start = 0;
+		callfunc "F_LMSWarpAllToSave", .Map$;
+		end;
+	}
+
+	.start = 2;
+
+	sleep 3500;
+	mapannounce .Map$,"We're about to begin the event.",bc_map,0x0ceedb;
+	sleep 2500;
+	mapannounce .Map$,"The rules are simple.",bc_map,0x0ceedb;
+	sleep 2500;
+	mapannounce .Map$,"Kill everyone in the map.",bc_map,0x0ceedb;
+	sleep 2500;
+	mapannounce .Map$,"Last Man Standing wins!",bc_map,0x0ceedb;
+	sleep 2000;
+	mapannounce .Map$,"That's all. Let's begin.",bc_map,0x0ceedb;
+	sleep 3000;
+
+	for (.@i = 10; .@i > 0; .@i--) {
+		mapannounce .Map$, "LMS: -- " + .@i + " --", bc_map, 0x0ceedb;
+		sleep 1000;
+	}
+
+	mapannounce .Map$, "LMS: Fight!", bc_map, 0x0ceedb;
+	pvpon .Map$;
+
+	.timer = 0;
+	initnpctimer;
+	end;
+
+//==================================================
+// CHECK REMAINING PLAYERS
+//==================================================
+OnTimer5000:
+	.timer++;
+	.@size = getmapusers(.Map$);
+
+	if ( .@size > 1 && .timer == 6 ) {
+		.timer = 0;
+		mapannounce .Map$, "LMS: " + .@size + " players left..", bc_blue;
+	}
+	else if ( .@size <= 1 ) {
+		donpcevent strnpcinfo(3) + "::OnEndEvent";
+		end;
+	}
+
+	setnpctimer 0;
+	end;
+
+//==================================================
+// END EVENT
+//==================================================
+OnEndEvent:
+	stopnpctimer;
+	pvpoff .Map$;
+	.start = 0;
+
+	mapannounce .Map$, "LMS: Event ended!", bc_map, 0x0ceedb;
+	sleep 5000;
+
+	.@size = getmapunits(BL_PC, .Map$, .@aid);
+
+	if ( .@size == 0 ) {
+		announce "LMS: No winners.", bc_all, 0x0ceedb;
+		callfunc "F_LMSWarpAllToSave", .Map$;
+		end;
+	}
+
+	if (attachrid(.@aid[0])) {
+		announce strcharinfo(0) + " has won the Last Man Standing Event.", bc_all, 0x0ceedb;
+
+		getitem 33017,2; // Credit
+		getitem 51001,2; // Nostalgic Pot Box
+		dispbottom "LMS: You received your reward!";
+
+		detachrid;
+	}
+
+	callfunc "F_LMSWarpAllToSave", .Map$;
+	end;
+
+//==================================================
+// PLAYER DIE
+//==================================================
+OnPCDieEvent:
+	if ( .start && strcharinfo(3) == .Map$ ) {
+		warp "SavePoint",0,0;
+
+		.@size = getmapusers(.Map$);
+		if ( .@size > 1 )
+			mapannounce .Map$, "LMS: " + .@size + " players left..", bc_blue;
+		else if ( .@size <= 1 )
+			donpcevent strnpcinfo(3) + "::OnEndEvent";
+	}
+	end;
+}

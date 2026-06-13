@@ -1,0 +1,133 @@
+//=========================== KafraShop.net ===============================
+//= Mini-Games : Bombring
+//=========================================================================
+
+-	script	MG_Bombring	FAKE_NPC,{
+	end;
+
+OnInit:
+	.evtName$ = "Bombring";
+	end;
+
+OnStart:
+	$EVT_BOMBRING = 2;
+	mapannounce("bomb_ev", "["+.evtName$+"] This is how the event works.", bc_npc|bc_blue);
+	sleep 2000;
+	mapannounce("bomb_ev", "["+.evtName$+"] Bombring will run rampant in this area.", bc_npc|bc_blue);
+	sleep 2000;
+	mapannounce("bomb_ev", "["+.evtName$+"] And all of them will go KA-BOOOOOM!!", bc_npc|bc_blue);
+	sleep 2000;
+	mapannounce("bomb_ev", "["+.evtName$+"] You need to avoid them and stay alive.", bc_npc|bc_blue);
+	sleep 2000;
+	mapannounce("bomb_ev", "["+.evtName$+"] This will run until only one player survives.", bc_npc|bc_blue);
+	sleep 2000;
+	mapannounce("bomb_ev", "["+.evtName$+"] So, ready or not here they come!!", bc_npc|bc_blue);
+	setnpctimer(300000);
+	startnpctimer();
+	end;
+
+OnTimer310000:
+	donpcevent(strnpcinfo(0)+"::OnSpawn");
+	end;
+
+OnSpawn:
+	// Minimum 2 players required before the event can properly start.
+	if (getmapusers("bomb_ev") < 2) {
+		announce("["+.evtName$+"] Event cancelled. Minimum 2 players are required to start.", bc_all|bc_blue);
+		donpcevent(strnpcinfo(0)+"::OnStop");
+		end;
+	}
+
+	while ($EVT_BOMBRING == 2) {
+		stopnpctimer();
+
+		monster("bomb_ev", 0, 0, "Run for your life!", 1904, 20);
+
+		if (getmapusers("bomb_ev") <= 0) {
+			announce("["+.evtName$+"] No winners for this event. Better luck next time.", bc_npc|bc_blue);
+			donpcevent(strnpcinfo(0)+"::OnStop");
+			end;
+		}
+		else if (getmapusers("bomb_ev") == 1) {
+			donpcevent(strnpcinfo(0)+"::OnReward");
+			end;
+		}
+
+		setnpctimer(300000);
+		startnpctimer();
+		end;
+	}
+
+	donpcevent(strnpcinfo(0)+"::OnStop");
+	end;
+
+OnReward:
+	killmonsterall("bomb_ev");
+
+	getmapunits(BL_PC, "bomb_ev", .@unit[0]);
+
+	if (attachrid(.@unit[0])) {
+		announce("["+.evtName$+"] "+strcharinfo(0)+" has won the event!", bc_all|bc_blue);
+		$EVT_BOMBRING_WINNER$ = strcharinfo(0);
+
+		if (getarraysize($EVT_BOMBRING_ITEM) > 1) {
+			for (.@i = 0; .@i < getarraysize($EVT_BOMBRING_ITEM); .@i += 2)
+				getitem($EVT_BOMBRING_ITEM[.@i], $EVT_BOMBRING_ITEM[.@i+1]);
+		}
+
+		if ($EVT_BOMBRING_POINT > 0) {
+			F_PointGain(0, $EVT_BOMBRING_POINT, .evtName$);
+			F_ShowCurrency("#EVENTPOINT", "Event", $EVT_BOMBRING_POINT);
+			EVENTWINS += $EVT_BOMBRING_POINT;
+			EVENTWINS_BOMB += $EVT_BOMBRING_POINT;
+		}
+	}
+
+	detachrid();
+	donpcevent(strnpcinfo(0)+"::OnStop");
+	end;
+
+OnPCDieEvent:
+	if (strcharinfo(3) != "bomb_ev") end;
+
+	if (strcharinfo(3) == "bomb_ev" && $EVT_BOMBRING == 2) {
+		mapannounce("bomb_ev", "["+.evtName$+"] "+strcharinfo(0)+"'s exploded.", bc_npc|bc_blue);
+
+		warp("prontera", 149, 156);
+		dispbottom "["+.evtName$+"] You have lost! Better luck next time.";
+
+		if ($EVT_BOMBRING_CONSO_POINT) {
+			F_PointGain(1, $EVT_BOMBRING_CONSO_POINT, .evtName$);
+			F_ShowCurrency("#EVENTPOINT", "Event", $EVT_BOMBRING_CONSO_POINT);
+			EVENTWINS += $EVT_BOMBRING_CONSO_POINT;
+			EVENTWINS_BOMB += $EVT_BOMBRING_CONSO_POINT;
+		}
+
+		sleep2(200);
+		recovery(0);
+
+		if (getmapusers("bomb_ev") == 1)
+			donpcevent(strnpcinfo(0)+"::OnReward");
+	}
+	end;
+
+OnStop:
+	stopnpctimer();
+	$EVT_BOMBRING = 0;
+	killmonsterall("bomb_ev");
+	mapwarp("bomb_ev", "prontera", 149, 156);
+	end;
+}
+
+bomb_ev	mapflag	nobranch
+bomb_ev	mapflag	nodrop
+bomb_ev	mapflag	noexp
+bomb_ev	mapflag	noicewall
+bomb_ev	mapflag	noloot
+bomb_ev	mapflag	nomemo
+bomb_ev	mapflag	nosave	SavePoint
+bomb_ev	mapflag	noskill
+bomb_ev	mapflag	noteleport
+bomb_ev	mapflag	nowarp
+bomb_ev	mapflag	nowarpto
+bomb_ev	mapflag	pvp	off

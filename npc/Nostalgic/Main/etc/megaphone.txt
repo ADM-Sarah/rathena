@@ -1,0 +1,34 @@
+-	script	Megaphone_Command	-1,{
+
+OnInit:
+	bindatcmd "mega", strnpcinfo(3) + "::OnMega", 0, 99;
+	end;
+
+OnMega:
+	if (#megaphone_ready < 1) {
+		dispbottom "You need to use a Megaphone first.";
+		end;
+	}
+
+	mes "[Megaphone]";
+	mes "Please enter your message.";
+	mes "Maximum 120 characters.";
+	next;
+
+	input .@msg$;
+
+	if (.@msg$ == "") {
+		dispbottom "Megaphone cancelled.";
+		close;
+	}
+
+	if (getstrlen(.@msg$) > 120) {
+		dispbottom "Maximum 120 characters only.";
+		close;
+	}
+
+	set #megaphone_ready, 0;
+
+	announce "[Megaphone] " + strcharinfo(0) + ": " + .@msg$, bc_all, 0xFF0000;
+	close;
+}

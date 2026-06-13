@@ -1,0 +1,125 @@
+prontera,164,162,4	script	Gold Room#goldroom	813,{
+	doevent "gold_room_main::OnTalk";
+}
+
+// warp portal back prontera
+ordeal_3-1,47,218,0	warp	gold_room_back_prt#1	1,1,prontera,155,181
+ordeal_3-1,51,15,0	warp	gold_room_back_prt#2	1,1,prontera,155,181
+
+// dokebi summon
+ordeal_3-1,0,0,0,0	monster	Dokebi	1110,250,5000,0,"gold_room_main::OnKill"
+ordeal_3-1,0,0,0,0	monster	Dokebi	1110,250,5000,0,"gold_room_main::OnKill"
+
+
+-	script	gold_room_main	-1,{
+	
+	OnInit:
+		// gold room map
+		.map$ = "ordeal_3-1";
+		// entrance fee
+		.zeny_cost = 100000;
+
+		setmapflag .map$,mf_pvp;
+		setmapflag .map$,mf_pvp_noguild;
+		setmapflag .map$,mf_pvp_noparty;
+		setmapflag .map$,mf_nobranch;
+		setmapflag .map$,mf_nosave;
+		setmapflag .map$,mf_nomemo;
+		//setmapflag .map$,mf_noreturn;
+		setmapflag .map$,mf_nowarp;
+		setmapflag .map$,mf_nowarpto;
+		setmapflag .map$,mf_noloot;
+		//setmapflag .map$,mf_noskill;
+
+		bindatcmd("goldon",strnpcinfo(0)+"::OnGoldCommand",99);
+		end;
+	
+	OnTalk:
+		mes "Enter Gold Room ?";
+		if ( .zeny_cost ) 
+			mes F_InsertComma( .zeny_cost ) + " Zeny";
+		switch ( select( 
+			"Enter Gold Room",
+			"Cancel"
+		)) {
+			case 1:
+				if ( Zeny < .zeny_cost ) {
+					mes "Not enough Zeny.";
+				}
+				else {
+					Zeny -= .zeny_cost;
+					warp .map$,149,150;
+				}
+				break;
+			default:
+				break;
+		}
+		close;
+		
+	OnKill:
+		getinventorylist;
+		if ( @inventorylist_count > 30 ) {
+			dispbottom "You have 30 different items in your inventory.";
+			dispbottom "Remove some of your items in your inventory to receive gold.";
+			end;
+		}
+
+		if(rand(1,100) >= 1 && rand(1,100) <= 20){
+			if(checkweight( 33056,1 )){
+				getitem 33056,1;
+			}else if(checkweight( 33057,1 )){
+				getitem 33057,1;
+			}else{
+				getitem 33058,1;
+			}
+		}
+
+		if(.GoldStatus == 1){
+			getitem 969,2;
+			end;
+		}else{
+			getitem 969,1;
+			end;
+		}
+
+
+OnGoldCommand:
+	if(.GoldStatus == 1) end;
+	announce "Gold Room Boost Drop is being held. Enjoy x2 gold drop.",bc_all,0xFF6060;
+	set .GoldStatus,1;
+	sleep 3600000;
+    	announce "There is 1 hour left in Gold Room Boost Drop!",bc_all,0xFF6060;
+	sleep 3600000;
+	announce "Gold Room Boost Drop is Ending. Current drop are back to normal.",bc_all,0xFF6060;
+	set .GoldStatus,0;
+end;
+
+}
+
+ordeal_3-1,144,155,3	script	Exit#GR	4_M_JOB_KNIGHT1,{
+	mes "Do you want to leave Gold Room now?";
+	next;
+	switch(select("Yes:No")) {
+	case 1:
+		warp "SavePoint",0,0;
+		break;
+	case 2:
+		mes "Goodbye!";
+		close;
+	}
+}
+
+
+// Mapflags
+ordeal_3-1	mapflag	nosave	SavePoint
+ordeal_3-1	mapflag	nomemo
+ordeal_3-1	mapflag	nobranch
+ordeal_3-1	mapflag	noexp
+ordeal_3-1	mapflag	nochat
+ordeal_3-1	mapflag	novending
+ordeal_3-1	mapflag	nowarpto
+ordeal_3-1	mapflag	nowarp
+ordeal_3-1	mapflag	noreturn
+ordeal_3-1	mapflag	noskill
+ordeal_3-1	mapflag	nopenalty
+ordeal_3-1	mapflag	nobranch

@@ -1,0 +1,171 @@
+//==================================================
+// Bombring Event - FINAL FIXED
+// Auto Schedule:
+// - 13:00
+// - 18:00
+// - 20:00
+// - 00:00
+//
+// 5-minute warning before each start
+// Join command: @bomb
+// Survivors reward:
+// - 51001 x5 (Nostalgic Pot Box)
+// - 33017 x5 (Credit)
+// Warp out to SavePoint instead of Prontera
+//==================================================
+
+function	script	F_BombringWarpAllToSave	{
+	.@map$ = getarg(0);
+
+	.@count = getmapunits(BL_PC, .@map$, .@aid);
+	for (.@i = 0; .@i < .@count; .@i++) {
+		if (attachrid(.@aid[.@i])) {
+			warp "SavePoint",0,0;
+			detachrid;
+		}
+	}
+	return;
+}
+
+-	script	Event_Bombring	-1,{
+
+OnInit:
+	.Map$ = "quiz_02";
+	.JoinX = 59;
+	.JoinY = 340;
+
+	setarray .@mapflag,
+		mf_nowarp,
+		mf_nowarpto,
+		mf_noskill,
+		mf_noteleport,
+		mf_nomemo,
+		mf_nosave,
+		mf_noicewall,
+		mf_nobranch,
+		mf_noreturn,
+		mf_nocommand;
+
+	for ( .@i = 0; .@i < getarraysize(.@mapflag); .@i++ )
+		setmapflag .Map$, .@mapflag[.@i];
+
+	.start = 0;
+	.round = 0;
+
+	bindatcmd "bomb", strnpcinfo(3)+"::OnAtBomb", 0, 99;
+	end;
+
+OnClock1255:
+OnClock1755:
+OnClock1955:
+OnClock2355:
+	if (.start) end;
+	announce "Bombring: Bombring Event will start in 5 minutes!", bc_all, 0x0ceedb;
+	announce "Bombring: To join, use @bomb.", bc_all, 0x0ceedb;
+	end;
+
+OnClock1300:
+OnClock1800:
+OnClock2000:
+OnClock0000:
+	donpcevent strnpcinfo(3)+"::OnStart";
+	end;
+
+OnAtBomb:
+	if (.start != 1) {
+		dispbottom "Bombring: Registration is not open right now.";
+		end;
+	}
+
+	if (strcharinfo(3) == .Map$) {
+		dispbottom "Bombring: You are already inside the event map.";
+		end;
+	}
+
+	warp .Map$, .JoinX, .JoinY;
+	dispbottom "Bombring: You have joined the event. Good luck!";
+	end;
+
+OnStart:
+	if ( .start ) end;
+
+	.round = 0;
+	.start = 1;
+	killmonsterall .Map$;
+
+	announce "Bombring: We are going to have a Bombring event.",0;
+	sleep 10000;
+	announce "Bombring: For those who want to join, use @bomb.",0;
+	sleep 10000;
+	announce "Bombring: After 1 minute the event entry will close.",0;
+	sleep 10000;
+	announce "Bombring: So please if you want to join, use @bomb.",0;
+	sleep 60000;
+
+	announce "Bombring: The entry to the event is now closed.",bc_all,0x0ceedb;
+
+	if ( getmapusers(.Map$) < 1 ) {
+		announce "Bombring: Not enough participants.",bc_all,0x0ceedb;
+		.start = 0;
+		callfunc "F_BombringWarpAllToSave", .Map$;
+		end;
+	}
+
+	.start = 2;
+
+	sleep 3500;
+	mapannounce .Map$,"We're about to begin the event.",bc_map,0x0ceedb;
+	sleep 2500;
+	mapannounce .Map$,"The rules are simple.",bc_map,0x0ceedb;
+	sleep 2000;
+	mapannounce .Map$,"Event will run for 30 seconds for 5 total rounds.",bc_map,0x0ceedb;
+	sleep 2500;
+	mapannounce .Map$,"All you have to do is avoid Bombrings and stay alive.",bc_map,0x0ceedb;
+	sleep 2000;
+	mapannounce .Map$,"That's all. Let's begin.",bc_map,0x0ceedb;
+	sleep 3000;
+
+	while ( .round < 5 ) {
+		.@count = getmapusers(.Map$);
+		.round++;
+		mapannounce .Map$,"Round "+.round,bc_map,0x0ceedb;
+		areamonster .Map$,48,334,71,357,"Run for your life!",1904,5 * .@count * .round;
+		sleep 10000 - (1000 * .round);
+	}
+
+	.@count = getmapusers(.Map$);
+
+	if ( !.@count ) {
+		announce "Bombring: No one survived the Bombring event.",bc_all,0x0ceedb;
+	}
+	else {
+		.@size = getmapunits(BL_PC, .Map$, .@aid);
+
+		if ( .@size > 1 )
+			announce "Bombring: Multiple players have won the Bombring Event.",bc_all,0x0ceedb;
+
+		for ( .@i = 0; .@i < getarraysize(.@aid); .@i++ ) {
+			if ( attachrid(.@aid[.@i]) ) {
+
+				if ( .@size == 1 )
+					announce "Bombring: "+strcharinfo(0)+" has won the Bombring Event.",bc_all,0x0ceedb;
+
+				getitem 51001,3;
+				getitem 33017,3;
+				dispbottom "Bombring: You survived and received your reward!";
+
+				detachrid;
+			}
+		}
+	}
+
+	.start = 0;
+	sleep 5000;
+	callfunc "F_BombringWarpAllToSave", .Map$;
+	end;
+
+OnPCDieEvent:
+	if ( .start && strcharinfo(3) == .Map$ )
+		warp "SavePoint",0,0;
+	end;
+}

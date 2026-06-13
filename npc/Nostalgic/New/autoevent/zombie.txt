@@ -1,0 +1,161 @@
+//=========================== KafraShop.net ===============================
+//= Mini-Games : Novice VS Zombies
+//=========================================================================
+
+-	script	MG_Zombie	FAKE_NPC,{
+
+OnInit:
+	.evtName$ = "Novice vs Zombies";
+
+	if ($EVT_ZOMBIE == 2) {
+		setnpctimer(300000);
+		startnpctimer();
+	}
+	end;
+
+OnStart:
+	$EVT_ZOMBIE = 2;
+	mapannounce("zombie_ev", "["+.evtName$+"] This is how the event works.", bc_npc|bc_blue);
+	sleep 2000;
+	mapannounce("zombie_ev", "["+.evtName$+"] Zombies will be appearing on the map.", bc_npc|bc_blue);
+	sleep 2000;
+	mapannounce("zombie_ev", "["+.evtName$+"] You need to avoid them and stay alive.", bc_npc|bc_blue);
+	sleep 2000;
+	mapannounce("zombie_ev", "["+.evtName$+"] This will run until only one player survives.", bc_npc|bc_blue);
+	sleep 2000;
+	mapannounce("zombie_ev", "["+.evtName$+"] So, ready or not here they come!!", bc_npc|bc_blue);
+	setnpctimer(300000);
+	startnpctimer();
+	end;
+
+OnTimer310000:
+	donpcevent(strnpcinfo(0)+"::OnZombieSpawn");
+	end;
+
+OnZombieSpawn:
+	// Minimum 2 players required before the event can properly start.
+	if (getmapusers("zombie_ev") < 2) {
+		announce("["+.evtName$+"] Event cancelled. Minimum 2 players are required to start.", bc_all|bc_blue);
+		donpcevent(strnpcinfo(0)+"::OnStop");
+		end;
+	}
+
+	while ($EVT_ZOMBIE == 2) {
+		.ROUND++;
+
+		if (.ROUND % 15 == 0 && .ROUND <= 15)
+			killmonsterall("zombie_ev");
+
+		switch (.ROUND / 15) {
+			default:
+				monster("zombie_ev", 0, 0, "Brain Eater", 1036, 5);
+				break;
+
+			case 0:
+				monster("zombie_ev", 0, 0, "Brain Eater", 1015, 5);
+				break;
+		}
+
+		stopnpctimer();
+
+		if (getmapusers("zombie_ev") <= 0) {
+			announce("["+.evtName$+"] No winners for this event. Better luck next time.", bc_all|bc_blue);
+			donpcevent(strnpcinfo(0)+"::OnStop");
+			end;
+		}
+		else if (getmapusers("zombie_ev") == 1) {
+			donpcevent(strnpcinfo(0)+"::OnZombieReward");
+			end;
+		}
+
+		switch (rand(2)) {
+			case 0:
+				mapannounce("zombie_ev", "["+.evtName$+"] "+getmapusers("zombie_ev")+" players are still alive.", bc_npc|bc_blue);
+				break;
+
+			case 1:
+				mapannounce("zombie_ev", "["+.evtName$+"] "+getmapusers("zombie_ev")+" players are STILL alive? Are you sure you're not cheating?", bc_npc|bc_blue);
+				break;
+
+			default:
+				mapannounce("zombie_ev", "["+.evtName$+"] "+getmapusers("zombie_ev")+" players are STILL ALIVE? Seriously, I'm gonna report you!", bc_npc|bc_blue);
+				break;
+		}
+
+		setnpctimer(300000);
+		startnpctimer();
+		end;
+	}
+	end;
+
+OnZombieReward:
+	killmonsterall("zombie_ev");
+
+	getmapunits(BL_PC, "zombie_ev", .@unit[0]);
+
+	if (attachrid(.@unit[0])) {
+		announce("["+.evtName$+"] "+strcharinfo(0)+" has won the event!", bc_all|bc_blue);
+		$EVT_ZOMBIE_WINNER$ = strcharinfo(0);
+
+		if (getarraysize($EVT_ZOMBIE_ITEM) > 1) {
+			for (.@i = 0; .@i < getarraysize($EVT_ZOMBIE_ITEM); .@i += 2)
+				getitem($EVT_ZOMBIE_ITEM[.@i], $EVT_ZOMBIE_ITEM[.@i+1]);
+		}
+
+		if ($EVT_ZOMBIE_POINT > 0) {
+			F_PointGain(0, $EVT_ZOMBIE_POINT, .evtName$);
+			F_ShowCurrency("#EVENTPOINT", "Event", $EVT_ZOMBIE_POINT);
+			EVENTWINS += $EVT_ZOMBIE_POINT;
+			EVENTWINS_ZOMBIE += $EVT_ZOMBIE_POINT;
+		}
+	}
+
+	detachrid();
+	donpcevent(strnpcinfo(0)+"::OnStop");
+	end;
+
+OnPCDieEvent:
+	if (strcharinfo(3) != "zombie_ev") end;
+
+	if (strcharinfo(3) == "zombie_ev" && $EVT_ZOMBIE == 2) {
+		mapannounce("zombie_ev", "["+.evtName$+"] "+strcharinfo(0)+"'s brain was eaten by the zombie horde.", bc_npc|bc_blue);
+		dispbottom "["+.evtName$+"] You have lost! Better luck next time.";
+
+		if ($EVT_ZOMBIE_CONSO_POINT) {
+			F_PointGain(1, $EVT_ZOMBIE_CONSO_POINT, .evtName$);
+			F_ShowCurrency("#EVENTPOINT", "Event", $EVT_ZOMBIE_CONSO_POINT);
+			EVENTWINS += $EVT_ZOMBIE_CONSO_POINT;
+			EVENTWINS_ZOMBIE += $EVT_ZOMBIE_CONSO_POINT;
+		}
+
+		warp("prontera", 149, 156);
+		sleep2(200);
+		recovery(0);
+
+		if (getmapusers("zombie_ev") == 1)
+			donpcevent(strnpcinfo(0)+"::OnZombieReward");
+	}
+	end;
+
+OnStop:
+	$EVT_ZOMBIE = 0;
+	stopnpctimer();
+	killmonsterall("zombie_ev");
+	.cnt = 3;
+	.ROUND = 0;
+	mapwarp("zombie_ev", "prontera", 149, 156);
+	end;
+}
+
+zombie_ev	mapflag	nobranch
+zombie_ev	mapflag	nodrop
+zombie_ev	mapflag	noexp
+zombie_ev	mapflag	noicewall
+zombie_ev	mapflag	noloot
+zombie_ev	mapflag	nomemo
+zombie_ev	mapflag	nosave	SavePoint
+zombie_ev	mapflag	noskill
+zombie_ev	mapflag	noteleport
+zombie_ev	mapflag	nowarp
+zombie_ev	mapflag	nowarpto
+zombie_ev	mapflag	pvp	off

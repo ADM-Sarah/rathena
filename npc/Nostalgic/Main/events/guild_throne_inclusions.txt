@@ -1,0 +1,553 @@
+//==============================================================
+//  RECOMMENDED IMPROVEMENTS PACKAGE
+//  Guild Throne War Expansion System
+//  Compatible with latest rAthena
+//==============================================================
+//
+// INCLUDED:
+//  1. SQL Persistent Defender Save
+//  2. Ranking System
+//  3. Spectator Room
+//  4. Betting System
+//  5. Anti Dual Client
+//  6. Max Member Limit
+//  7. Damage Ranking
+//  8. Reward by Rodex Mail
+//  9. Queue System
+// 10. Registration UI Menu
+//
+//==============================================================
+
+
+
+//==============================================================
+// [1] SQL PERSISTENT DEFENDER SAVE
+//==============================================================
+//
+// PURPOSE:
+// Saves the defending guild even after server restart.
+//
+//==============================================================
+
+// SQL TABLE
+
+CREATE TABLE IF NOT EXISTS `guild_throne_data` (
+	`id` int NOT NULL AUTO_INCREMENT,
+	`defender_guild_id` int NOT NULL DEFAULT 0,
+	`last_winner` varchar(50) NOT NULL DEFAULT '',
+	`win_count` int NOT NULL DEFAULT 0,
+	`last_event` datetime NULL,
+	PRIMARY KEY (`id`)
+);
+
+//==============================================================
+// LOAD DEFENDER ON SERVER START
+//==============================================================
+
+OnInit:
+
+	query_sql(
+		"SELECT defender_guild_id FROM guild_throne_data LIMIT 1",
+		.DefenderGuild
+	);
+
+	if (.DefenderGuild > 0)
+		debugmes "[Guild Throne War] Loaded Defender Guild ID: "+.DefenderGuild;
+
+	end;
+
+//==============================================================
+// SAVE DEFENDER AFTER WIN
+//==============================================================
+
+function	script	F_GTW_SaveDefender	{
+
+	.@gid = getarg(0);
+
+	query_sql(
+		"DELETE FROM guild_throne_data"
+	);
+
+	query_sql(
+		"INSERT INTO guild_throne_data(defender_guild_id,last_winner,last_event) VALUES ("+
+		.@gid+",'"+escape_sql(getguildname(.@gid))+"',NOW())"
+	);
+
+	return;
+}
+
+
+
+//==============================================================
+// [2] RANKING SYSTEM
+//==============================================================
+//
+// PURPOSE:
+// Stores win rankings.
+//
+//==============================================================
+
+CREATE TABLE IF NOT EXISTS `guild_throne_rankings` (
+	`guild_id` int NOT NULL,
+	`guild_name` varchar(50) NOT NULL,
+	`wins` int NOT NULL DEFAULT 0,
+	PRIMARY KEY (`guild_id`)
+);
+
+//==============================================================
+// ADD WIN
+//==============================================================
+
+function	script	F_GTW_AddWin	{
+
+	.@gid = getarg(0);
+
+	query_sql(
+		"INSERT INTO guild_throne_rankings(guild_id,guild_name,wins) "+
+		"VALUES ("+.@gid+",'"+escape_sql(getguildname(.@gid))+"',1) "+
+		"ON DUPLICATE KEY UPDATE wins = wins + 1"
+	);
+
+	return;
+}
+
+//==============================================================
+// RANKING NPC
+//==============================================================
+
+prontera,160,180,4	script	GTW Rankings	629,{
+
+	mes "[GTW Rankings]";
+
+	query_sql(
+		"SELECT guild_name,wins FROM guild_throne_rankings "+
+		"ORDER BY wins DESC LIMIT 10",
+		.@name$,.@wins
+	);
+
+	for (.@i = 0; .@i < getarraysize(.@name$); .@i++) {
+		mes (.@i+1)+". "+.@name$[.@i]+" - "+.@wins[.@i]+" wins";
+	}
+
+	close;
+}
+
+
+
+//==============================================================
+// [3] SPECTATOR ROOM
+//==============================================================
+//
+// PURPOSE:
+// Players can watch the battle safely.
+//
+//==============================================================
+
+guild_vs1	mapflag	noskill
+guild_vs1	mapflag	nodrop
+
+payon,194,262,4	script	GTW Spectator	629,{
+
+	mes "[Spectator]";
+	mes "Watch the Guild Throne War?";
+	next;
+
+	if (select("Yes:No") == 2)
+		close;
+
+	warp "guild_vs1",100,180;
+	close;
+}
+
+//==============================================================
+// SPECTATOR AREA
+//==============================================================
+//
+// Add cells:
+//
+// mapflag zone
+//
+// Recommended:
+// Top platform or isolated room.
+//
+//==============================================================
+
+
+
+//==============================================================
+// [4] BETTING SYSTEM
+//==============================================================
+//
+// PURPOSE:
+// Players bet on guilds.
+//
+//==============================================================
+
+-	script	GTW_Betting	-1,{
+
+OnInit:
+	.BetCurrency = 7227; // Event Coin
+	end;
+}
+
+payon,193,253,4	script	GTW Betting	629,{
+
+	mes "[Betting Manager]";
+
+	if (.BetOpen == 0) {
+		mes "Betting is closed.";
+		close;
+	}
+
+	mes "Select guild to bet.";
+
+	for (.@i = 0; .@i < .GuildCount; .@i++)
+		.@menu$ += getguildname(.Guilds[.@i])+":";
+
+	.@sel = select(.@menu$)-1;
+
+	input .@amount;
+
+	if (countitem(.BetCurrency) < .@amount) {
+		mes "Not enough currency.";
+		close;
+	}
+
+	delitem .BetCurrency,.@amount;
+
+	BetGuild = .Guilds[.@sel];
+	BetAmount = .@amount;
+
+	mes "Bet registered.";
+	close;
+}
+
+//==============================================================
+// PAYOUT
+//==============================================================
+
+function	script	F_GTW_BetReward	{
+
+	.@winner = getarg(0);
+
+	if (BetGuild == .@winner) {
+		getitem 7227,BetAmount * 2;
+	}
+
+	return;
+}
+
+
+
+//==============================================================
+// [5] ANTI DUAL CLIENT
+//==============================================================
+//
+// PURPOSE:
+// Prevent same IP joining multiple accounts.
+//
+//==============================================================
+
+function	script	F_GTW_CheckDualIP	{
+
+	.@gid = getarg(0);
+
+	getguildmember .@gid,1;
+
+	for (.@i = 0; .@i < $@guildmembercount; .@i++) {
+
+		if (!isloggedin($@guildmemberaid[.@i],$@guildmembercid[.@i]))
+			continue;
+
+		attachrid $@guildmemberaid[.@i];
+
+		.@ip$ = getcharip();
+
+		for (.@k = .@i + 1; .@k < $@guildmembercount; .@k++) {
+
+			attachrid $@guildmemberaid[.@k];
+
+			if (.@ip$ == getcharip())
+				return 1;
+		}
+	}
+
+	return 0;
+}
+
+//==============================================================
+// USAGE
+//==============================================================
+
+if (callfunc("F_GTW_CheckDualIP",.@gid)) {
+	mes "Dual client detected.";
+	close;
+}
+
+
+
+//==============================================================
+// [6] MAX MEMBER LIMIT
+//==============================================================
+//
+// PURPOSE:
+// Limit participants inside event.
+//
+//==============================================================
+
+.MaxInside = 20;
+
+//==============================================================
+
+function	script	F_GTW_WarpLimitedGuild	{
+
+	.@map$ = getarg(0);
+	.@x = getarg(1);
+	.@y = getarg(2);
+	.@gid = getarg(3);
+
+	getguildmember .@gid,1;
+
+	.@count = 0;
+
+	for (.@i = 0; .@i < $@guildmembercount; .@i++) {
+
+		if (.@count >= .MaxInside)
+			break;
+
+		if (!isloggedin($@guildmemberaid[.@i],$@guildmembercid[.@i]))
+			continue;
+
+		attachrid $@guildmemberaid[.@i];
+
+		warp .@map$,.@x,.@y;
+
+		.@count++;
+	}
+
+	return;
+}
+
+
+
+//==============================================================
+// [7] DAMAGE RANKING SYSTEM
+//==============================================================
+//
+// PURPOSE:
+// Track Emperium damage.
+//
+//==============================================================
+
+-	script	GTW_Damage	-1,{
+
+OnNPCKillEvent:
+
+	if (strcharinfo(3) != "guild_vs1")
+		end;
+
+	if (killedrid != 1288)
+		end;
+
+	.EmpDamage[getcharid(2)] += damage;
+
+	end;
+}
+
+//==============================================================
+// SHOW DAMAGE
+//==============================================================
+
+payon,194,247,4	script	GTW Damage Rank	629,{
+
+	mes "[Damage Rankings]";
+
+	for (.@i = 0; .@i < getarraysize(.EmpDamage); .@i++) {
+
+		if (.EmpDamage[.@i] <= 0)
+			continue;
+
+		mes getguildname(.@i)+" - "+.EmpDamage[.@i];
+	}
+
+	close;
+}
+
+
+
+//==============================================================
+// [8] REWARD BY RODEX MAIL
+//==============================================================
+//
+// PURPOSE:
+// Rewards are mailed.
+//
+//==============================================================
+
+function	script	F_GTW_SendReward	{
+
+	.@charid = getarg(0);
+	.@item = getarg(1);
+	.@amount = getarg(2);
+
+	mail send .@charid,
+		"Guild Throne War",
+		"Event Reward",
+		"You received a reward.",
+		.@item,
+		.@amount;
+
+	return;
+}
+
+
+
+//==============================================================
+// [9] QUEUE SYSTEM
+//==============================================================
+//
+// PURPOSE:
+// Challengers enter queue.
+//
+//==============================================================
+
+-	script	GTW_Queue	-1,{
+
+OnInit:
+	.QueueCount = 0;
+	end;
+}
+
+//==============================================================
+// REGISTER
+//==============================================================
+
+.QueueGuilds[.QueueCount] = .@gid;
+.QueueCount++;
+
+//==============================================================
+// NEXT GUILD
+//==============================================================
+
+function	script	F_GTW_GetNextQueue	{
+
+	if (.QueueCount <= 0)
+		return 0;
+
+	.@gid = .QueueGuilds[0];
+
+	deletearray .QueueGuilds[0],1;
+
+	.QueueCount--;
+
+	return .@gid;
+}
+
+
+
+//==============================================================
+// [10] REGISTRATION UI WINDOW
+//==============================================================
+//
+// PURPOSE:
+// Better registration interface.
+//
+//==============================================================
+
+payon,194,242,4	script	GTW Registration	629,{
+
+	mes "[Guild Throne War]";
+
+	mes "Event Information:";
+	mes "";
+	mes "Required Guild Level:";
+	mes "^00FF00"+.RequiredGuildLevel+"^000000";
+	mes "";
+	mes "Required Online Members:";
+	mes "^00FF00"+.RequiredOnline+"^000000";
+	mes "";
+	mes "Battle Duration:";
+	mes "^00FF00"+.BattleTime+" Minutes^000000";
+
+	next;
+
+	switch(select(
+		"Register Guild",
+		"View Rankings",
+		"View Current Defender",
+		"Cancel"
+	)) {
+
+	case 1:
+		donpcevent "Guild Throne War::OnRegister";
+		break;
+
+	case 2:
+		callshop "GTW Rankings",1;
+		break;
+
+	case 3:
+		mes "Current Defender:";
+		mes getguildname(.DefenderGuild);
+		close;
+	}
+
+	close;
+}
+
+
+
+//==============================================================
+// ADDITIONAL PROFESSIONAL IMPROVEMENTS
+//==============================================================
+//
+// RECOMMENDED FOR HIGH POPULATION SERVERS
+//
+//==============================================================
+//
+// [11] AFK DETECTION
+//      Kick inactive players after X minutes.
+//
+// [12] AUTO BALANCER
+//      Balance guilds by member count.
+//
+// [13] DAMAGE LOGS
+//      Full battle analytics.
+//
+// [14] MVP REWARD SYSTEM
+//      Top damage player rewards.
+//
+// [15] LIVE SCOREBOARD
+//      Real-time UI rankings.
+//
+// [16] DISCORD WEBHOOK
+//      Automatic event announcements.
+//
+// [17] WEB CONTROL PANEL
+//      Register through website.
+//
+// [18] INSTANCE-BASED GTW
+//      Multiple simultaneous GTW rooms.
+//
+// [19] ANTI FEED SYSTEM
+//      Detect intentional deaths.
+//
+// [20] STREAM MODE
+//      Observer camera NPC.
+//
+// [21] GUILD READY CHECK
+//      Confirm all members ready.
+//
+// [22] BATTLE BUFF SYSTEM
+//      Event-exclusive buffs.
+//
+// [23] SEASON SYSTEM
+//      Monthly champions.
+//
+// [24] CHAMPION STATUES
+//      Spawn winner statue in town.
+//
+// [25] HALL OF FAME
+//      Permanent records.
+//
+//==============================================================

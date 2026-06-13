@@ -34,6 +34,7 @@
 #include "pc_groups.hpp"
 #include "pet.hpp"
 #include "./skills/skill_impl.hpp"
+#include "skill.hpp"
 
 using namespace rathena;
 
@@ -2046,6 +2047,17 @@ int64 battle_calc_damage(block_list *src,block_list *bl,struct Damage *d,int64 d
 
 		if (md && md->damagetaken != 100)
 			damage = i64max(damage * md->damagetaken / 100, 1);
+	}
+
+	if (skill_id) {
+		auto it = skill_adjustment_db.find(skill_id);
+		if (it != skill_adjustment_db.end()) {
+			int32 rate = it->second;
+			damage += damage * rate / 100;
+
+			if (damage < 0)
+				damage = 0;
+		}
 	}
 	
 	if (tsc != nullptr && !tsc->empty()) {
@@ -4740,8 +4752,8 @@ static void battle_attack_sc_bonus(struct Damage* wd, block_list *src, block_lis
 #endif
 		if (sc->getSCE(SC_SPIRIT)) {
 			if (skill_id == AS_SONICBLOW && sc->getSCE(SC_SPIRIT)->val2 == SL_ASSASIN) {
-				ATK_ADDRATE(wd->damage, wd->damage2, map_flag_gvg2(src->m) ? 25 : 100); //+25% dmg on woe/+100% dmg on nonwoe
-				RE_ALLATK_ADDRATE(wd, map_flag_gvg2(src->m) ? 25 : 100); //+25% dmg on woe/+100% dmg on nonwoe
+				ATK_ADDRATE(wd->damage, wd->damage2, map_flag_gvg2(src->m) ? 10 : 25); //+25% dmg on woe/+100% dmg on nonwoe
+				RE_ALLATK_ADDRATE(wd, map_flag_gvg2(src->m) ? 10 : 25); //+25% dmg on woe/+100% dmg on nonwoe
 			} else if (skill_id == CR_SHIELDBOOMERANG && sc->getSCE(SC_SPIRIT)->val2 == SL_CRUSADER) {
 				ATK_ADDRATE(wd->damage, wd->damage2, 100);
 				RE_ALLATK_ADDRATE(wd, 100);
@@ -5386,18 +5398,18 @@ static void battle_calc_weapon_final_atk_modifiers(struct Damage* wd, block_list
 	}
 
 	if( sc ) {
-		//SC_FUSION hp penalty [Komurka]
-		if (sc->getSCE(SC_FUSION)) {
-			uint32 hp = sstatus->max_hp;
+		// //SC_FUSION hp penalty [Komurka]
+		// if (sc->getSCE(SC_FUSION)) {
+		// 	uint32 hp = sstatus->max_hp;
 
-			if (sd && tsd) {
-				hp = hp / 13;
-				if (((int64)sstatus->hp * 100) <= ((int64)sstatus->max_hp * 20))
-					hp = sstatus->hp;
-			} else
-				hp = 2*hp/100; //2% hp loss per hit
-			status_zap(src, hp, 0);
-		}
+		// 	if (sd && tsd) {
+		// 		hp = hp / 13;
+		// 		if (((int64)sstatus->hp * 100) <= ((int64)sstatus->max_hp * 20))
+		// 			hp = sstatus->hp;
+		// 	} else
+		// 		hp = 2*hp/100; //2% hp loss per hit
+		// 	status_zap(src, hp, 0);
+		// }
 		if (sc->getSCE(SC_VIGOR))
 			status_zap(src, sc->getSCE(SC_VIGOR)->val2, 0);
 		// Only affecting non-skills
@@ -8286,6 +8298,16 @@ int32 battle_check_target( const block_list* src, const block_list* target, int3
 	if (flag&BCT_WOS && (src == target || s_bl == target))
 		return -1;
 
+	if ( s_bl->type == BL_PC && t_bl->type == BL_MOB ) {
+		const map_session_data *sd = BL_CAST( BL_PC, s_bl );
+		struct map_data *mapdata = map_getmapdata(m);
+		char output[128];
+		sprintf(output, "$koe_%s", mapindex_id2name(sd->mapindex));
+		if ( ( ( ( (TBL_MOB*)target )->mob_id == 28003 || ( (TBL_MOB*)target )->mob_id == 28004 ) && mapdata->getMapFlag(MF_KINGOFEMP) ) &&
+			( sd->status.guild_id == mapreg_readreg( add_str(output) ) || battle_getcurrentskill(src) > 0 ) )
+		return 0;
+	}
+	
 	if ( s_bl->type == BL_PC ) {
 		switch( t_bl->type ) {
 			case BL_MOB: // Source => PC, Target => MOB
@@ -9302,6 +9324,70 @@ static const struct _battle_data {
 	{ "enable_bonus_map_drops",             &battle_config.enable_bonus_map_drops,          1,      0,      1,              },
 	{ "hide_cloaked_units",                 &battle_config.hide_cloaked_units,              0,      0,      BL_ALL,         },
 
+	{ "autobattle.autoheal",				&battle_config.autobattle_autoheal,				1,		0,		1,				},
+	{ "autobattle.autopotion",				&battle_config.autobattle_autopotion,			1,		0,		1,				},
+	{ "autobattle.sittorest",				&battle_config.autobattle_sittorest,			1,		0,		1,				},
+	{ "autobattle.attackskill",				&battle_config.autobattle_attackskill,			1,		0,		1,				},
+	{ "autobattle.buffskill",				&battle_config.autobattle_buffskill,			1,		0,		1,				},
+	{ "autobattle.buffitems",				&battle_config.autobattle_buffitems,			1,		0,		1,				},
+	{ "autobattle.teleport",				&battle_config.autobattle_teleport,				1,		0,		1,				},
+	{ "autobattle.teleport_mvp",			&battle_config.autobattle_teleport_mvp,			1,		0,		1,				},
+	{ "autobattle.pickup",					&battle_config.autobattle_pickup,				1,		0,		1,				},
+	{ "autobattle.prefixname",				&battle_config.autobattle_prefixname,			1,		0,		1,				},
+	{ "autobattle.hateffect",				&battle_config.autobattle_hateffect,			1,		0,		1,				},
+	{ "autobattle.pdetection",				&battle_config.autobattle_pdetection,			15,     1,      30,      		},
+	{ "autobattle.mselection",				&battle_config.autobattle_mselection,			1,		0,		1,				},
+	{ "autobattle.mdetection",				&battle_config.autobattle_mdetection,			15,     1,      30,      		},
+	{ "autobattle.pickup_delay",			&battle_config.autobattle_pickup_delay,			0,   	0,		INT_MAX,      	},
+	{ "autobattle.move_min",				&battle_config.autobattle_move_min,				7,      1,      20,      		},
+	{ "autobattle.move_max",				&battle_config.autobattle_move_max,				7,      1,      20,      		},
+	{ "autobattle.movetype",				&battle_config.autobattle_movetype,				0,		0,		2,				},
+	{ "autobattle.askill_delay",			&battle_config.autobattle_askill_delay,			500,	0,		INT_MAX,		},
+	{ "autobattle.bskill_delay",			&battle_config.autobattle_bskill_delay,			500,	0,		INT_MAX,		},
+	{ "autobattle.drop_ratio",				&battle_config.autobattle_drop_ratio,			100,	0,		INT_MAX,		},
+	{ "autobattle.exp_ratio",				&battle_config.autobattle_exp_ratio,			100,	0,		INT_MAX,		},
+	{ "autobattle.allow_town",				&battle_config.autobattle_allow_town,			1,		0,		1,				},
+	{ "autobattle.allow_pvp",				&battle_config.autobattle_allow_pvp,			1,		0,		1,				},
+	{ "autobattle.allow_gvg",				&battle_config.autobattle_allow_gvg,			1,		0,		1,				},
+	{ "autobattle.allow_bg",				&battle_config.autobattle_allow_bg,				1,		0,		1,				},
+	{ "autobattle.battery_system",			&battle_config.autobattle_battery_system,		0,		0,		1,				},
+	{ "autobattle.timer",					&battle_config.autobattle_timer,				250,	25,		INT_MAX,		},
+	{ "autobattle.iplimit",					&battle_config.autobattle_iplimit,				0,		0,		INT_MAX,		},
+	{ "autobattle.gepardlimit",				&battle_config.autobattle_gepardlimit,			0,		0,		INT_MAX,		},
+	{ "autobattle.battleoffline_system",	&battle_config.autobattle_battleoffline_system,	0,		0,		1,				},
+	{ "autobattle.loot_range",				&battle_config.autobattle_loot_range,			1,		0,		1,				},
+	{ "autobattle.daily_limit",				&battle_config.autobattle_daily_limit,			0,		0,		1,				},
+	{ "autoslave.teleport",					&battle_config.autoslave_teleport,				0,		0,		1,				},
+	{ "autobattle.vip_drop_ratio",			&battle_config.autobattle_vip_drop_ratio,		-100,	0,		INT_MAX,		},
+	{ "autobattle.vip_exp_ratio",			&battle_config.autobattle_vip_exp_ratio,		-100,	0,		INT_MAX,		},
+
+	{ "sd_freeze_active",                   &battle_config.sd_freeze_active,                0,      0,      1,              },
+	{ "sd_freeze",                          &battle_config.sd_freeze,                       0,      0,      10000,          },
+	{ "sd_freeze_duration",                 &battle_config.sd_freeze_duration,              0,      0,      10000,          },
+	{ "ct_freeze_active",                   &battle_config.ct_freeze_active,                0,      0,      1,              },
+	{ "ct_freeze",                          &battle_config.ct_freeze,                       0,      0,      10000,          },
+	{ "ct_freeze_duration",                 &battle_config.ct_freeze_duration,              0,      0,      10000,          },
+
+	// MvP and Mini-Boss Card Ad and Log System [Bad]
+	{ "announcement_and_log_system",        &battle_config.announcement_and_log_system,     1,      0,      1,              },
+	{ "mvp_card_announce_system",           &battle_config.mvp_card_announce_system,        1,      0,      1,              },
+	{ "mvp_card_announce",                  &battle_config.mvp_card_announce,               1,      0,      1,              },
+	{ "dropped_mvp_card_log",               &battle_config.dropped_mvp_card_log,            1,      0,      1,              },
+	{ "set_drop_announce_color",            &battle_config.set_drop_announce_color,         0xFFBB00,      0,INT_MAX,       },
+	{ "mini_boss_card_announce_system",     &battle_config.mini_boss_card_announce_system,  1,      0,      1,              },
+	{ "mini_boss_card_announce",            &battle_config.mini_boss_card_announce,         1,      0,      1,              },
+	{ "dropped_mini_boss_card_log",         &battle_config.dropped_mini_boss_card_log,      1,      0,      1,              },
+	{ "set_drop_card_announce_color",       &battle_config.set_drop_card_announce_color,    0xFFBB00,      0,INT_MAX,       },
+
+	{ "extended_vending",					&battle_config.extended_vending,				1,		0,		1,				},
+	{ "show_broadcast_info",				&battle_config.show_broadcast_info,				1,		0,		1,				},
+	{ "show_item_vending",					&battle_config.show_item_vending,				1,		0,		1,				},
+	{ "ex_vending_info",					&battle_config.ex_vending_info,					1,		0,		1,				},
+	{ "ex_vending_report",					&battle_config.ex_vending_report,				1,		0,		1,				},
+	{ "ex_buying_bound",					&battle_config.ex_buying_bound,					1,		0,		1,				},
+	{ "item_zeny",							&battle_config.item_zeny,						0,		0,		INT32_MAX,		},
+	{ "item_cash",							&battle_config.item_cash,						0,		0,		INT32_MAX,		},
+
 #include <custom/battle_config_init.inc>
 };
 
@@ -9589,6 +9675,28 @@ int32 battle_config_read(const char* cfgName)
 					*symbol != '$' && // symbol of guild chat
 					*symbol != atcommand_symbol)
 					charcommand_symbol = *symbol;
+			}else if (strcmpi(w1, "fly_wing_ids") == 0) {
+				char tmp[128];
+				safestrncpy(tmp, w2, sizeof(tmp));
+			
+				char* token = strtok(tmp, ",");
+				battle_config.fly_wing_ids_count = 0;
+			
+				while (token && battle_config.fly_wing_ids_count < 30) {
+					battle_config.fly_wing_ids[battle_config.fly_wing_ids_count++] = atoi(token);
+					token = strtok(NULL, ",");
+				}
+			}else if (strcmpi(w1, "fly_wing_consume_ids") == 0) {
+				char tmp[128];
+				safestrncpy(tmp, w2, sizeof(tmp));
+			
+				char* token = strtok(tmp, ",");
+				battle_config.fly_wing_consume_count = 0;
+			
+				while (token && battle_config.fly_wing_consume_count < 30) {
+					battle_config.fly_wing_consume_ids[battle_config.fly_wing_consume_count++] = atoi(token);
+					token = strtok(NULL, ",");
+				}
 			}else if( battle_set_value(w1, w2) == 0 )
 				ShowWarning("Unknown setting '%s' in file %s\n", w1, cfgName);
 		}

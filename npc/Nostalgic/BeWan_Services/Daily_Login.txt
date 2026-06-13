@@ -1,0 +1,185 @@
+/*
+CREATE TABLE IF NOT EXISTS `daily_rewards` (
+	`id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`aid` INT(11) UNSIGNED NOT NULL,
+	`status` TINYINT(11) UNSIGNED NOT NULL DEFAULT '1',
+	`time` varchar(255) NOT NULL,
+	PRIMARY KEY (`id`),
+	KEY (`aid`)
+) ENGINE=MyISAM;
+*/
+
+prontera,141,181,5	script	Daily Rewards#1	4_F_KAFRA9,{
+	doevent "daily_login_reward::OnTalk";
+}
+
+
+-	script	daily_login_reward	-1,{
+
+function reward_list;
+	
+function	reward_list	{
+
+.@give_reward = getarg( 0,0 );
+.@argcount = getargcount() - 2;
+		
+mes "Today rewards:";
+if ( .@argcount >= 1 ) {
+	for ( .@i = 1; .@i <= .@argcount; .@i += 2 ) {
+		.@item_id = getarg( .@i,0 );
+		.@amount = getarg( .@i+1,0 );
+				
+		mes .@amount +"x "+getitemname( .@item_id );
+		if ( .@give_reward )
+			getitem getarg( .@i ),getarg( .@i + 1 );
+}
+			
+if ( .@give_reward )
+	#online_reward_dayofyear = .dayofyear;
+	.@give_reward = ( #online_reward_dayofyear != .dayofyear && .dayofyear > 0 && #online_minute >= .minute );
+				
+if ( !.@give_reward && #online_minute && #online_minute < .minute ) {
+	mes " ";
+	mes "You still need to accumulate another total of "+( .minute - #online_minute )+" minute(s) before you can get the rewards.";
+}
+
+}else{
+	mes "> none";
+}
+	return;
+}
+	
+OnInit:
+// duration to count as completed daily login.
+.minute = 60;
+
+// check interval
+.interval_check_sec = 60;
+
+// idle stop reward
+.idle_sec = 600;
+
+// cutin name format.
+.cutin_name_format$ = "login_day_%02d";
+
+.npc_name$ = strnpcinfo(0);
+bindatcmd "daily",.npc_name$+"::OnTalk";
+		
+OnHour00:
+	.today = atoi( gettimestr( "%Y%m%d",10 ) );
+	.dayofyear = gettime(8);
+	.@is_reset = ( gettime(5) == 1 );
+	if ( .@is_reset ) {
+		query_sql( "UPDATE `daily_rewards` SET `status` = 2 WHERE `status` = 1" );
+	}
+		
+	callsub( L_restart, .@is_reset );
+	end;
+		
+OnTalk:
+query_sql( "SELECT COUNT(`aid`) FROM `daily_rewards` WHERE `aid` = "+getcharid(3)+" AND `status` <> 2",.@size );
+		
+if ( .cutin_name_format$ != "" )
+	//cutin sprintf( .cutin_name_format$,.@size ),4;
+			
+mes "[Daily Rewards]";
+mes "Total Daily Login = "+.@size+" Day(s)";
+mes " ";
+next;
+if ( select( "Claim Rewards","Cancel" ) == 1 ) {
+	.@give_reward = ( #online_reward_dayofyear != .dayofyear && .dayofyear > 0 && #online_minute >= .minute );
+				
+mes "[Daily Rewards]";
+switch( .@size ) {
+	case 0:
+		mes "You have to reach the minimum online playtime to complete the daily cycle.";
+		mes " ";
+	// case X: reward_list( <itemid>,<amount>,...,<item>,<amount> ); break;
+	case 1: reward_list( .@give_reward, 33021,5 ); break;	// ygg box 5x
+	case 2: reward_list( .@give_reward, 33022,5 ); break;	// ygg seed box 5x
+	case 3: reward_list( .@give_reward, 33024,5 ); break;	// resentment box 5x
+	case 4: reward_list( .@give_reward, 33023,5 ); break;	// aloevera box 5x
+	case 5: reward_list( .@give_reward, 33025,5 ); break;	// box of thunder box 5x
+	case 6: reward_list( .@give_reward, 33017,10 ); break;	// credit 10x
+	case 7: reward_list( .@give_reward, 33046,1 ); break;	// NostalgicRO supplies box 1x
+	case 8: reward_list( .@give_reward, 604,10 ); break;	// dead branch 10x
+	case 9: reward_list( .@give_reward, 12103,10 ); break;	// bloody branch 10x	
+	case 10: reward_list( .@give_reward, 7139,10); break;	// glistening coat 10x
+	case 11: reward_list( .@give_reward, 13828,10 ); break;	// resist box V1 10x
+	case 12: reward_list( .@give_reward, 13829,10 ); break;	// resist box V2 10x
+	case 13: reward_list( .@give_reward, 33017,10 ); break;	// Credit 10x
+	case 14: reward_list( .@give_reward, 33047,1 ); break;	// NostalgicRO Event Box 1x
+	case 15: reward_list( .@give_reward, 969,100 ); break;	// Gold 100x
+	case 16: reward_list( .@give_reward, 12221,10 ); break;	// Megaphone 10x
+	case 17: reward_list( .@give_reward, 33017,10 ); break;	// Credit 10x
+	case 18: reward_list( .@give_reward, 7776,10 ); break;	// Gympass 10x
+	case 19: reward_list( .@give_reward, 7620,5 ); break;	// Enriched Oridecon 5x
+	case 20: reward_list( .@give_reward, 7619,5 ); break;	// Enriched Elunium 5x
+	case 21: reward_list( .@give_reward, 33045,1 ); break;	// Random Castle Drop Box 1x
+	case 22: reward_list( .@give_reward, 33018,1 ); break;	// Silver Credit 1x
+	case 23: reward_list( .@give_reward, 33046,1 ); break;	// NostalgicRO Supplies Box 1x
+	case 24: reward_list( .@give_reward, 33047,1 ); break;	// NostalgicRO Event Box 1x
+	case 25: reward_list( .@give_reward, 33045,1 ); break;		// Random Castle Drop Box 1x
+	case 26: reward_list( .@give_reward, 33018,2 ); break;		// Silver Credit 2x
+	case 27: reward_list( .@give_reward, 33046,1 ); break;		// NostalgicRO Supplies Box 1x
+	case 28: reward_list( .@give_reward, 33047,1 ); break;		// NostalgicRO Event Box 1x
+	case 29: reward_list( .@give_reward, 19596,1 ); break;		// Costume Flapping Angel Wings 1x
+	case 30: reward_list( .@give_reward, 12216,5,12215,5 ); break;		// Agi and Blessing Scroll 5x
+	case 31: reward_list( .@give_reward, 6234,1 ); break;		// +7 Refine Ticket 1x
+	default:
+		mes "No rewards available for this day.";
+		close;
+}
+				
+if ( .@size && #online_reward_dayofyear == .dayofyear ) {
+	next;
+	mes "[Daily Rewards]";
+	mes "You've claimed the rewards for "+.@size+" day(s), try again tomorrow.";
+}
+
+}
+close;
+		
+OnUpdate:
+if ( checkidle() < .idle_sec ) {
+	#online_minute++;
+			
+	if ( #online_minute >= .minute && #online_reward_dayofyear != .today ) {
+		query_sql( "INSERT INTO `daily_rewards` ( `aid`,`time` ) VALUES ( "+getcharid(3)+",NOW() )" );
+		dispbottom "You have completed daily login for today.";
+	}else{
+		dispbottom "Daily Reward start counting # currently "+#online_minute+"/"+.minute+" minutes.";
+	}
+}
+		
+OnPCLoginEvent:
+if ( #online_reward_dayofyear != .dayofyear && .dayofyear > 0 ) {
+	if ( #online_reward_dayofyear ) {
+		#online_reward_dayofyear = 0;
+		#online_minute = 0;
+	}
+	if ( #online_minute < .minute ) {
+		deltimer .npc_name$+"::OnUpdate";
+		addtimer ( .interval_check_sec * 1000 ),.npc_name$+"::OnUpdate";
+	}
+			
+	// if ( .cutin_name_format$ != "" ) {
+	// 	query_sql( "SELECT COUNT(`aid`) FROM `daily_rewards` WHERE `aid` = "+getcharid(3)+" AND `status` <> 2",.@size );
+	// 	cutin sprintf( .cutin_name_format$,.@size ),4;
+	// }
+}
+end;
+		
+L_restart:
+	.@value = getarg( 0,0 );
+		
+	query_sql( "SELECT `account_id` FROM `char` WHERE `online` = 1",.@aid );
+	.@aid_size = getarraysize( .@aid );
+	for ( .@i = 0; .@i < .@aid_size; .@i++ )
+		if ( attachrid( .@aid[.@i] ) ) {
+			#online_minute = 0;
+			doevent .npc_name$+"::OnPCLoginEvent";
+		}
+end;
+
+}

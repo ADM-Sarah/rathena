@@ -1,0 +1,511 @@
+//============================================================
+// PVP WARPER ONLY + RANDOM SPAWN FIXED
+// + MAIN CHARACTER ONLY PER ACCOUNT
+// + SAME IP / SAME DEVICE BLOCK ALL PVP ROOMS
+// + PVP KILL POINT
+// + SAME VICTIM SPAM PROTECTION
+// + GM MENU RESET ALL / SINGLE PLAYER PVP POINTS
+//============================================================
+
+function	script	F_IsPvpMap	{
+	.@m$ = getarg(0);
+	if (
+		.@m$ == "izlude2" ||
+		.@m$ == "guild_vs1" ||
+		.@m$ == "guild_vs2" ||
+		.@m$ == "guild_vs3" ||
+		.@m$ == "guild_vs4" ||
+		.@m$ == "guild_vs5"
+	) return 1;
+	return 0;
+}
+
+//============================================================
+// PVP WARPER
+//============================================================
+valmorra,165,134,5	script	PVP ROOM	11013,{
+
+	mes "[PVP Warper]";
+	mes "Your PVP Kill Points: ^00FF00" + #PVP_KillPoints + "^000000";
+	mes "";
+	mes "^FF0000Anti-Abuse System:^000000";
+	mes "Only your registered main character";
+	mes "can enter PVP rooms.";
+	mes "Same IP / same device cannot enter";
+	mes "any PVP room at the same time.";
+	mes "";
+	mes "Choose a room:";
+	next;
+
+	.@ptcnt    = getmapusers("izlude2");
+	.@dmcnt    = getmapusers("guild_vs3");
+	.@gvgcnt   = getmapusers("guild_vs2");
+	.@p1cnt    = getmapusers("guild_vs5");
+	.@champcnt = getmapusers("guild_vs1");
+	.@sinxcnt  = getmapusers("guild_vs4");
+
+	.@menu$ =
+		"Party PvP Room ["+.@ptcnt+"]:" +
+		"Deathmatch Room ["+.@dmcnt+"]:" +
+		"Guild vs Guild Room ["+.@gvgcnt+"]:" +
+		"1vs1 Room ["+.@p1cnt+"]:" +
+		"Champion vs Champion ["+.@champcnt+"]:" +
+		"SinX vs SinX ["+.@sinxcnt+"]:";
+
+	if (getgroupid() >= 99)
+		.@menu$ += "^FF0000GM Menu^000000:";
+
+	.@menu$ += "Cancel:";
+
+	.@sel = select(.@menu$);
+
+	if (getgroupid() >= 99 && .@sel == 7) {
+		mes "[PVP GM Menu]";
+		mes "Choose action:";
+		next;
+
+		.@gm = select(
+			"Reset ALL Player PVP Points:" +
+			"Reset SINGLE Player PVP Points:" +
+			"Cancel"
+		);
+
+		if (.@gm == 1) {
+			mes "[PVP GM Menu]";
+			mes "^FF0000Reset ALL player PVP Kill Points?^000000";
+			next;
+
+			if (select("^FF0000Yes, Reset All^000000:Cancel") == 1) {
+				query_sql "DELETE FROM `char_reg_num` WHERE `key` = '#PVP_KillPoints'";
+				mes "[PVP GM Menu]";
+				mes "^00FF00All PVP Kill Points have been reset successfully.^000000";
+				close;
+			}
+
+			mes "[PVP GM Menu]";
+			mes "Reset cancelled.";
+			close;
+		}
+
+		if (.@gm == 2) {
+			mes "[PVP GM Menu]";
+			mes "Enter player character name:";
+			next;
+			input .@name$;
+
+			query_sql "SELECT `char_id` FROM `char` WHERE `name` = '" + escape_sql(.@name$) + "' LIMIT 1", .@cid;
+
+			if (!.@cid) {
+				mes "[PVP GM Menu]";
+				mes "^FF0000Character not found.^000000";
+				close;
+			}
+
+			query_sql "DELETE FROM `char_reg_num` WHERE `char_id` = " + .@cid + " AND `key` = '#PVP_KillPoints'";
+
+			mes "[PVP GM Menu]";
+			mes "^00FF00PVP Kill Points reset successfully.^000000";
+			mes "Player: ^0000FF" + .@name$ + "^000000";
+			close;
+		}
+
+		close;
+	}
+
+	switch(.@sel) {
+	case 1:
+		if (getcharid(1) <= 0) {
+			mes "[PVP Warper]";
+			mes "You need a Party to enter Party PvP.";
+			close;
+		}
+		callsub S_CheckMainCharacter;
+		callsub S_CheckPvpAbuseAllRooms;
+		callsub S_RandomWarp, "izlude2";
+		close;
+
+	case 2:
+		callsub S_CheckMainCharacter;
+		callsub S_CheckPvpAbuseAllRooms;
+		callsub S_RandomWarp, "guild_vs3";
+		close;
+
+	case 3:
+		if (getcharid(2) <= 0) {
+			mes "[PVP Warper]";
+			mes "You need a Guild to enter GvG Room.";
+			close;
+		}
+		callsub S_CheckMainCharacter;
+		callsub S_CheckPvpAbuseAllRooms;
+		callsub S_RandomWarp, "guild_vs2";
+		close;
+
+	case 4:
+		callsub S_CheckMainCharacter;
+		callsub S_CheckPvpAbuseAllRooms;
+		callsub S_RandomWarp, "guild_vs5";
+		close;
+
+	case 5:
+		if (Class != Job_Champion) {
+			mes "[PVP Warper]";
+			mes "Champion only.";
+			close;
+		}
+		callsub S_CheckMainCharacter;
+		callsub S_CheckPvpAbuseAllRooms;
+		callsub S_RandomWarp, "guild_vs1";
+		close;
+
+	case 6:
+		if (Class != Job_Assassin_Cross) {
+			mes "[PVP Warper]";
+			mes "Assassin Cross only.";
+			close;
+		}
+		callsub S_CheckMainCharacter;
+		callsub S_CheckPvpAbuseAllRooms;
+		callsub S_RandomWarp, "guild_vs4";
+		close;
+
+	default:
+		close;
+	}
+
+S_CheckMainCharacter:
+
+	if (getgroupid() >= 99)
+		return;
+
+	if (#PVP_MainCharID <= 0) {
+		#PVP_MainCharID = getcharid(0);
+		#PVP_MainCharName$ = strcharinfo(0);
+
+		dispbottom "[PVP System] This character has been registered as your main PVP character.";
+		return;
+	}
+
+	if (#PVP_MainCharID != getcharid(0)) {
+		mes "[PVP Warper]";
+		mes "^FF0000Access denied.^000000";
+		mes "Only your registered main PVP character";
+		mes "can enter PVP rooms.";
+		mes "";
+		mes "Registered Main:";
+		mes "^0000FF" + #PVP_MainCharName$ + "^000000";
+		close;
+	}
+
+	return;
+
+S_CheckPvpAbuseAllRooms:
+
+	if (getgroupid() >= 99)
+		return;
+
+	.@myip$ = getcharip();
+	.@myrid = getcharid(3); // Store your Account ID safely before detaching
+
+	// Gepard unique device ID
+	.@myuid$ = "";
+	.@myuid$ = get_unique_id();
+	if (#PVP_DeviceID$ == "")
+		#PVP_DeviceID$ = .@myuid$;
+
+	setarray .@maps$[0],
+		"izlude2",
+		"guild_vs1",
+		"guild_vs2",
+		"guild_vs3",
+		"guild_vs4",
+		"guild_vs5";
+
+	for (.@m = 0; .@m < getarraysize(.@maps$); .@m++) {
+
+		// Clear array explicitly to avoid leaks between map iterations
+		cleararray .@aid[0], 0, 128; 
+		.@count = getmapunits(BL_PC, .@maps$[.@m], .@aid);
+
+		for (.@i = 0; .@i < .@count; .@i++) {
+
+			// Skip if it's the player trying to warp
+			if (.@aid[.@i] == .@myrid)
+				continue;
+
+			// Try attaching to the target player. If it fails, skip safely.
+			if (!attachrid(.@aid[.@i]))
+				continue;
+
+			.@target_ip$ = getcharip();
+			.@target_uid$ = #PVP_DeviceID$;
+			.@target_name$ = strcharinfo(0);
+
+			// Always detach safely
+			detachrid;
+
+			// Re-attach back to the original warping player using the stored variable
+			if (!attachrid(.@myrid)) {
+				// Safety fallback: if original player disconnected mid-check, stop script execution
+				end; 
+			}
+
+			if (.@target_ip$ == .@myip$) {
+				mes "[PVP Warper]";
+				mes "^FF0000Access denied.^000000";
+				mes "Someone from your IP is already";
+				mes "inside a PVP room.";
+				mes "";
+				mes "Detected Player:";
+				mes "^0000FF" + .@target_name$ + "^000000";
+				close;
+			}
+
+			if (.@myuid$ != "" && .@target_uid$ != "" && .@target_uid$ == .@myuid$) {
+				mes "[PVP Warper]";
+				mes "^FF0000Access denied.^000000";
+				mes "Someone from your device is already";
+				mes "inside a PVP room.";
+				mes "";
+				mes "Detected Player:";
+				mes "^0000FF" + .@target_name$ + "^000000";
+				close;
+			}
+		}
+	}
+
+	return;
+
+S_RandomWarp:
+	.@map$ = getarg(0);
+
+	if (.@map$ == "izlude2") {
+		switch(rand(1,15)) {
+		case 1: warp .@map$,127,254; end;
+		case 2: warp .@map$,101,250; end;
+		case 3: warp .@map$,127,230; end;
+		case 4: warp .@map$,111,201; end;
+		case 5: warp .@map$,80,205; end;
+		case 6: warp .@map$,86,161; end;
+		case 7: warp .@map$,51,164; end;
+		case 8: warp .@map$,125,125; end;
+		case 9: warp .@map$,156,126; end;
+		case 10: warp .@map$,92,132; end;
+		case 11: warp .@map$,169,184; end;
+		case 12: warp .@map$,175,214; end;
+		case 13: warp .@map$,191,209; end;
+		case 14: warp .@map$,202,210; end;
+		default: warp .@map$,142,201; end;
+		}
+	}
+
+	if (.@map$ == "guild_vs3") {
+		switch(rand(1,17)) {
+		case 1: warp .@map$,44,54; end;
+		case 2: warp .@map$,14,49; end;
+		case 3: warp .@map$,23,35; end;
+		case 4: warp .@map$,25,23; end;
+		case 5: warp .@map$,48,15; end;
+		case 6: warp .@map$,64,22; end;
+		case 7: warp .@map$,75,32; end;
+		case 8: warp .@map$,82,49; end;
+		case 9: warp .@map$,71,49; end;
+		case 10: warp .@map$,74,63; end;
+		case 11: warp .@map$,71,75; end;
+		case 12: warp .@map$,58,57; end;
+		case 13: warp .@map$,49,82; end;
+		case 14: warp .@map$,31,74; end;
+		case 15: warp .@map$,67,66; end;
+		case 16: warp .@map$,33,66; end;
+		default: warp .@map$,60,32; end;
+		}
+	}
+
+	if (.@map$ == "guild_vs2") {
+		switch(rand(1,13)) {
+		case 1: warp .@map$,6,51; end;
+		case 2: warp .@map$,79,50; end;
+		case 3: warp .@map$,50,9; end;
+		case 4: warp .@map$,50,90; end;
+		case 5: warp .@map$,49,84; end;
+		case 6: warp .@map$,10,49; end;
+		case 7: warp .@map$,21,49; end;
+		case 8: warp .@map$,49,14; end;
+		case 9: warp .@map$,62,41; end;
+		case 10: warp .@map$,72,48; end;
+		case 11: warp .@map$,90,49; end;
+		case 12: warp .@map$,80,50; end;
+		default: warp .@map$,41,33; end;
+		}
+	}
+
+	if (.@map$ == "guild_vs5") {
+		switch(rand(1,12)) {
+		case 1: warp .@map$,22,49; end;
+		case 2: warp .@map$,38,48; end;
+		case 3: warp .@map$,42,70; end;
+		case 4: warp .@map$,61,68; end;
+		case 5: warp .@map$,64,52; end;
+		case 6: warp .@map$,65,37; end;
+		case 7: warp .@map$,47,28; end;
+		case 8: warp .@map$,32,36; end;
+		case 9: warp .@map$,57,50; end;
+		case 10: warp .@map$,45,58; end;
+		case 11: warp .@map$,59,32; end;
+		default: warp .@map$,60,72; end;
+		}
+	}
+
+	if (.@map$ == "guild_vs1") {
+		switch(rand(1,8)) {
+		case 1: warp .@map$,15,49; end;
+		case 2: warp .@map$,49,15; end;
+		case 3: warp .@map$,84,49; end;
+		case 4: warp .@map$,49,84; end;
+		case 5: warp .@map$,27,27; end;
+		case 6: warp .@map$,72,27; end;
+		case 7: warp .@map$,27,72; end;
+		default: warp .@map$,72,72; end;
+		}
+	}
+
+	if (.@map$ == "guild_vs4") {
+		switch(rand(1,8)) {
+		case 1: warp .@map$,22,49; end;
+		case 2: warp .@map$,49,22; end;
+		case 3: warp .@map$,76,49; end;
+		case 4: warp .@map$,49,76; end;
+		case 5: warp .@map$,30,30; end;
+		case 6: warp .@map$,68,30; end;
+		case 7: warp .@map$,30,68; end;
+		default: warp .@map$,68,68; end;
+		}
+	}
+
+	warp "valmorra",171,132;
+	end;
+}
+
+//============================================================
+// PVP CONTROLLER
+//============================================================
+-	script	PVP_CONTROLLER	-1,{
+
+OnInit:
+	.SameVictimLimit = 6;
+	.SameVictimTime = 60;
+	end;
+
+OnPCDieEvent:
+	.@victim_map$ = strcharinfo(3);
+
+	if (!callfunc("F_IsPvpMap", .@victim_map$))
+		end;
+
+	.@victim_aid = getcharid(3);
+	.@victim_name$ = strcharinfo(0);
+	.@killer_rid = killerrid;
+
+	specialeffect2 EF_RESURRECTION;
+	skilleffect "ALL_RESURRECTION", 1;
+	warp "valmorra", 171, 132;
+
+	if (.@killer_rid <= 0)
+		end;
+
+	if (!attachrid(.@killer_rid))
+		end;
+
+	if (!callfunc("F_IsPvpMap", strcharinfo(3)))
+		end;
+
+	if (getgroupid() >= 99)
+		end;
+
+	if (getcharid(3) == .@victim_aid)
+		end;
+
+	.@now = gettimetick(2);
+
+	if (@pvp_last_victim_aid == .@victim_aid && (.@now - @pvp_last_kill_time) <= .SameVictimTime) {
+		@pvp_same_victim_count++;
+	} else {
+		@pvp_last_victim_aid = .@victim_aid;
+		@pvp_same_victim_count = 1;
+	}
+
+	@pvp_last_kill_time = .@now;
+
+	if (@pvp_same_victim_count >= .SameVictimLimit) {
+		announce "[PVP System] " + strcharinfo(0) + " has been removed from PVP for repeatedly killing the same player (" + .@victim_name$ + ").", bc_all, 0xFF0000;
+		dispbottom "PVP abuse detected. Stop killing the same player repeatedly.";
+
+		@pvp_same_victim_count = 0;
+		@pvp_last_victim_aid = 0;
+		@pvp_last_kill_time = 0;
+
+		warp "SavePoint",0,0;
+		end;
+	}
+
+	#PVP_KillPoints += 1;
+	dispbottom "PVP Kill Point +1 | Total: " + #PVP_KillPoints;
+	end;
+}
+
+//============================================================
+// MAPFLAGS
+//============================================================
+izlude2	mapflag	pvp
+izlude2	mapflag	pvp_nocalcrank
+izlude2	mapflag	loadevent
+izlude2	mapflag	nowarpto
+izlude2	mapflag	nowarp
+izlude2	mapflag	noreturn
+izlude2	mapflag	nosave	SavePoint
+izlude2	mapflag	noteleport
+
+guild_vs1	mapflag	pvp
+guild_vs1	mapflag	pvp_nocalcrank
+guild_vs1	mapflag	loadevent
+guild_vs1	mapflag	nowarpto
+guild_vs1	mapflag	nowarp
+guild_vs1	mapflag	noreturn
+guild_vs1	mapflag	nosave	SavePoint
+guild_vs1	mapflag	noteleport
+
+guild_vs2	mapflag	pvp
+guild_vs2	mapflag	pvp_nocalcrank
+guild_vs2	mapflag	loadevent
+guild_vs2	mapflag	nowarpto
+guild_vs2	mapflag	nowarp
+guild_vs2	mapflag	noreturn
+guild_vs2	mapflag	nosave	SavePoint
+guild_vs2	mapflag	noteleport
+
+guild_vs3	mapflag	pvp
+guild_vs3	mapflag	pvp_nocalcrank
+guild_vs3	mapflag	loadevent
+guild_vs3	mapflag	nowarpto
+guild_vs3	mapflag	nowarp
+guild_vs3	mapflag	noreturn
+guild_vs3	mapflag	nosave	SavePoint
+guild_vs3	mapflag	noteleport
+
+guild_vs4	mapflag	pvp
+guild_vs4	mapflag	pvp_nocalcrank
+guild_vs4	mapflag	loadevent
+guild_vs4	mapflag	nowarpto
+guild_vs4	mapflag	nowarp
+guild_vs4	mapflag	noreturn
+guild_vs4	mapflag	nosave	SavePoint
+guild_vs4	mapflag	noteleport
+
+guild_vs5	mapflag	pvp
+guild_vs5	mapflag	pvp_nocalcrank
+guild_vs5	mapflag	loadevent
+guild_vs5	mapflag	nowarpto
+guild_vs5	mapflag	nowarp
+guild_vs5	mapflag	noreturn
+guild_vs5	mapflag	nosave	SavePoint
+guild_vs5	mapflag	noteleport

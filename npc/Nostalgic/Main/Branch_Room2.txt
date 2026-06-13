@@ -1,0 +1,353 @@
+//===== rAthena Script =======================================
+//= Party Branch Room System - SavePoint Fixed (5 Rooms)
+//============================================================
+
+ice2xlake	mapflag	nosave	SavePoint,valmorra,182,128
+ice2xlake	mapflag	nowarp
+ice2xlake	mapflag	nowarpto
+ice2xlake	mapflag	nomemo
+ice2xlake	mapflag	noteleport
+
+ice2xlake2	mapflag	nosave	SavePoint,valmorra,182,128
+ice2xlake2	mapflag	nowarp
+ice2xlake2	mapflag	nowarpto
+ice2xlake2	mapflag	nomemo
+ice2xlake2	mapflag	noteleport
+
+ice2xlake3	mapflag	nosave	SavePoint,valmorra,182,128
+ice2xlake3	mapflag	nowarp
+ice2xlake3	mapflag	nowarpto
+ice2xlake3	mapflag	nomemo
+ice2xlake3	mapflag	noteleport
+
+ice2xlake4	mapflag	nosave	SavePoint,valmorra,182,128
+ice2xlake4	mapflag	nowarp
+ice2xlake4	mapflag	nowarpto
+ice2xlake4	mapflag	nomemo
+ice2xlake4	mapflag	noteleport
+
+ice2xlake5	mapflag	nosave	SavePoint,valmorra,182,128
+ice2xlake5	mapflag	nowarp
+ice2xlake5	mapflag	nowarpto
+ice2xlake5	mapflag	nomemo
+ice2xlake5	mapflag	noteleport
+
+valmorra,185,131,5	script	Branch Room Manager	4_F_RUSGREEN,{
+	.@party_id = getcharid(1);
+
+	mes "[^00BFFFBranch Room Manager^000000]";
+	if (!.@party_id) {
+		mes "You need to be in a ^55FF55Party^000000 to use Branch Room.";
+		close;
+	}
+
+	mes "Party only Branch Room service.";
+	mes "Rental fee: ^FFCC001,000,000,000 zeny^000000";
+	mes "Duration: ^FFCC0060 minutes^000000";
+	mes "If the room is empty for ^FF555515 minutes^000000, it will be reset automatically.";
+	next;
+
+	.@menu$ = "";
+	for (.@i = 1; .@i <= $@branch_room_count; .@i++) {
+		.@map$ = $@branch_room_map$[.@i];
+		.@owner = getvariableofnpc(.owner_party_id[.@i], "Branch Room Controller");
+		.@users = getmapusers(.@map$);
+
+		if (.@owner) {
+			.@ownername$ = getvariableofnpc(.owner_party_name$[.@i], "Branch Room Controller");
+			.@left = getvariableofnpc(.end_time[.@i], "Branch Room Controller") - gettimetick(2);
+			if (.@left < 0) .@left = 0;
+			.@menu$ += "Room "+.@i+" ["+.@ownername$+" | "+callfunc("F_BranchTime2Str", .@left)+" | "+.@users+" player]:";
+		} else {
+			.@menu$ += "Room "+.@i+" [Available]:";
+		}
+	}
+	.@menu$ += "Cancel";
+
+	.@pick = select(.@menu$);
+	if (.@pick > $@branch_room_count)
+		close;
+
+	.@owned_room = 0;
+	for (.@i = 1; .@i <= $@branch_room_count; .@i++) {
+		if (getvariableofnpc(.owner_party_id[.@i], "Branch Room Controller") == .@party_id) {
+			.@owned_room = .@i;
+			break;
+		}
+	}
+
+	if (getvariableofnpc(.owner_party_id[.@pick], "Branch Room Controller") == .@party_id) {
+		warp $@branch_room_map$[.@pick], getvariableofnpc(.warpx, "Branch Room Controller"), getvariableofnpc(.warpy, "Branch Room Controller");
+		close;
+	}
+
+	if (.@owned_room && .@owned_room != .@pick) {
+		mes "[^00BFFFBranch Room Manager^000000]";
+		mes "Your party already owns Room ^55FF55"+.@owned_room+"^000000.";
+		close;
+	}
+
+	if (getvariableofnpc(.owner_party_id[.@pick], "Branch Room Controller")) {
+		mes "[^00BFFFBranch Room Manager^000000]";
+		mes "That room is currently reserved by party:";
+		mes "^FFCC00"+getvariableofnpc(.owner_party_name$[.@pick], "Branch Room Controller")+"^000000";
+		close;
+	}
+
+	if (getpartyleader(.@party_id, 2) != getcharid(0)) {
+		mes "[^00BFFFBranch Room Manager^000000]";
+		mes "Only the ^FF5555Party Leader^000000 can rent a new Branch Room.";
+		close;
+	}
+
+	if (Zeny < getvariableofnpc(.rentcost, "Branch Room Controller")) {
+		mes "[^00BFFFBranch Room Manager^000000]";
+		mes "You do not have enough zeny.";
+		close;
+	}
+
+	mes "[^00BFFFBranch Room Manager^000000]";
+	mes "Rent Room ^55FF55"+.@pick+"^000000 for your party?";
+	mes "Cost: ^FFCC00"+callfunc("F_InsertComma", getvariableofnpc(.rentcost, "Branch Room Controller"))+" zeny^000000";
+	next;
+
+	if (select("Yes:No") == 2)
+		close;
+
+	Zeny -= getvariableofnpc(.rentcost, "Branch Room Controller");
+
+	set getvariableofnpc(.owner_party_id[.@pick], "Branch Room Controller"), .@party_id;
+	set getvariableofnpc(.owner_party_name$[.@pick], "Branch Room Controller"), strcharinfo(1);
+	set getvariableofnpc(.owner_leader_aid[.@pick], "Branch Room Controller"), getcharid(3);
+	set getvariableofnpc(.owner_leader_cid[.@pick], "Branch Room Controller"), getcharid(0);
+	set getvariableofnpc(.start_time[.@pick], "Branch Room Controller"), gettimetick(2);
+	set getvariableofnpc(.end_time[.@pick], "Branch Room Controller"), gettimetick(2) + getvariableofnpc(.timeout_seconds, "Branch Room Controller");
+	set getvariableofnpc(.empty_since[.@pick], "Branch Room Controller"), 0;
+
+	killmonsterall $@branch_room_map$[.@pick];
+	warp $@branch_room_map$[.@pick], getvariableofnpc(.warpx, "Branch Room Controller"), getvariableofnpc(.warpy, "Branch Room Controller");
+
+	announce "[Branch Room] Party '"+strcharinfo(1)+"' rented Room "+.@pick+".", bc_all;
+	close;
+}
+
+-	script	Branch Room Controller	-1,{
+OnInit:
+	.rentcost = 1000000000;
+	.timeout_seconds = 3600;
+	.empty_release_seconds = 900;
+
+	.warpx = 142;
+	.warpy = 139;
+
+	$@branch_room_count = 5;
+	setarray $@branch_room_map$[1],
+		"ice2xlake", "ice2xlake2", "ice2xlake3", "ice2xlake4", "ice2xlake5";
+
+	initnpctimer;
+	end;
+
+OnTimer5000:
+	for (.@i = 1; .@i <= $@branch_room_count; .@i++) {
+		if (!.owner_party_id[.@i])
+			continue;
+
+		.@map$ = $@branch_room_map$[.@i];
+
+		getmapunits BL_PC, .@map$, .@aid_list;
+
+		for (.@j = 0; .@j < getarraysize(.@aid_list); .@j++) {
+			if (!attachrid(.@aid_list[.@j]))
+				continue;
+
+			if (strcharinfo(3) != .@map$) {
+				detachrid;
+				continue;
+			}
+
+			if (getcharid(1) != .owner_party_id[.@i]) {
+				dispbottom "This Branch Room belongs to another party.";
+				warp "SavePoint",0,0;
+			}
+
+			detachrid;
+		}
+	}
+	end;
+
+OnTimer60000:
+	.@now = gettimetick(2);
+
+	for (.@i = 1; .@i <= $@branch_room_count; .@i++) {
+		if (!.owner_party_id[.@i])
+			continue;
+
+		.@map$ = $@branch_room_map$[.@i];
+		.@users = getmapusers(.@map$);
+
+		if (.@now >= .end_time[.@i]) {
+			killmonsterall .@map$;
+			callfunc("F_BranchWarpMapToSavePoint", .@map$);
+			callfunc("F_BranchClearRoom", .@i);
+			continue;
+		}
+
+		if (.@users <= 0) {
+			if (!.empty_since[.@i])
+				.empty_since[.@i] = .@now;
+			else if ((.@now - .empty_since[.@i]) >= .empty_release_seconds) {
+				killmonsterall .@map$;
+				callfunc("F_BranchClearRoom", .@i);
+			}
+		} else {
+			.empty_since[.@i] = 0;
+		}
+	}
+	end;
+}
+
+-	script	Branch Room Helper	4_F_RUSGREEN,{
+	.@map$ = strcharinfo(3);
+	.@slot = 0;
+
+	for (.@i = 1; .@i <= $@branch_room_count; .@i++) {
+		if (.@map$ == $@branch_room_map$[.@i]) {
+			.@slot = .@i;
+			break;
+		}
+	}
+
+	if (!.@slot) {
+		mes "[Branch Helper]";
+		mes "Room data not found.";
+		close;
+	}
+
+	.@owner = getvariableofnpc(.owner_party_id[.@slot], "Branch Room Controller");
+	.@party = getcharid(1);
+
+	mes "[^00BFFFBranch Helper^000000]";
+	if (.@owner) {
+		.@left = getvariableofnpc(.end_time[.@slot], "Branch Room Controller") - gettimetick(2);
+		if (.@left < 0) .@left = 0;
+
+		mes "Room: ^55FF55"+.@slot+"^000000";
+		mes "Owner Party: ^FFCC00"+getvariableofnpc(.owner_party_name$[.@slot], "Branch Room Controller")+"^000000";
+		mes "Time left: ^FFCC00"+callfunc("F_BranchTime2Str", .@left)+"^000000";
+	} else {
+		mes "This room is currently not reserved.";
+	}
+
+	next;
+
+	switch(select("Heal + Bless + Agi:Leave Room:Give Up Room:Cancel")) {
+	case 1:
+		percentheal 100,100;
+
+		sc_start SC_BLESSING,600000,10;
+		sc_start SC_INCREASEAGI,600000,10;
+
+		skilleffect "AL_BLESSING",10;
+		skilleffect "AL_INCAGI",10;
+
+		specialeffect2 EF_BLESSING;
+		specialeffect2 EF_INCAGI;
+
+		mes "[^00BFFFBranch Helper^000000]";
+		mes "You have been healed and buffed.";
+		close;
+
+	case 2:
+		warp "SavePoint",0,0;
+		close;
+
+	case 3:
+		if (.@owner != .@party) {
+			mes "[^00BFFFBranch Helper^000000]";
+			mes "Only the owning party can give up this room.";
+			close;
+		}
+
+		if (getpartyleader(.@party, 2) != getcharid(0)) {
+			mes "[^00BFFFBranch Helper^000000]";
+			mes "Only the ^FF5555Party Leader^000000 can give up this room.";
+			close;
+		}
+
+		if (getvariableofnpc(.owner_leader_cid[.@slot], "Branch Room Controller") != getcharid(0)) {
+			mes "[^00BFFFBranch Helper^000000]";
+			mes "Only the original party leader who rented this room can give it up.";
+			close;
+		}
+
+		mes "[^00BFFFBranch Helper^000000]";
+		mes "Are you sure you want to give up this room?";
+		mes "All monsters will be removed and all players inside will return to their savepoint.";
+		next;
+
+		if (select("Yes, give up room:Cancel") == 2)
+			close;
+
+		mes "[^00BFFFBranch Helper^000000]";
+		mes "Room has been given up.";
+		mes "All monsters will be removed and all players will be warped to savepoint.";
+		close2;
+
+		killmonsterall .@map$;
+		callfunc("F_BranchWarpMapToSavePoint", .@map$);
+		callfunc("F_BranchClearRoom", .@slot);
+		end;
+
+	default:
+		close;
+	}
+}
+
+function	script	F_BranchWarpMapToSavePoint	{
+	.@map$ = getarg(0);
+
+	getmapunits BL_PC, .@map$, .@aid_list;
+
+	for (.@i = 0; .@i < getarraysize(.@aid_list); .@i++) {
+		if (!attachrid(.@aid_list[.@i]))
+			continue;
+
+		warp "SavePoint",0,0;
+		detachrid;
+	}
+
+	return;
+}
+
+function	script	F_BranchClearRoom	{
+	.@slot = getarg(0);
+
+	set getvariableofnpc(.owner_party_id[.@slot], "Branch Room Controller"), 0;
+	set getvariableofnpc(.owner_party_name$[.@slot], "Branch Room Controller"), "";
+	set getvariableofnpc(.owner_leader_aid[.@slot], "Branch Room Controller"), 0;
+	set getvariableofnpc(.owner_leader_cid[.@slot], "Branch Room Controller"), 0;
+	set getvariableofnpc(.start_time[.@slot], "Branch Room Controller"), 0;
+	set getvariableofnpc(.end_time[.@slot], "Branch Room Controller"), 0;
+	set getvariableofnpc(.empty_since[.@slot], "Branch Room Controller"), 0;
+
+	return;
+}
+
+function	script	F_BranchTime2Str	{
+	.@s = getarg(0);
+	if (.@s < 0)
+		.@s = 0;
+
+	.@h = .@s / 3600;
+	.@s %= 3600;
+	.@m = .@s / 60;
+	.@s %= 60;
+
+	return .@h+"h "+.@m+"m "+.@s+"s";
+}
+
+ice2xlake,146,144,4	duplicate(Branch Room Helper)	Branch Helper#ice1	4_F_RUSGREEN
+ice2xlake2,146,144,4	duplicate(Branch Room Helper)	Branch Helper#ice2	4_F_RUSGREEN
+ice2xlake3,146,144,4	duplicate(Branch Room Helper)	Branch Helper#ice3	4_F_RUSGREEN
+ice2xlake4,146,144,4	duplicate(Branch Room Helper)	Branch Helper#ice4	4_F_RUSGREEN
+ice2xlake5,146,144,4	duplicate(Branch Room Helper)	Branch Helper#ice5	4_F_RUSGREEN

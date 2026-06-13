@@ -1,0 +1,635 @@
+// ============================================================
+//  GUILD WAR EVENT - v3.3
+//  rAthena Compatible - Cleaned Dot-Notation Implementation
+// ============================================================
+//  FILES NEEDED:
+//   1. npc/custom/guild_war_event.txt  (this file)
+//   2. npc/custom/gw_gm_panel.txt     (separate GM panel)
+// ============================================================
+//  CONFIGURATION (edit OnInit values below):
+//   .reg_time      - Registration duration in seconds
+//   .event_time    - Max event duration in seconds
+//   .defend_time   - Time to defend Emperium in seconds
+//   .badge_reward  - War Badges per winning member
+//   .badge_mvp     - Bonus badges for Emperium breaker
+//   .max_guilds    - Max guilds allowed
+//   .min_guilds    - Min guilds required to start
+//   .arena_map$    - Your arena map name
+//   .emperium_x/y  - Emperium spawn coordinates
+//   .warpout_map$  - Where rivals get warped on capture
+//   .warpout_x/y   - Coords of warpout destination
+// ============================================================
+
+// ============================================================
+//  EVENT MANAGER - FAKE_NPC (invisible brain)
+// ============================================================
+-	script	GuildWarManager	FAKE_NPC,{
+
+OnInit:
+	.reg_time      = 120;
+	.event_time    = 600;
+	.defend_time   = 300;
+	.badge_reward  = 5;
+	.badge_mvp     = 10;
+	.max_guilds    = 8;
+	.min_guilds    = 2;
+	.arena_map$    = "guild_vs1";
+	.emperium_x    = 50;
+	.emperium_y    = 14;
+	.warpout_map$  = "prontera";
+	.warpout_x     = 155;
+	.warpout_y     = 181;
+	.event_state   = 0;
+	.holding_guild = 0;
+	.guild_count   = 0;
+	.defend_ticks  = 0;
+	.event_ticks   = 0;
+	.mvp_breaker$  = "";
+	if ($gw_reigning_guild) {
+		donpcevent "GuildFlagNPC::OnUpdateFlag";
+		donpcevent "GuildFlagCity::OnUpdateFlag";
+	}
+	end;
+
+// ============================================================
+//  WEEKLY AUTO-SCHEDULER - Every Saturday 9:00 PM
+// ============================================================
+OnClock2100:
+	if (gettime(4) != 6) end;
+	if (.event_state != 0) end;
+	announce "[ Guild War ] Registration is now OPEN! Every Saturday 9:00 PM!", bc_all, 0xFFD700;
+	if ($gw_reigning_guild) {
+		announce "[ Guild War ] Reigning Champion: ["+ $gw_reigning_name$ +"] is auto-registered as Defender!", bc_all, 0x00AAFF;
+	}
+	donpcevent "GuildWarManager::OnStartRegistration";
+	end;
+
+// ============================================================
+//  REGISTRATION
+// ============================================================
+OnStartRegistration:
+	if (.event_state != 0) end;
+	.event_state = 1;
+	.guild_count = 0;
+	deletearray .registered_guilds[0], 32;
+	if ($gw_reigning_guild) {
+		.registered_guilds[0] = $gw_reigning_guild;
+		.guild_count = 1;
+		announce "[ Guild War ] Defending champion ["+ $gw_reigning_name$ +"] auto-registered!", bc_all, 0x00AAFF;
+	}
+	announce "[ Guild War ] Registration OPEN for "+ (.reg_time / 60) +" minutes! Guild Masters, register at the Registrar NPC!", bc_all, 0xFF6600;
+	initnpctimer;
+	end;
+
+OnTimer30000:
+	if (.event_state != 1) end;
+	announce "[ Guild War ] Registration: 90 seconds left! Guilds joined: "+ .guild_count +"/"+ .max_guilds, bc_all, 0xFF6600;
+	end;
+
+OnTimer90000:
+	if (.event_state != 1) end;
+	announce "[ Guild War ] Registration closes in 30 seconds!", bc_all, 0xFF6600;
+	end;
+
+OnTimer120000:
+	if (.event_state != 1) { stopnpctimer; end; }
+	stopnpctimer;
+
+	if (.guild_count < .min_guilds) {
+		announce "[ Guild War ] Not enough guilds registered ("+ .guild_count +"/"+ .min_guilds +"). Event cancelled.", bc_all, 0xFF0000;
+		.event_state = 0;
+		end;
+	}
+
+	// =========================================
+	// Registered Guilds Announcement
+	// =========================================
+	set .@guild_list$, "";
+	for (set .@i, 0; .@i < .guild_count; set .@i, .@i + 1) {
+		if (.@i)
+			set .@guild_list$, .@guild_list$ + ", ";
+
+		set .@guild_list$, .@guild_list$ + "[" + getguildname(.registered_guilds[.@i]) + "]";
+	}
+
+	announce "[ Guild War ] Registration Closed!", bc_all, 0xFFD700;
+	announce "[ Guild War ] Registered Guilds ("+ .guild_count +"): " + .@guild_list$, bc_all, 0x00CCFF;
+
+	donpcevent "GuildWarManager::OnEventStart";
+	end;
+
+// ============================================================
+//  GUILD REGISTRATION (called from Registrar NPC)
+// ============================================================
+OnGuildRegister:
+	announce "DEBUG: OnGuildRegister reached", bc_all;
+	if (.event_state != 1) {
+		dispbottom "Guild War registration is not open.";
+		end;
+	}
+	if (!getcharid(2)) {
+		dispbottom "You must be in a guild to register.";
+		end;
+	}
+	if (getcharid(0) != getguildmasterid(getcharid(2))) {
+		dispbottom "Only the Guild Master can register!";
+		end;
+	}
+	if (.guild_count >= .max_guilds) {
+		dispbottom "Maximum guilds already registered.";
+		end;
+	}
+	set @my_guild, getcharid(2);
+	set @already, 0;
+	set @ri, 0;
+	while (@ri < .guild_count) {
+		if (.registered_guilds[@ri] == @my_guild) {
+			set @already, 1;
+			set @ri, .guild_count;
+		}
+		set @ri, @ri + 1;
+	}
+	if (@already) {
+		dispbottom "Your guild is already registered!";
+		end;
+	}
+	.registered_guilds[.guild_count] = @my_guild;
+	.guild_count++;
+	announce "[ Guild War ] Guild ["+ getguildname(@my_guild) +"] joined! ("+ .guild_count +"/"+ .max_guilds +")", bc_all, 0x00CC00;
+	dispbottom "Your guild is registered for the Guild War!";
+	end;
+
+// ============================================================
+//  EVENT START
+// ============================================================
+OnEventStart:
+	.event_state   = 2;
+	.holding_guild = 0;
+	.defend_ticks  = 0;
+	.event_ticks   = 0;
+	.mvp_breaker$  = "";
+	announce "[ Guild War ] THE BATTLE HAS BEGUN! Break the Emperium to claim the base!", bc_all, 0xFF0000;
+	setmapflag .arena_map$, mf_pvp;
+	setmapflag .arena_map$, mf_nowarp;
+	setmapflag .arena_map$, mf_nowarpto;
+	setmapflag .arena_map$, mf_noreturn;
+	setmapflag .arena_map$, mf_noteleport;
+	set @wi, 0;
+	while (@wi < .guild_count) {
+		getguildmember .registered_guilds[@wi], 1;
+		set @wj, 0;
+		while (@wj < $@guildmembercount) {
+			if (isloggedin(getcharid(0, $@guildmembername$[@wj]))) {
+				warpchar .arena_map$, .emperium_x + ((@wi % 4) * 4) - 6, .emperium_y + 8 + ((@wi / 4) * 4), $@guildmembername$[@wj];
+			}
+			set @wj, @wj + 1;
+		}
+		set @wi, @wi + 1;
+	}
+	sleep 3000;
+	monster .arena_map$, .emperium_x, .emperium_y, "Guardian Emperium", 1288, 1, "GuildWarManager::OnEmperiumDead";
+	announce "[ Guild War ] The Emperium has spawned at the center of the arena!", bc_all|bc_map, 0xFFFF00;
+	donpcevent "GuildFlagNPC::OnClearFlag";
+	donpcevent "GuildFlagCity::OnClearFlag";
+	initnpctimer;
+	end;
+
+// ============================================================
+//  EMPERIUM BROKEN
+// ============================================================
+OnEmperiumDead:
+	if (!attachrid(killedrid)) {
+		sleep 1000;
+		monster .arena_map$, .emperium_x, .emperium_y, "Guardian Emperium", 1288, 1, "GuildWarManager::OnEmperiumDead";
+		end;
+	}
+	set @breaker$, strcharinfo(0);
+	set @breaker_guild, getcharid(2);
+	if (!@breaker_guild) {
+		sleep 1000;
+		monster .arena_map$, .emperium_x, .emperium_y, "Guardian Emperium", 1288, 1, "GuildWarManager::OnEmperiumDead";
+		end;
+	}
+	.holding_guild = @breaker_guild;
+	.event_state   = 3;
+	.defend_ticks  = 0;
+	.mvp_breaker$  = @breaker$;
+	set @holder_name$, getguildname(.holding_guild);
+	announce "[ Guild War ] *** BASE CAPTURED! ***", bc_all, 0xFF6600;
+	announce "[ Guild War ] Guild ["+ @holder_name$ +"] has seized the Emperium!", bc_all, 0xFF6600;
+	announce "[ Guild War ] Breaker: "+ @breaker$ +" | They must defend for "+ (.defend_time / 60) +" minutes!", bc_all, 0xFF6600;
+	announce "[ Guild War ] Players NOT in ["+ @holder_name$ +"] will be warped out in 5 seconds!", bc_all, 0xFF0000;
+	announce "[ Guild War ] Players NOT in ["+ @holder_name$ +"] will be warped out in 5 seconds!", bc_map, 0xFF0000, .arena_map$;
+	donpcevent "GuildFlagNPC::OnUpdateFlag";
+	donpcevent "GuildFlagCity::OnUpdateFlag";
+	stopnpctimer;
+	sleep 5000;
+	// Warp out all non-holding-guild players
+	getmapusers .arena_map$;
+	set @ki, 0;
+	while (@ki < $@mapusers) {
+		if (getcharid(2, $@mapusers$[@ki]) != .holding_guild) {
+			dispbottom "You have been warped out! Re-enter the arena to fight back!", $@mapusers$[@ki];
+			warpchar .warpout_map$, .warpout_x, .warpout_y, $@mapusers$[@ki];
+		}
+		set @ki, @ki + 1;
+	}
+	announce "[ Guild War ] Rival players removed! ["+ getguildname(.holding_guild) +"] now controls the base!", bc_all, 0xFF6600;
+	removemapflag .arena_map$, mf_nowarpto;
+	sleep 2000;
+	monster .arena_map$, .emperium_x, .emperium_y, "Guardian Emperium", 1288, 1, "GuildWarManager::OnEmperiumDead";
+	initnpctimer;
+	end;
+
+// ============================================================
+//  DEFEND TIMER (ticks every 60s)
+// ============================================================
+OnTimer60000:
+	if (.event_state == 3) {
+		.defend_ticks++;
+		set @left, (.defend_time / 60) - .defend_ticks;
+		if (@left > 0) {
+			announce "[ Guild War ] ["+ getguildname(.holding_guild) +"] is defending! "+ @left +" minute(s) left. Break the Emperium!", bc_all, 0x00AAFF;
+		}
+		if (.defend_ticks >= (.defend_time / 60)) {
+			stopnpctimer;
+			donpcevent "GuildWarManager::OnEventEnd";
+		}
+	} else if (.event_state == 2) {
+		.event_ticks++;
+		if (.event_ticks >= (.event_time / 60)) {
+			stopnpctimer;
+			if (!.holding_guild) {
+				announce "[ Guild War ] Time expired! No winner this week.", bc_all, 0xFF0000;
+				donpcevent "GuildWarManager::OnEventReset";
+			} else {
+				donpcevent "GuildWarManager::OnEventEnd";
+			}
+		}
+	}
+	end;
+
+// ============================================================
+//  EVENT END - REWARD WINNERS
+// ============================================================
+OnEventEnd:
+	stopnpctimer;
+	if (!.holding_guild) {
+		announce "[ Guild War ] Event ended with no winner!", bc_all, 0xFF0000;
+		donpcevent "GuildWarManager::OnEventReset";
+		end;
+	}
+	set @wname$, getguildname(.holding_guild);
+	$gw_reigning_guild = .holding_guild;
+	$gw_reigning_name$ = @wname$;
+	announce "[ Guild War ] *** GUILD WAR OVER ***", bc_all, 0xFFD700;
+	announce "[ Guild War ] WINNER: ["+ @wname$ +"]! They are the new Reigning Champions!", bc_all, 0xFFD700;
+	getguildmember .holding_guild, 1;
+	set @rewarded, 0;
+	set @ri2, 0;
+	while (@ri2 < $@guildmembercount) {
+		if (isloggedin(getcharid(0, $@guildmembername$[@ri2]))) {
+			if (strcharinfo(3, $@guildmembername$[@ri2]) == .arena_map$) {
+				if ($@guildmembername$[@ri2] == .mvp_breaker$) {
+					getitem 7773, .badge_mvp, $@guildmembername$[@ri2];
+					dispbottom "MVP! You broke the Emperium! +"+ .badge_mvp +" War Badges!", $@guildmembername$[@ri2];
+				} else {
+					getitem 7773, .badge_reward, $@guildmembername$[@ri2];
+					dispbottom "Victory! Your guild won! +"+ .badge_reward +" War Badges!", $@guildmembername$[@ri2];
+				}
+				set @rewarded, @rewarded + 1;
+			}
+		}
+		set @ri2, @ri2 + 1;
+	}
+	announce "[ Guild War ] "+ @rewarded +" members of ["+ @wname$ +"] received War Badges!", bc_all, 0xFFD700;
+	donpcevent "GuildFlagNPC::OnUpdateFlag";
+	donpcevent "GuildFlagCity::OnUpdateFlag";
+	sleep 15000;
+	donpcevent "GuildWarManager::OnEventReset";
+	end;
+
+// ============================================================
+//  RESET
+// ============================================================
+OnEventReset:
+	stopnpctimer;
+	removemapflag .arena_map$, mf_pvp;
+	removemapflag .arena_map$, mf_nowarp;
+	removemapflag .arena_map$, mf_nowarpto;
+	removemapflag .arena_map$, mf_noreturn;
+	removemapflag .arena_map$, mf_noteleport;
+	killmonster .arena_map$, "GuildWarManager::OnEmperiumDead";
+	getmapusers .arena_map$;
+	set @ki2, 0;
+	while (@ki2 < $@mapusers) {
+		warpchar .warpout_map$, .warpout_x, .warpout_y, $@mapusers$[@ki2];
+		set @ki2, @ki2 + 1;
+	}
+	.event_state   = 0;
+	.holding_guild = 0;
+	.guild_count   = 0;
+	.defend_ticks  = 0;
+	.event_ticks   = 0;
+	.mvp_breaker$  = "";
+	deletearray .registered_guilds[0], 32;
+	announce "[ Guild War ] The event has been terminated. Arena cleared!", bc_all, 0xFF0000;
+	donpcevent "GuildFlagNPC::OnUpdateFlag";
+	donpcevent "GuildFlagCity::OnUpdateFlag";
+	end;
+
+// ============================================================
+//  GM TRIGGERS (called from gw_gm_panel.txt)
+// ============================================================
+OnGMStartReg:
+	donpcevent "GuildWarManager::OnStartRegistration";
+	end;
+
+OnGMForceStart:
+	announce "DEBUG: OnGMForceStart reached", bc_all;
+	if (.event_state != 1) {
+		announce "[Guild War] Registration is not open.", bc_all;
+		end;
+	}
+
+	if (.guild_count < .min_guilds) {
+		announce "[Guild War] Need at least "+ .min_guilds +" guilds to start.", bc_all;
+		end;
+	}
+
+	stopnpctimer;
+	donpcevent "GuildWarManager::OnEventStart";
+	end;
+
+OnGMClearChampion:
+	$gw_reigning_guild = 0;
+	$gw_reigning_name$ = "";
+	donpcevent "GuildFlagNPC::OnClearFlag";
+	donpcevent "GuildFlagCity::OnClearFlag";
+	dispbottom "Reigning champion cleared.";
+	end;
+}
+
+// ============================================================
+//  GUILD FLAG - INSIDE ARENA
+// ============================================================
+guild_vs1,52,14,4	script	GuildFlagNPC	guild_flag,{
+	mes "[Guild War Flag]";
+	if (!$gw_reigning_guild) {
+		mes "^888888No guild holds this territory.^000000";
+		mes "The Guild War runs every Saturday at 9:00 PM.";
+	} else {
+		mes "Territory held by:";
+		mes "^FFD700["+ $gw_reigning_name$ +"]^000000";
+		mes " ";
+		mes "Challenge them every Saturday at 9:00 PM!";
+	}
+	close;
+
+OnUpdateFlag:
+	if ($gw_reigning_guild) {
+		flagemblem $gw_reigning_guild;
+	} else {
+		flagemblem 0;
+	}
+	end;
+
+OnClearFlag:
+	flagemblem 0;
+	end;
+}
+
+// ============================================================
+//  GUILD FLAG - PRONTERA (public display)
+// ============================================================
+prontera,141,163,4	script	GuildFlagCity	guild_flag,{
+	mes "[Guild War Championship]";
+	if (!$gw_reigning_guild) {
+		mes "^888888No champion yet.^000000";
+		mes "Compete every Saturday at 9:00 PM!";
+	} else {
+		mes "Reigning Champion:";
+		mes "^FFD700["+ $gw_reigning_name$ +"]^000000";
+		mes " ";
+		mes "They won last Saturday's Guild War!";
+	}
+	close;
+
+OnUpdateFlag:
+	if ($gw_reigning_guild) {
+		flagemblem $gw_reigning_guild;
+	} else {
+		flagemblem 0;
+	}
+	end;
+
+OnClearFlag:
+	flagemblem 0;
+	end;
+}
+
+// ============================================================
+//  REGISTRATION NPC - PRONTERA
+// ============================================================
+prontera,137,162,4	script	GuildWarRegistrar	715,{
+	mes "[Guild War Registrar]";
+	mes "^FF6600=== Weekly Guild War ===^000000";
+	mes "Every ^FFD700Saturday at 9:00 PM^000000";
+	mes " ";
+	if ($gw_reigning_guild) {
+		mes "Current Champion: ^00AAFF["+ $gw_reigning_name$ +"]^000000";
+		mes " ";
+	}
+	set @gw_state, getvariableofnpc(.event_state, "GuildWarManager");
+	if (@gw_state == 0) {
+		mes "Registration is ^888888not open^000000 right now.";
+		mes "Come back Saturday night!";
+		close;
+	}
+	if (@gw_state == 2 || @gw_state == 3) {
+		mes "The Guild War is ^FF0000in progress^000000!";
+		close;
+	}
+	set @gc2, getvariableofnpc(.guild_count, "GuildWarManager");
+	set @mg2, getvariableofnpc(.max_guilds, "GuildWarManager");
+	mes "Registration is ^00CC00OPEN^000000!";
+	mes "Registered: ^0055FF"+ @gc2 +"^000000 / "+ @mg2;
+	next;
+	menu "Register my Guild", L_REG,
+	     "Event Rules", L_RULES,
+	     "Cancel", L_CANCEL;
+
+	L_REG:
+		if (!getcharid(2)) {
+			mes "[Registrar] You must be in a guild!";
+			close;
+		}
+		if (getcharid(0) != getguildmasterid(getcharid(2))) {
+			mes "[Registrar] Only the Guild Master can register!";
+			close;
+		}
+		mes "[Registrar] Register ^0055FF["+ getguildname(getcharid(2)) +"]^000000?";
+		next;
+		menu "Yes!", L_CONFIRM, "No", L_CANCEL;
+
+	L_CONFIRM:
+	callsub S_RegisterGuild;
+	close;
+
+S_RegisterGuild:
+	if (!getcharid(2)) {
+		mes "[Registrar]";
+		mes "You must be in a guild.";
+		return;
+	}
+
+	if (getcharid(0) != getguildmasterid(getcharid(2))) {
+		mes "[Registrar]";
+		mes "Only the Guild Master may register.";
+		return;
+	}
+
+	set .@guild_id, getcharid(2);
+	set .@gc, getvariableofnpc(.guild_count, "GuildWarManager");
+
+	copyarray .@regs[0], getvariableofnpc(.registered_guilds[0], "GuildWarManager"), .@gc;
+
+	for (set .@i, 0; .@i < .@gc; set .@i, .@i + 1) {
+		if (.@regs[.@i] == .@guild_id) {
+			mes "[Registrar]";
+			mes "Your guild is already registered.";
+			return;
+		}
+	}
+
+	setd ".registered_guilds[" + .@gc + "]", .@guild_id;
+	
+	// Direct assignment across objects (replaces setvariableofnpc completely)
+	GuildWarManager.guild_count = .@gc + 1;
+
+	announce "[ Guild War ] Guild ["+ getguildname(.@guild_id) +"] joined! ("+ GuildWarManager.guild_count +"/"+ getvariableofnpc(.max_guilds,"GuildWarManager") +")", bc_all, 0x00CC00;
+
+	mes "[Registrar]";
+	mes "Registration successful!";
+	return;
+
+	L_RULES:
+		mes "[Registrar] ^FFD700=== Rules ===^000000";
+		mes "1. Guild Masters register here.";
+		mes "2. All members warp to the arena.";
+		mes "3. Break the Emperium to capture the base.";
+		mes "4. Defend it for 5 minutes to win.";
+		mes "5. If broken, new guild must defend.";
+		mes "6. On capture, rivals are warped out for 5s then can re-enter.";
+		mes "7. Winners get War Badges!";
+		mes "8. Breaker gets MVP bonus badges!";
+		mes "9. Winners defend their title next week!";
+		close;
+
+	L_CANCEL:
+		close;
+}
+
+// ============================================================
+//  ARENA ENTRY NPC - PRONTERA
+// ============================================================
+prontera,138,166,4	script	GuildWarEntrance	716,{
+	mes "[Arena Guard]";
+	set @gw_state2, getvariableofnpc(.event_state, "GuildWarManager");
+	if (@gw_state2 == 0 || @gw_state2 == 1) {
+		mes "The arena is not open yet.";
+		mes "The Guild War runs every Saturday at 9:00 PM.";
+		close;
+	}
+	if (!getcharid(2)) {
+		mes "You must be in a registered guild to enter!";
+		close;
+	}
+	set @my_guild2, getcharid(2);
+	set @found, 0;
+	set @gc3, getvariableofnpc(.guild_count, "GuildWarManager");
+	
+	if (@gc3 > 0) {
+		copyarray @reg_guilds[0], getvariableofnpc(.registered_guilds[0], "GuildWarManager"), @gc3;
+		
+		for (set @ei, 0; @ei < @gc3; set @ei, @ei + 1) {
+			if (@reg_guilds[@ei] == @my_guild2) {
+				set @found, 1;
+				break;
+			}
+		}
+	}
+	if (!@found) {
+		mes "Your guild is not registered for this event.";
+		close;
+	}
+	set @amap2$, getvariableofnpc(.arena_map$, "GuildWarManager");
+	set @ax2, getvariableofnpc(.emperium_x, "GuildWarManager");
+	set @ay2, getvariableofnpc(.emperium_y, "GuildWarManager");
+	mes "The Guild War is ^FF0000in progress^000000!";
+	mes "Enter the arena and fight!";
+	next;
+	menu "Enter!", L_ENTER, "Not now", L_CANCEL2;
+
+	L_ENTER:
+		warp @amap2$, @ax2 + 2, @ay2 + 8;
+		end;
+	L_CANCEL2:
+		close;
+}
+
+// ============================================================
+//  Guild War - GM Control Panel
+// ============================================================
+prontera,138,170,4	script	GWGMPanel	717,{
+	if (getgmlevel() < 80) {
+		mes "Nothing here.";
+		close;
+	}
+	mes "[Guild War GM Panel]";
+	mes "State: ^FF6600"+ getvariableofnpc(.event_state,"GuildWarManager") +"^000000  (0=Idle 1=Reg 2=Active 3=Defend)";
+	mes "Guilds: ^0055FF"+ getvariableofnpc(.guild_count,"GuildWarManager") +"^000000";
+	if ($gw_reigning_guild) {
+		mes "Champion: ^FFD700["+ $gw_reigning_name$ +"]^000000";
+	} else {
+		mes "Champion: ^888888None^000000";
+	}
+	next;
+	menu "1. Open Registration", L_REG,
+	     "2. Force Start Event", L_START,
+	     "3. Stop and Reset", L_STOP,
+	     "4. Clear Champion", L_CLEARCHAMP,
+	     "5. Warp to Arena", L_WARP,
+	     "6. Cancel", L_CANCEL;
+
+	L_REG:
+		donpcevent "GuildWarManager::OnStartRegistration";
+		mes "^00CC00Registration opened!^000000";
+		close;
+
+	L_START:
+		donpcevent "GuildWarManager::OnGMForceStart";
+		mes "^FF0000Force start triggered!^000000";
+		close;
+
+	L_STOP:
+		donpcevent "GuildWarManager::OnEventReset";
+		mes "^FF6600Event stopped and reset globally.^000000";
+		close;
+
+	L_CLEARCHAMP:
+		donpcevent "GuildWarManager::OnGMClearChampion";
+		mes "^888888Champion cleared.^000000";
+		close;
+
+	L_WARP:
+		set @amap$, getvariableofnpc(.arena_map$, "GuildWarManager");
+		set @ax, getvariableofnpc(.emperium_x, "GuildWarManager");
+		set @ay, getvariableofnpc(.emperium_y, "GuildWarManager");
+		close2;
+		warp @amap$, @ax, @ay + 5;
+		end;
+
+	L_CANCEL:
+		close;
+}

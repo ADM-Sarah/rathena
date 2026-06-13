@@ -1,0 +1,435 @@
+//==============================================================
+//  Guild Throne War (Weekly GvG Event)
+//  Compatible: Latest rAthena
+//==============================================================
+//  FEATURES
+//==============================================================
+//  - Weekly automatic schedule (Friday Night)
+//  - Configurable schedule
+//  - Only Guild Master can register
+//  - Guild Level requirement
+//  - Online member requirement
+//  - Registration timer
+//  - Random challenger selection
+//  - Persistent defending guild
+//  - Team A / Team B spawn locations
+//  - Emperium defense mechanics
+//  - Loser consolation rewards
+//  - Winner rewards
+//  - Recall disabled inside event
+//  - Automatic next-week defense
+//==============================================================
+
+-	script	GuildThroneWar_Config	-1,{
+
+//==============================================================
+// CONFIGURATION
+//==============================================================
+
+OnInit:
+
+	//==========================================================
+	// EVENT TIME
+	//==========================================================
+	// Friday = 5
+	// Saturday = 6
+	// Sunday = 0
+	//==========================================================
+
+	.EventDay			= 5;	// Friday
+	.EventHour			= 21;	// 9 PM
+	.EventMinute		= 0;
+
+	// Registration Duration (minutes)
+	.RegisterTime		= 5;
+
+	// Battle Duration (minutes)
+	.BattleTime			= 30;
+
+	//==========================================================
+	// REQUIREMENTS
+	//==========================================================
+
+	.RequiredGuildLevel	= 10;
+	.RequiredOnline		= 10;
+
+	//==========================================================
+	// MAP SETTINGS
+	//==========================================================
+
+	.EventMap			$= "guild_vs1";
+
+	// Team A Spawn
+	.TeamAX				= 50;
+	.TeamAY				= 100;
+
+	// Team B Spawn
+	.TeamBX				= 150;
+	.TeamBY				= 100;
+
+	// Emperium Position
+	.EmpX				= 100;
+	.EmpY				= 100;
+
+	// Exit Location
+	.ExitMap			$= "prontera";
+	.ExitX				= 156;
+	.ExitY				= 191;
+
+	//==========================================================
+	// REWARDS
+	//==========================================================
+
+	// Winner Reward
+	.WinnerItem			= 607;		// Yggdrasil Berry
+	.WinnerAmount		= 20;
+
+	// Consolation Reward
+	.LoserItem			= 501;		// Red Potion
+	.LoserAmount		= 10;
+
+	//==========================================================
+	// INTERNAL
+	//==========================================================
+
+	.DefenderGuild		= 0;
+
+	// Disable Recall
+	setmapflag .EventMap$, mf_gvg;
+	setmapflag .EventMap$, mf_gvg_castle;
+	setmapflag .EventMap$, mf_noskill;
+
+	// Disable Guild Recall
+	setmapflag .EventMap$, mf_skill_damage,AL_TELEPORT,0;
+	setmapflag .EventMap$, mf_skill_damage,GD_EMERGENCYCALL,0;
+
+	end;
+}
+
+//==============================================================
+// MAIN NPC
+//==============================================================
+
+payon,194,157,4	script	Guild Throne War	640,{
+
+	.@gid = getcharid(2);
+
+	if (.EventOpen == 0) {
+		mes "[Guild Throne War]";
+		mes "Registration is currently closed.";
+		close;
+	}
+
+	if (getguildmasterid(.@gid) != getcharid(0)) {
+		mes "[Guild Throne War]";
+		mes "Only the Guild Master may register.";
+		close;
+	}
+
+	if (getguildinfo(.@gid,4) < getvariableofnpc(.RequiredGuildLevel,"GuildThroneWar_Config")) {
+		mes "[Guild Throne War]";
+		mes "Guild level requirement not met.";
+		close;
+	}
+
+	.@online = 0;
+
+	getguildmember .@gid,1;
+
+	for (.@i = 0; .@i < $@guildmembercount; .@i++) {
+		if (isloggedin($@guildmemberaid[.@i],$@guildmembercid[.@i]))
+			.@online++;
+	}
+
+	if (.@online < getvariableofnpc(.RequiredOnline,"GuildThroneWar_Config")) {
+		mes "[Guild Throne War]";
+		mes "Your guild needs at least "+
+			getvariableofnpc(.RequiredOnline,"GuildThroneWar_Config")+
+			" online members.";
+		close;
+	}
+
+	for (.@i = 0; .@i < .GuildCount; .@i++) {
+		if (.Guilds[.@i] == .@gid) {
+			mes "[Guild Throne War]";
+			mes "Your guild is already registered.";
+			close;
+		}
+	}
+
+	.Guilds[.GuildCount] = .@gid;
+	.GuildCount++;
+
+	announce "[Guild Throne War]: Guild '"+getguildname(.@gid)+"' has registered!",bc_all;
+
+	mes "[Guild Throne War]";
+	mes "Registration successful.";
+	close;
+}
+
+//==============================================================
+// SCHEDULER
+//==============================================================
+
+-	script	GuildThroneWar_Scheduler	-1,{
+
+OnInit:
+	initnpctimer;
+	end;
+
+OnTimer60000:
+
+	.@day = gettime(DT_DAYOFWEEK);
+	.@hour = gettime(DT_HOUR);
+	.@minute = gettime(DT_MINUTE);
+
+	if (
+		.@day == getvariableofnpc(.EventDay,"GuildThroneWar_Config") &&
+		.@hour == getvariableofnpc(.EventHour,"GuildThroneWar_Config") &&
+		.@minute == getvariableofnpc(.EventMinute,"GuildThroneWar_Config")
+	) {
+		donpcevent "GuildThroneWar_Control::OnStartRegister";
+	}
+
+	initnpctimer;
+	end;
+}
+
+//==============================================================
+// EVENT CONTROL
+//==============================================================
+
+-	script	GuildThroneWar_Control	-1,{
+
+OnStartRegister:
+
+	.EventOpen = 1;
+	.GuildCount = 0;
+
+	announce "[Guild Throne War]: Registration is now OPEN for 5 minutes!",bc_all;
+
+	initnpctimer;
+	end;
+
+OnTimer300000:
+
+	stopnpctimer;
+
+	.EventOpen = 0;
+
+	if (.GuildCount < 1) {
+		announce "[Guild Throne War]: Event cancelled. No guilds registered.",bc_all;
+		end;
+	}
+
+	announce "[Guild Throne War]: Registration closed.",bc_all;
+
+	donpcevent strnpcinfo(0)+"::OnStartBattle";
+	end;
+
+//==============================================================
+// START BATTLE
+//==============================================================
+
+OnStartBattle:
+
+	mapannounce "guild_vs1","Guild Throne War has started!",bc_all;
+
+	.ActiveGuildCount = 0;
+
+	for (.@i = 0; .@i < .GuildCount; .@i++) {
+		.ActiveGuilds[.ActiveGuildCount] = .Guilds[.@i];
+		.ActiveGuildCount++;
+	}
+
+	// Add defender guild if exists
+	if (.DefenderGuild > 0) {
+		.ActiveGuilds[.ActiveGuildCount] = .DefenderGuild;
+		.ActiveGuildCount++;
+	}
+
+	// Warp Defender
+	if (.DefenderGuild > 0) {
+		warpguild .EventMap$,.EmpX,.EmpY,.DefenderGuild;
+	}
+
+	// First challenger
+	donpcevent strnpcinfo(0)+"::OnNextBattle";
+
+	initnpctimer;
+	end;
+
+OnTimer1800000:
+
+	stopnpctimer;
+
+	announce "[Guild Throne War]: Event has ended!",bc_all;
+
+	if (.DefenderGuild > 0) {
+
+		announce "[Guild Throne War]: Winner Guild - "+getguildname(.DefenderGuild),bc_all;
+
+		getguildmember .DefenderGuild,1;
+
+		for (.@i = 0; .@i < $@guildmembercount; .@i++) {
+
+			if (attachrid($@guildmemberaid[.@i])) {
+
+				getitem getvariableofnpc(.WinnerItem,"GuildThroneWar_Config"),
+						getvariableofnpc(.WinnerAmount,"GuildThroneWar_Config");
+
+				warp getvariableofnpc(.ExitMap,"GuildThroneWar_Config"),
+					 getvariableofnpc(.ExitX,"GuildThroneWar_Config"),
+					 getvariableofnpc(.ExitY,"GuildThroneWar_Config");
+
+				detachrid;
+			}
+		}
+	}
+
+	killmonsterall .EventMap$;
+
+	end;
+
+//==============================================================
+// NEXT BATTLE ROUND
+//==============================================================
+
+OnNextBattle:
+
+	if (.ActiveGuildCount <= 1)
+		end;
+
+	// Pick challenger
+	.@rand = rand(.ActiveGuildCount);
+
+	.@challenger = .ActiveGuilds[.@rand];
+
+	if (.@challenger == .DefenderGuild)
+		end;
+
+	announce "[Guild Throne War]: Challenger Guild - "+getguildname(.@challenger),bc_all;
+
+	// Warp challenger
+	warpguild .EventMap$,.TeamAX,.TeamAY,.@challenger;
+
+	// Spawn Emperium
+	monster .EventMap$,.EmpX,.EmpY,"Emperium",1288,1,strnpcinfo(0)+"::OnEmpDead";
+
+	.CurrentAttacker = .@challenger;
+
+	end;
+
+//==============================================================
+// EMPERIUM DESTROYED
+//==============================================================
+
+OnEmpDead:
+
+	.@killergid = getcharid(2);
+
+	if (.@killergid == .DefenderGuild)
+		end;
+
+	announce "[Guild Throne War]: "+getguildname(.@killergid)+" has conquered the throne!",bc_all;
+
+	// Kick old defender
+	if (.DefenderGuild > 0) {
+
+		getguildmember .DefenderGuild,1;
+
+		for (.@i = 0; .@i < $@guildmembercount; .@i++) {
+
+			if (attachrid($@guildmemberaid[.@i])) {
+
+				getitem getvariableofnpc(.LoserItem,"GuildThroneWar_Config"),
+						getvariableofnpc(.LoserAmount,"GuildThroneWar_Config");
+
+				warp getvariableofnpc(.ExitMap,"GuildThroneWar_Config"),
+					 getvariableofnpc(.ExitX,"GuildThroneWar_Config"),
+					 getvariableofnpc(.ExitY,"GuildThroneWar_Config");
+
+				detachrid;
+			}
+		}
+	}
+
+	.DefenderGuild = .@killergid;
+
+	// Remove challenger from list
+	for (.@i = 0; .@i < .ActiveGuildCount; .@i++) {
+
+		if (.ActiveGuilds[.@i] == .@killergid)
+			continue;
+
+		.@temp[.@c] = .ActiveGuilds[.@i];
+		.@c++;
+	}
+
+	deletearray .ActiveGuilds[0],128;
+
+	for (.@i = 0; .@i < .@c; .@i++)
+		.ActiveGuilds[.@i] = .@temp[.@i];
+
+	.ActiveGuildCount = .@c;
+
+	sleep2 5000;
+
+	donpcevent strnpcinfo(0)+"::OnNextBattle";
+
+	end;
+}
+
+//==============================================================
+// MAP FLAGS
+//==============================================================
+
+guild_vs1	mapflag	nobranch
+guild_vs1	mapflag	nopenalty
+guild_vs1	mapflag	noteleport
+guild_vs1	mapflag	nowarp
+guild_vs1	mapflag	nowarpto
+guild_vs1	mapflag	gvg
+
+//==============================================================
+// NOTES
+//==============================================================
+//
+// REQUIRED MAP:
+//  guild_vs1
+//
+// REQUIRED EMPERIUM:
+//  Monster ID: 1288
+//
+// HOW IT WORKS:
+// -------------------------------------------------------------
+// 1. Every Friday at configured time
+// 2. Registration opens for 5 minutes
+// 3. Guild Masters register
+// 4. Guilds must meet requirements
+// 5. Event starts
+// 6. Defender guild stays on throne
+// 7. Challenger guild attacks
+// 8. If challenger wins:
+//      - old defender removed
+//      - challenger becomes defender
+// 9. Repeat until timer ends
+// 10. Final defender wins event
+//
+//==============================================================
+//
+// RECOMMENDED IMPROVEMENTS
+//==============================================================
+//
+// - SQL save of defending guild
+// - Ranking system
+// - Spectator room
+// - Betting NPC
+// - Anti dual-client checks
+// - Limit max guild members inside
+// - Damage rankings
+// - Reward via mail
+// - Queue system
+// - UI registration window
+//
+//==============================================================

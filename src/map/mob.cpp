@@ -24,12 +24,14 @@
 #include <common/utils.hpp>
 
 #include "achievement.hpp"
+#include "autoattack.hpp"
 #include "battle.hpp"
 #include "clif.hpp"
 #include "elemental.hpp"
 #include "guild.hpp"
 #include "homunculus.hpp"
 #include "intif.hpp"
+#include "instance.hpp"
 #include "itemdb.hpp"
 #include "log.hpp"
 #include "map.hpp"
@@ -85,6 +87,7 @@ std::unordered_map<uint32, std::shared_ptr<s_item_drop_list>> mob_looted_drops;
 MobSummonDatabase mob_summon_db;
 MobChatDatabase mob_chat_db;
 MapDropDatabase map_drop_db;
+VIPDropExcludedDatabase vip_drop_excluded_db;
 
 /*==========================================
  * Local prototype declaration   (only required thing)
@@ -1322,6 +1325,8 @@ static int32 mob_ai_sub_hard_activesearch(block_list *bl,va_list ap)
 	md=va_arg(ap,mob_data *);
 	target= va_arg(ap,block_list**);
 	mode= static_cast<enum e_mode>(va_arg(ap, int32));
+
+	aa_mob_ai_search_mvpcheck(bl, md);
 
 	//If can't seek yet, not an enemy, or you can't attack it, skip.
 	if ((*target) == bl || !status_check_skilluse(md, bl, 0, 0))
@@ -2853,9 +2858,27 @@ int32 mob_getdroprate(block_list *src, std::shared_ptr<s_mob_db> mob, int32 base
 
 			int32 cap;
 
-			if (pc_isvip(sd)) { // Increase item drop rate for VIP.
-				// Unsure how the VIP and other bonuses should stack, this is additive.
-				drop_rate_bonus += battle_config.vip_drop_increase;
+			if (pc_isvip(sd)) {
+
+				bool excluded = false;
+
+				for (const auto& drop : mob->dropitem)
+				{
+					if (!drop)
+						continue;
+
+					// compare current drop rate + item
+					if (drop->rate == base_rate &&
+						vip_drop_excluded_db.find(drop->nameid))
+					{
+						excluded = true;
+						break;
+					}
+				}
+
+				if (!excluded)
+					drop_rate_bonus += battle_config.vip_drop_increase;
+
 				cap = battle_config.drop_rate_cap_vip;
 			} else
 				cap = battle_config.drop_rate_cap;
@@ -3176,6 +3199,12 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
 
 			if ((base_exp > 0 || job_exp > 0) && entry.flag == MDLF_HOMUN && homkillonly && battle_config.hom_idle_no_share && pc_isidle_hom(tmpsd[i]))
 				base_exp = job_exp = 0;
+			
+			if (sd && sd->state.autoattack) {
+				int ratio = pc_isvip(sd) ? battle_config.autobattle_vip_exp_ratio:battle_config.autobattle_exp_ratio;
+				base_exp = base_exp * ratio / 100;
+				job_exp  = job_exp  * ratio / 100;
+			}
 
 			if ( ( temp = tmpsd[i]->status.party_id)>0 ) {
 				int32 j;
@@ -3262,8 +3291,13 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
 
 		std::shared_ptr<s_item_drop_list> dlist = std::make_shared<s_item_drop_list>();
 		dlist->m = md->m;
-		dlist->x = md->x;
-		dlist->y = md->y;
+		if (sd && sd->state.autoattack && battle_config.autobattle_loot_range) {
+			dlist->x = sd->x;
+			dlist->y = sd->y;
+		} else {
+			dlist->x = md->x;
+			dlist->y = md->y;
+		}
 		dlist->first_charid = (first_sd != nullptr ? first_sd->status.char_id : 0);
 		dlist->second_charid = (second_sd ? second_sd->status.char_id : 0);
 		dlist->third_charid = (third_sd ? third_sd->status.char_id : 0);
@@ -3288,6 +3322,13 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
 					else
 						//it's positive, then it goes as it is
 						drop_rate = it.rate;
+
+					if (sd && sd->state.autoattack) {
+						if (pc_isvip(sd))
+							drop_rate = drop_rate * battle_config.autobattle_vip_drop_ratio / 100;
+						else
+							drop_rate = drop_rate * battle_config.autobattle_drop_ratio / 100;
+					}
 
 					if (rnd()%10000 >= drop_rate)
 						continue;
@@ -3330,6 +3371,13 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
 				continue;
 
 			drop_rate = mob_getdroprate(src, md->db, entry->rate, drop_modifier, md);
+			
+			if (sd && sd->state.autoattack) {
+				if (pc_isvip(sd))
+					drop_rate = drop_rate * battle_config.autobattle_vip_drop_ratio / 100;
+				else
+					drop_rate = drop_rate * battle_config.autobattle_drop_ratio / 100;
+			}
 
 			// attempt to drop the item
 			if (rnd() % 10000 >= drop_rate)
@@ -3352,8 +3400,106 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
 			// Announce first, or else ditem will be freed. [Lance]
 			// By popular demand, use base drop rate for autoloot code. [Skotlex]
 			mob_item_drop(md, dlist, ditem, 0, battle_config.autoloot_adjust ? drop_rate : entry->rate, homkillonly || merckillonly);
-		}
+		
+			// MvP and Mini-Boss Card Ad and Log System [Bad]
+			if (first_sd != nullptr && battle_config.announcement_and_log_system) {
 
+				if (it->type == IT_CARD && md->get_bosstype() == BOSSTYPE_MVP && battle_config.mvp_card_announce_system) {
+					char map_name[MAP_NAME_LENGTH];
+					safestrncpy(map_name,map_getmapdata(md->m)->name,sizeof(map_name));
+					if (map[md->m].instance_id > 0) {
+						auto it_instance = instances.find(map[md->m].instance_id);
+						if (it_instance != instances.end()) {
+							auto idata = it_instance->second;
+							auto db = instance_db.find(idata->id);
+							if (db != nullptr) {
+								safestrncpy(map_name,db->name.c_str(),sizeof(map_name));
+							}
+						}
+					}
+					else {
+						char* p = strchr(map_name, '#');
+						if (p)
+							*p = '\0';
+					}
+
+					if (battle_config.mvp_card_announce) {
+						char message[128];
+						sprintf(message,msg_txt(sd,2000),first_sd->status.name,md->name,map_name,it->ename.c_str(),(float)drop_rate / 100);
+						intif_broadcast2(message, strlen(message) + 1, battle_config.set_drop_announce_color, 0x190, 12, 0, 0);
+					}
+
+					if (battle_config.dropped_mvp_card_log) {
+						if ( SQL_ERROR == Sql_Query(mmysql_handle, "INSERT INTO dropped_mvp_card_log (account_id, char_name, mvp_id, mvp_name, card_id, card_name, drop_map) VALUES ('%d', '%s', '%d', '%s', '%d', '%s', '%s')", first_sd->status.account_id, first_sd->status.name, md->mob_id, md->db->sprite.c_str(), it->nameid, it->name.c_str(),  mapindex_id2name(first_sd->mapindex))) // RMT Log System [Bad]
+						Sql_ShowDebug(mmysql_handle);
+					}
+				}
+
+				if (it->type == IT_CARD && md->get_bosstype() == BOSSTYPE_MINIBOSS && battle_config.mini_boss_card_announce_system) {
+
+					if (battle_config.mini_boss_card_announce) {
+						char message[128];
+						sprintf (message, msg_txt(sd,2000), first_sd->status.name, md->name, mapindex_id2name(first_sd->mapindex), it->ename.c_str(), (float)drop_rate/100);
+						intif_broadcast2(message, strlen(message) + 1, battle_config.set_drop_card_announce_color, 0x190, 12, 0, 0);
+					}
+
+					if (battle_config.dropped_mini_boss_card_log) {
+						if ( SQL_ERROR == Sql_Query(mmysql_handle, "INSERT INTO dropped_mini_boss_card_log (account_id, char_name, mini_boss_id, mini_boss_name, card_id, card_name, drop_map) VALUES ('%d', '%s', '%d', '%s', '%d', '%s', '%s')", first_sd->status.account_id, first_sd->status.name, md->mob_id, md->db->sprite.c_str(), it->nameid, it->name.c_str(),  mapindex_id2name(first_sd->mapindex))) // RMT Log System [Bad]
+						Sql_ShowDebug(mmysql_handle);
+					}
+				}
+			}
+		}
+		auto mapdata = map_getmapdata(m);
+
+		//ShowInfo("GLOBALDROP CHECK map=%s list=%d mob=%d\n",
+		//	mapdata->name,
+		//	(int)mapdata->mobitemglobaldrop_list.size(),
+		//	md->mob_id);
+		if (!mapdata->mobitemglobaldrop_list.empty()) {
+			for (const auto& mid : mapdata->mobitemglobaldrop_list) {
+				for (const auto& subit : mid.mobitemglobaldrop_sub_list) {
+					if (subit.mob_id && subit.mob_id != md->mob_id)
+						continue;
+					//ShowInfo("GLOBALDROP TRY item=%d rate=%d\n",
+					//	subit.drop_id,
+					//	subit.drop_per);
+					if (rnd()%10000 >= subit.drop_per)
+						continue;
+
+					if (!item_db.find(subit.drop_id))
+						continue;
+
+					std::shared_ptr<s_mob_drop> mobdrop = std::make_shared<s_mob_drop>();
+					mobdrop->nameid = subit.drop_id;
+
+					std::shared_ptr<s_item_drop> ditem =
+						mob_setdropitem(mobdrop,1,md->mob_id);
+
+					// force proper drop handling
+					if (rnd()%10000 < subit.drop_per) {
+
+						struct item item_tmp{};
+						item_tmp.nameid = subit.drop_id;
+						item_tmp.identify = 1;
+
+						map_addflooritem(
+							&item_tmp,
+							1,
+							md->m,
+							md->x,
+							md->y,
+							0,0,0,
+							0,
+							md->mob_id
+						);
+					}
+					//ShowInfo("GLOBALDROP DROPPED item=%d mob=%d\n",
+					//	subit.drop_id,
+					//	md->mob_id);
+				}
+			}
+		}
 		// Ore Discovery (triggers if owner has loot priority, does not require to be the killer)
 		if (first_sd != nullptr && pc_checkskill(first_sd, BS_FINDINGORE) > 0) {
 			std::shared_ptr<s_item_group_entry> entry = itemdb_group.get_random_entry(IG_ORE, 1, GROUP_ALGORITHM_DROP);
@@ -3608,7 +3754,16 @@ int32 mob_dead(mob_data *md, block_list *src, int32 type)
 			npc_script_event( *first_sd, NPCE_KILLNPC );
 		}
 	}
+    for (auto& entry : md->dmglog) {
+        map_session_data* sd = map_charid2sd(entry.id);
+        if (!sd)
+            continue;
 
+        if (md->get_bosstype() == BOSSTYPE_MVP) {
+            entry.dmg = 0;
+            entry.dmg_tanked = 0;
+        }
+    }
 	if(md->deletetimer != INVALID_TIMER) {
 		delete_timer(md->deletetimer,mob_timer_delete);
 		md->deletetimer = INVALID_TIMER;
@@ -4803,6 +4958,8 @@ int32 mob_clone_delete(mob_data *md){
 	}
 	return 0;
 }
+
+
 
 //Adjusts the drop rate of item according to the criteria given. [Skotlex]
 static uint32 mob_drop_adjust(int32 baserate, int32 rate_adjust, uint16 rate_min, uint16 rate_max)
@@ -6366,6 +6523,39 @@ uint64 MobChatDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	return 1;
 }
 
+const std::string VIPDropExcludedDatabase::getDefaultLocation()
+{
+	return std::string(db_path) + "/vip_drop_excluded.yml";
+}
+
+uint64 VIPDropExcludedDatabase::parseBodyNode(const ryml::NodeRef& node)
+{
+	std::string aegis;
+
+	if (!this->asString(node, "AegisName", aegis))
+		return 0;
+
+	auto item = item_db.search_aegisname(aegis.c_str());
+
+	if (!item) {
+		this->invalidWarning(
+			node,
+			"Unknown item '%s'",
+			aegis.c_str()
+		);
+		return 0;
+	}
+
+	std::shared_ptr<s_vip_drop_excluded> entry =
+		std::make_shared<s_vip_drop_excluded>();
+
+	entry->nameid = item->nameid;
+
+	this->put(item->nameid, entry);
+
+	return 1;
+}
+
 /*==========================================
  * processes one mob_skill_db entry
  *------------------------------------------*/
@@ -7214,6 +7404,7 @@ static void mob_load(void)
 	mob_avail_db.load();
 	mob_summon_db.load();
 	map_drop_db.load();
+	vip_drop_excluded_db.load();
 
 	mob_drop_ratio_adjust();
 	mob_skill_db_set();
@@ -7374,6 +7565,7 @@ void do_final_mob(bool is_reload){
 	mob_item_drop_ratio.clear();
 	mob_summon_db.clear();
 	map_drop_db.clear();
+	vip_drop_excluded_db.clear();
 	if( !is_reload ) {
 		mob_delayed_drops.clear();
 	}

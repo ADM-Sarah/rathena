@@ -1,0 +1,7 @@
+function	script	F_BlockArenaWingUse	{
+	if (strcharinfo(3) == "pvp_n_3-5") {
+		dispbottom "You cannot use this item on this map.";
+		end;
+	}
+	return;
+}

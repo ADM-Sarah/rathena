@@ -1,0 +1,17 @@
+###########################################################################
+# Item Vending Database
+###########################################################################
+# - Item              Item Aegis Name.
+###########################################################################
+
+Header:
+  Type: ITEM_VENDING_DB
+  Version: 1
+
+Body:
+ - Item: Credit
+ - Item: Nostalgic_Coin
+ - Item: Nostalgic_Event_Ticket
+ - Item: DNostalgic_MVP_Ticketd
+ - Item: Worldboss_Coin
+ - Item: War_Badge

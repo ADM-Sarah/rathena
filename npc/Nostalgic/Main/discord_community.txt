@@ -1,0 +1,362 @@
+//==============================================================
+// Community Discord Daily Supply NPC
+// Location : valmorra,192,116
+// GM Menu  : GM Level 99 only
+//==============================================================
+
+function	script	F_CDS_IsGM	{
+	return (getgmlevel() >= 99);
+}
+
+function	script	F_CDS_TodayKey	{
+	return gettime(DT_YEAR) * 10000 + gettime(DT_MONTH) * 100 + gettime(DT_DAYOFMONTH);
+}
+
+function	script	F_CDS_IsRegistered	{
+	.@aid = getcharid(3);
+	.@rows = query_sql("SELECT `account_id` FROM `community_supply_members` WHERE `account_id` = " + .@aid + " LIMIT 1");
+	return (.@rows > 0);
+}
+
+function	script	F_CDS_ShowRewardList	{
+	.@rows = query_sql("SELECT `id`, `item_id`, `amount` FROM `community_supply_rewards` ORDER BY `id` ASC",
+		.@rid, .@item_id, .@amount);
+
+	if (.@rows <= 0) {
+		mes "^FF0000No reward has been configured yet.^000000";
+		return;
+	}
+
+	mes "^FF0000[GM PANEL] Reward List^000000";
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		mes "^777777" + (.@i + 1) + ".^000000 " + getitemname(.@item_id[.@i]) + " x" + .@amount[.@i];
+	}
+	return;
+}
+
+function	script	F_CDS_ShowMemberList	{
+	.@rows = query_sql("SELECT `account_id`, `char_id`, `name`, `registered_by`, DATE_FORMAT(`registered_at`, '%Y-%m-%d %H:%i:%s') FROM `community_supply_members` ORDER BY `name` ASC",
+		.@aid, .@cid, .@name$, .@regby$, .@regat$);
+
+	if (.@rows <= 0) {
+		mes "^FF0000No community member has been registered yet.^000000";
+		return;
+	}
+
+	mes "^FF0000[GM PANEL] Registered Community Members^000000";
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		mes "^777777" + (.@i + 1) + ".^000000 " + .@name$[.@i];
+		mes "^999999AID: " + .@aid[.@i] + " | CID: " + .@cid[.@i] + "^000000";
+	}
+	return;
+}
+
+function	script	F_CDS_ShowClaimHistoryToday	{
+	.@rows = query_sql(
+		"SELECT `name`, `char_id`, DATE_FORMAT(`claimed_at`, '%Y-%m-%d %H:%i:%s') FROM `community_supply_claims` WHERE DATE(`claimed_at`) = CURDATE() ORDER BY `claimed_at` DESC",
+		.@name$, .@cid, .@claimed_at$
+	);
+
+	if (.@rows <= 0) {
+		mes "^FF0000[GM PANEL] Claim History Today^000000";
+		mes "No claim has been made today.";
+		return;
+	}
+
+	mes "^FF0000[GM PANEL] Claim History Today^000000";
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		mes "^777777" + (.@i + 1) + ".^000000 " + .@name$[.@i] + " ^777777(Char ID: " + .@cid[.@i] + ")^000000";
+		mes "^999999Claimed At:^000000 " + .@claimed_at$[.@i];
+	}
+	return;
+}
+
+function	script	F_CDS_Claim	{
+	.@aid = getcharid(3);
+	.@cid = getcharid(0);
+	.@name$ = escape_sql(strcharinfo(0));
+	.@today = callfunc("F_CDS_TodayKey");
+
+	.@rows = query_sql("SELECT `name` FROM `community_supply_members` WHERE `account_id` = " + .@aid + " LIMIT 1", .@reg_name$);
+
+	if (.@rows <= 0) {
+		mes "^FF0000You are not registered as a Discord Community member.^000000";
+		mes "Please contact an Administrator or GM for more details.";
+		return;
+	}
+
+	.@already = 0;
+	query_sql(
+		"SELECT COUNT(*) FROM `community_supply_claims` WHERE `account_id` = " + .@aid + " AND DATE(`claimed_at`) = CURDATE()",
+		.@already
+	);
+
+	if (.@already > 0) {
+		mes "^FF0000You have already claimed your Community Daily Supply today.^000000";
+		mes "Please come back again tomorrow.";
+		return;
+	}
+
+	.@reward_rows = query_sql("SELECT `item_id`, `amount` FROM `community_supply_rewards` ORDER BY `id` ASC", .@item_id, .@amount);
+
+	if (.@reward_rows <= 0) {
+		mes "^FF0000No reward has been configured yet.^000000";
+		mes "Please contact a GM.";
+		return;
+	}
+
+	for (.@i = 0; .@i < .@reward_rows; .@i++) {
+		if (!checkweight(.@item_id[.@i], .@amount[.@i])) {
+			mes "^FF0000You are overweight or your inventory is full.^000000";
+			mes "Please make some space before claiming your supply.";
+			return;
+		}
+	}
+
+	for (.@i = 0; .@i < .@reward_rows; .@i++) {
+		getitem .@item_id[.@i], .@amount[.@i];
+	}
+
+	query_sql(
+		"REPLACE INTO `community_supply_claims` (`account_id`,`claim_date`,`char_id`,`name`,`claimed_at`) VALUES (" +
+		.@aid + "," + .@today + "," + .@cid + ",'" + .@name$ + "',NOW())"
+	);
+
+	mes "^00AA00Claim successful!^000000";
+	mes "You have received your Community Daily Supply for today.";
+	return;
+}
+
+function	script	F_CDS_AddReward	{
+	mes "^FF0000[GM PANEL] Add Reward^000000";
+	mes "Enter Item ID:";
+	input .@item_id;
+
+	if (.@item_id <= 0 || getitemname(.@item_id) == "null") {
+		mes "^FF0000Invalid item ID.^000000";
+		return;
+	}
+
+	mes "Enter amount:";
+	input .@amount;
+
+	if (.@amount <= 0) {
+		mes "^FF0000Invalid amount.^000000";
+		return;
+	}
+
+	query_sql("INSERT INTO `community_supply_rewards` (`item_id`,`amount`) VALUES (" + .@item_id + "," + .@amount + ")");
+
+	mes "^00AA00Reward added successfully.^000000";
+	mes "Item: " + getitemname(.@item_id);
+	mes "Amount: " + .@amount;
+	return;
+}
+
+function	script	F_CDS_RemoveReward	{
+	.@rows = query_sql("SELECT `id`, `item_id`, `amount` FROM `community_supply_rewards` ORDER BY `id` ASC",
+		.@rid, .@item_id, .@amount);
+
+	if (.@rows <= 0) {
+		mes "^FF0000No reward available to remove.^000000";
+		return;
+	}
+
+	mes "^FF0000[GM PANEL] Remove Reward^000000";
+
+	.@menu$ = "";
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		.@menu$ += getitemname(.@item_id[.@i]) + " x" + .@amount[.@i] + ":";
+	}
+	.@menu$ += "Cancel";
+
+	.@sel = select(.@menu$);
+
+	if (.@sel == .@rows + 1) {
+		mes "Cancelled.";
+		return;
+	}
+
+	.@idx = .@sel - 1;
+
+	query_sql("DELETE FROM `community_supply_rewards` WHERE `id` = " + .@rid[.@idx] + " LIMIT 1");
+
+	mes "^00AA00Reward removed successfully.^000000";
+	mes "Removed: " + getitemname(.@item_id[.@idx]) + " x" + .@amount[.@idx];
+	return;
+}
+
+function	script	F_CDS_RegisterMember	{
+	mes "^FF0000[GM PANEL] Register Community Member^000000";
+	mes "Please enter the exact in-game name.";
+	input .@name$;
+
+	if (.@name$ == "") {
+		mes "^FF0000Invalid character name.^000000";
+		return;
+	}
+
+	.@esc_name$ = escape_sql(.@name$);
+
+	.@rows = query_sql(
+		"SELECT `char_id`, `account_id`, `name` FROM `char` WHERE `name` = '" + .@esc_name$ + "' LIMIT 1",
+		.@char_id, .@account_id, .@real_name$
+	);
+
+	if (.@rows <= 0) {
+		mes "^FF0000Character not found.^000000";
+		return;
+	}
+
+	.@exist = query_sql(
+		"SELECT `account_id` FROM `community_supply_members` WHERE `account_id` = " + .@account_id + " LIMIT 1"
+	);
+
+	if (.@exist > 0) {
+		mes "^FF9900This account is already registered as a Community Discord member.^000000";
+		return;
+	}
+
+	.@gm_name$ = escape_sql(strcharinfo(0));
+
+	query_sql(
+		"INSERT INTO `community_supply_members` (`account_id`,`char_id`,`name`,`registered_by`,`registered_at`) VALUES (" +
+		.@account_id + "," + .@char_id + ",'" + escape_sql(.@real_name$) + "','" + .@gm_name$ + "',NOW())"
+	);
+
+	mes "^00AA00Community member registered successfully.^000000";
+	mes "IGN: " + .@real_name$;
+	mes "Account ID: " + .@account_id;
+	return;
+}
+
+function	script	F_CDS_RemoveMember	{
+	.@rows = query_sql("SELECT `id`, `account_id`, `name` FROM `community_supply_members` ORDER BY `name` ASC",
+		.@id, .@aid, .@name$);
+
+	if (.@rows <= 0) {
+		mes "^FF0000No registered community member found.^000000";
+		return;
+	}
+
+	mes "^FF0000[GM PANEL] Remove Community Member^000000";
+
+	.@menu$ = "";
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		.@menu$ += .@name$[.@i] + ":";
+	}
+	.@menu$ += "Cancel";
+
+	.@sel = select(.@menu$);
+
+	if (.@sel == .@rows + 1) {
+		mes "Cancelled.";
+		return;
+	}
+
+	.@idx = .@sel - 1;
+
+	query_sql("DELETE FROM `community_supply_members` WHERE `id` = " + .@id[.@idx] + " LIMIT 1");
+	query_sql("DELETE FROM `community_supply_claims` WHERE `account_id` = " + .@aid[.@idx]);
+
+	mes "^00AA00Community member removed successfully.^000000";
+	mes "IGN: " + .@name$[.@idx];
+	return;
+}
+
+
+//==============================================================
+// NPC
+//==============================================================
+
+valmorra,190,109,3	script	Community Supply	4_F_KAFRA1,{
+
+	mes "^0055FF[Community Supply]^000000";
+	mes "Welcome to the Discord Community Daily Supply Center.";
+	mes "Registered community members can claim their daily supply here.";
+	next;
+
+	if (callfunc("F_CDS_IsGM")) {
+		switch(select(
+			"^00AA00Claim Your Supply Now^000000",
+			"^FF0000[GM PANEL]^000000",
+			"Cancel"
+		)) {
+		case 1:
+			mes "^0055FF[Community Supply]^000000";
+			callfunc("F_CDS_Claim");
+			close;
+
+		case 2:
+			goto L_GMMenu;
+
+		default:
+			close;
+		}
+	}
+	else {
+		switch(select(
+			"^00AA00Claim Your Supply Now^000000",
+			"Cancel"
+		)) {
+		case 1:
+			mes "^0055FF[Community Supply]^000000";
+			callfunc("F_CDS_Claim");
+			close;
+
+		default:
+			close;
+		}
+	}
+
+L_GMMenu:
+	mes "^FF0000[GM PANEL]^000000";
+	mes "Please choose an option.";
+	next;
+
+	switch(select(
+		"^FF0000Register Community Member^000000",
+		"^FF0000Remove Community Member^000000",
+		"^FF0000Add Reward^000000",
+		"^FF0000Remove Reward^000000",
+		"^FF0000View Community Member List^000000",
+		"^FF0000View Reward List^000000",
+		"^FF0000View Claim History Today^000000",
+		"Exit"
+	)) {
+	case 1:
+		callfunc("F_CDS_RegisterMember");
+		close;
+
+	case 2:
+		callfunc("F_CDS_RemoveMember");
+		close;
+
+	case 3:
+		callfunc("F_CDS_AddReward");
+		close;
+
+	case 4:
+		callfunc("F_CDS_RemoveReward");
+		close;
+
+	case 5:
+		callfunc("F_CDS_ShowMemberList");
+		close;
+
+	case 6:
+		callfunc("F_CDS_ShowRewardList");
+		close;
+
+	case 7:
+		callfunc("F_CDS_ShowClaimHistoryToday");
+		close;
+
+	default:
+		close;
+	}
+
+OnInit:
+	waitingroom "Community Supply",0;
+	end;
+}

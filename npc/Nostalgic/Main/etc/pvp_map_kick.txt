@@ -1,0 +1,18 @@
+-	script	PvP_Respawn_System	-1,{
+
+OnPCDieEvent:
+	// Get the name of the map where the player just died
+	getmapxy(.@map$, .@x, .@y, 0);
+
+	// REPLACE "pvp_yuno" WITH YOUR ACTUAL PVP MAP NAME
+	if (.@map$ == "gld_dun01") {
+		// Wait 1 millisecond to let the death log finish, then warp
+		sleep2 1;
+		warp "valmorra", 171, 132;
+		
+		// Optional: Revive the player automatically so they don't have to click "Return to Save Point"
+		// percent_hp, percent_sp
+		atcommand "@atcommand #revive " + strcharinfo(0); 
+	}
+	end;
+}

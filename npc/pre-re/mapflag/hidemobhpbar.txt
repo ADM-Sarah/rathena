@@ -7,7 +7,7 @@
 //============================================================
 
 // Guild Dungeons =============
-gld_dun01	mapflag	hidemobhpbar
-gld_dun02	mapflag	hidemobhpbar
-gld_dun03	mapflag	hidemobhpbar
-gld_dun04	mapflag	hidemobhpbar
+//gld_dun01	mapflag	hidemobhpbar
+//gld_dun02	mapflag	hidemobhpbar
+//gld_dun03	mapflag	hidemobhpbar
+//gld_dun04	mapflag	hidemobhpbar

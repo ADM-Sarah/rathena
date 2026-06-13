@@ -1,0 +1,31 @@
+//============================================================
+// Punching Bag - Auto Regen by Respawn (60 seconds reset)
+//============================================================
+
+-	script	PunchingBag_Regen	-1,{
+
+OnInit:
+	donpcevent "PunchingBag_Regen::OnSpawn";
+	stopnpctimer;
+	setnpctimer 0;
+	startnpctimer;
+	end;
+
+OnTimer60000:
+	// RESET every 60 sec
+	killmonster "valmorra","PunchingBag_Regen::OnDummyDead";
+	donpcevent "PunchingBag_Regen::OnSpawn";
+	end;
+
+OnSpawn:
+	monster "valmorra",160,32,"Punching Bag",1905,1,"PunchingBag_Regen::OnDummyDead";
+	monster "valmorra",171,32,"Punching Bag",1905,1,"PunchingBag_Regen::OnDummyDead";
+	monster "valmorra",182,32,"Punching Bag",1905,1,"PunchingBag_Regen::OnDummyDead";
+	end;
+
+OnDummyDead:
+	// If killed, respawn immediately
+	killmonster "valmorra","PunchingBag_Regen::OnDummyDead";
+	donpcevent "PunchingBag_Regen::OnSpawn";
+	end;
+}

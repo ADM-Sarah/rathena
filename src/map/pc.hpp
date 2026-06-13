@@ -14,6 +14,7 @@
 #include <common/strlib.hpp>// StringBuf
 #include <common/timer.hpp>
 
+#include "autoattack.hpp"
 #include "battleground.hpp"
 #include "buyingstore.hpp" // struct s_buyingstore
 #include "clif.hpp" //e_wip_block
@@ -94,6 +95,14 @@ enum equip_index {
 	EQI_SHADOW_ACC_R,
 	EQI_SHADOW_ACC_L,
 	EQI_MAX
+};
+
+enum job_bonus_type {
+	JST_ALL = 0,
+	JST_JOB = 1,
+	JST_ACCOUNT = 2,
+	JST_CHAR = 3,
+	JST_GUILD = 4
 };
 
 enum prevent_logout_trigger {
@@ -386,9 +395,12 @@ public:
 	status_change sc;
 	struct regen_data regen;
 	struct regen_data_sub sregen, ssregen;
+	struct s_autoattack aa;
+	t_tick last_battery_notify;
 	//NOTE: When deciding to add a flag to state or special_state, take into consideration that state is preserved in
 	//status_calc_pc, while special_state is recalculated in each call. [Skotlex]
 	struct s_state {
+		unsigned int autoattack : 1;
 		uint32 active : 1; //Marks active player (not active is logging in/out, or changing map servers)
 		uint32 menu_or_input : 1;// if a script is waiting for feedback from the player
 		uint32 dead_sit : 2;
@@ -416,6 +428,8 @@ public:
 		uint32 killable : 1;
 		uint32 doridori : 1;
 		uint32 ignoreAll : 1;
+		uint32 nobroadcast : 1;
+		uint32 nobroadcastall : 1;
 		uint32 debug_remove_map : 1; // temporary state to track double remove_map's [FlavioJS]
 		uint32 buyingstore : 1;
 		uint32 lesseffect : 1;
@@ -683,6 +697,12 @@ public:
 	} bonus;
 	// zeroed vars end here.
 
+	// (^~_~^) Color Nicks Start
+
+	unsigned int color_nicks_group_id;
+
+	// (^~_~^) Color Nicks End
+
 	int32 castrate,hprate,sprate,aprate,dsprate;
 	int32 hprecov_rate,sprecov_rate;
 	int32 matk_rate;
@@ -946,7 +966,12 @@ public:
 
 	std::vector<uint32> party_booking_requests;
 
+	unsigned short vend_loot;
+	int vend_lvl;
+
 	void update_look( _look look );
+
+	uint8 sb_autocast_chain = 0;
 };
 
 extern struct eri *pc_sc_display_ers; /// Player's SC display table
@@ -1130,6 +1155,31 @@ private:
 };
 
 extern JobDatabase job_db;
+
+struct s_job_bonus_db {
+	struct script_code *script;
+	job_bonus_type type;
+	uint32 id, account_id, guild_id, char_id, jobidx;
+
+	~s_job_bonus_db() {
+		if (this->script){
+			script_free_code(this->script);
+			this->script = nullptr;
+		}
+	}
+};
+
+class JobBonusDatabase : public TypesafeYamlDatabase<uint32, s_job_bonus_db> {
+public:
+	JobBonusDatabase() : TypesafeYamlDatabase("JOB_BONUS", 1) {
+
+	}
+
+	const std::string getDefaultLocation() override;
+	uint64 parseBodyNode(const ryml::NodeRef &node) override;
+};
+
+extern JobBonusDatabase job_bonus_db;
 
 #define EQP_WEAPON EQP_HAND_R
 #define EQP_SHIELD EQP_HAND_L
@@ -1370,6 +1420,54 @@ public:
 
 extern PlayerStatPointDatabase statpoint_db;
 
+enum EEmotionStatus : uint8
+{
+	EMSG_EMOTION_EXPANTION_USE_FAIL_DATE,
+	EMSG_EMOTION_EXPANTION_USE_FAIL_UNPURCHASED,
+	EMSG_EMOTION_USE_FAIL_SKILL_LEVEL,
+	EMSG_EMOTION_EXPANTION_USE_FAIL_UNKNOWN,
+};
+
+enum EEmotionExpantionStatus : uint8
+{
+	EMSG_EMOTION_EXPANTION_NOT_ENOUGH_NYANGVINE,
+	EMSG_EMOTION_EXPANTION_FAIL_DATE,
+	EMSG_EMOTION_EXPANTION_FAIL_ALREADY_BUY,
+	EMSG_EMOTION_EXPANTION_FAIL_ANOTHER_SALE_BUY,
+	EMSG_EMOTION_EXPANTION_NOT_ENOUGH_BASICSKILL_LEVEL,
+	EMSG_NOT_YET_SALE_START_TIME,
+	EMSG_EMOTION_EXPANTION_FAIL_UNKNOWN,
+};
+
+struct s_emotion_db
+{
+	uint16 Id;
+	uint16 Price;
+	uint16 Type;
+	uint32 SaleStart;
+	uint32 SaleEnd;
+	uint16 SaleRentalPeriod;
+	std::vector<emotion_type> Emotions;
+};
+
+class EmotionDatabase : public TypesafeCachedYamlDatabase<uint16, s_emotion_db>
+{
+public:
+	EmotionDatabase() : TypesafeCachedYamlDatabase("EMOTION_DB", 1) {}
+
+	const std::string getDefaultLocation() override;
+	uint64 parseBodyNode(const ryml::NodeRef &node) override;
+};
+
+extern EmotionDatabase emotion_db;
+
+void do_init_emotions(void);
+void do_final_emotions(void);
+
+void pc_use_emotion(map_session_data* const sd, const uint16 ExpantionId, const uint16 EmotionId);
+void pc_buy_emotion_expantion(map_session_data* const sd, const uint16 ExapntionId, const uint16 ItemId, const uint8 Amount);
+void pc_load_emotion_expantion_list(map_session_data* const sd);
+
 /// Enum of Summoner Power of 
 enum e_summoner_power_type {
 	SUMMONER_POWER_LAND = 0,
@@ -1443,6 +1541,9 @@ bool pc_memo(map_session_data* sd, int32 pos);
 char pc_checkadditem( const map_session_data* sd, t_itemid nameid, int32 amount );
 uint8 pc_inventoryblank( const map_session_data* sd );
 int16 pc_search_inventory( const map_session_data* sd, t_itemid nameid);
+
+int pc_inventory_count(map_session_data *sd, unsigned short nameid);
+
 char pc_payzeny(map_session_data *sd, int32 zeny, enum e_log_pick_type type, uint32 log_charid = 0);
 enum e_additem_result pc_additem(map_session_data *sd, struct item *item, int32 amount, e_log_pick_type log_type, bool favorite=false);
 char pc_getzeny(map_session_data *sd, int32 zeny, enum e_log_pick_type type, uint32 log_charid = 0);
@@ -1772,6 +1873,9 @@ void pc_show_questinfo(map_session_data *sd);
 void pc_show_questinfo_reinit(map_session_data *sd);
 
 bool pc_job_can_entermap(enum e_job jobid, int32 m, int32 group_lv);
+void pc_job_bonus(map_session_data *sd);
+
+bool pc_isUseitem(map_session_data *sd, int n);
 
 #if defined(RENEWAL_DROP) || defined(RENEWAL_EXP)
 uint16 pc_level_penalty_mod( map_session_data* sd, e_penalty_type type, std::shared_ptr<s_mob_db> mob, mob_data* md = nullptr );
@@ -1795,6 +1899,7 @@ void pc_macro_detector_disconnect(map_session_data &sd);
 // Macro Reporter
 void pc_macro_reporter_area_select(map_session_data &sd, const int16 x, const int16 y, const int8 radius);
 void pc_macro_reporter_process(map_session_data &sd, int32 reporter_account_id = -1);
+
 
 #ifdef MAP_GENERATOR
 void pc_reputation_generate();

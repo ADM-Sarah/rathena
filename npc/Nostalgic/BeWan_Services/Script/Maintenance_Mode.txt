@@ -1,0 +1,158 @@
+//===== rAthena Script =======================================
+//= Server Maintenance Script
+//===== By: ==================================================
+//= BeWan
+//https://rathena.org/board/profile/62232-bewan/
+//===== Current Version: =====================================
+//= 1.0
+//===== Description: =========================================
+//= Can add normal player who can login
+//= Can set level of gm who can login
+//= With countdown and you ON the maintenance script
+//============================================================
+
+-	script	MaintenanceScript	-1,{
+
+OnMaintenance:
+if(.ModeStatus == 1){
+	mes "[^55aaff"+.NPCName$+"^000000]";
+	mes "Server Maintenance System is currently ^00ff7fENABLED^000000.";
+	mes "Do you want to turn off the server maintenance?";
+	next;
+	switch(select("Yes","No")){
+	case 1: //YES
+	mes "[^55aaff"+.NPCName$+"^000000]";
+	.@random = rand( 10000,99999 );
+	mes "Enter Maintenance Code: ^FF0000"+.@random+"^000000";
+	input .@MaintenanceCode1;
+	
+	if(.@MaintenanceCode1 != .@random){
+		next;
+		mes "[^55aaff"+.NPCName$+"^000000]";
+		mes "Sorry but you enter incorrect maintenance code.";
+		close;
+	}else{
+	next;
+	mes "[^55aaff"+.NPCName$+"^000000]";
+	mes "Server are now open for players.";
+	.ModeStatus = 0;
+	close;
+	}
+	break;
+
+	case 2: //NO
+	mes "[^55aaff"+.NPCName$+"^000000]";
+	mes "Just speak to me if you want to turn off the server maintenance system.";
+	close;
+	break;
+	}
+}else{
+	mes "[^55aaff"+.NPCName$+"^000000]";
+	mes "Server Maintenance System is currently ^FF0000OFF^000000.";
+	mes "Do you want to activate the server in maintenance mode?";
+	next;
+	switch(select("Yes","No")){
+	case 1: //YES
+	mes "[^55aaff"+.NPCName$+"^000000]";
+	.@random = rand( 10000,99999 );
+	mes "Enter Maintenance Code: ^FF0000"+.@random+"^000000";
+	input .@MaintenanceCode;
+	
+	if(.@MaintenanceCode != .@random){
+		next;
+		mes "[^55aaff"+.NPCName$+"^000000]";
+		mes "Sorry but you enter incorrect maintenance code.";
+		close;
+	}else{
+		next;
+		mes "[^55aaff"+.NPCName$+"^000000]";
+		mes "You enter correct Maintenance Code are you sure about this?";
+		switch(select("Yes","No")){
+		case 1:
+		next;
+		mes "[^55aaff"+.NPCName$+"^000000]";
+		mes "Server in maintenance mode ^00ff7fEnabled^000000";
+		close2;
+		announce "The server will be temporarily closed for maintenance -- from 5 minutes", bc_all;
+		sleep 60000;
+		announce "The server will be temporarily closed for maintenance -- from 4 minutes", bc_all;
+		sleep 60000;
+		announce "The server will be temporarily closed for maintenance -- from 3 minutes", bc_all;
+		sleep 60000;
+		announce "The server will be temporarily closed for maintenance -- from 2 minutes", bc_all;
+		sleep 60000;
+		announce "The server will be temporarily closed for maintenance -- from 1 minute", bc_all;
+		sleep 30000;
+		announce "The server will be temporarily closed for maintenance -- from 30 seconds", bc_all;
+		sleep 10000;
+		announce "The server will be temporarily closed for maintenance -- from 20 seconds", bc_all;
+		sleep 10000;
+		announce "The server will be temporarily closed for maintenance -- from 10 seconds", bc_all;
+		sleep 1000;
+		announce "The server will be temporarily closed for maintenance -- from 9 seconds", bc_all;
+		sleep 1000;
+		announce "The server will be temporarily closed for maintenance -- from 8 seconds", bc_all;
+		sleep 1000;
+		announce "The server will be temporarily closed for maintenance -- from 7 seconds", bc_all;
+		sleep 1000;
+		announce "The server will be temporarily closed for maintenance -- from 6 seconds", bc_all;
+		sleep 1000;
+		announce "The server will be temporarily closed for maintenance -- from 5 seconds", bc_all;
+		sleep 1000;
+		announce "The server will be temporarily closed for maintenance -- from 4 seconds", bc_all;
+		sleep 1000;
+		announce "The server will be temporarily closed for maintenance -- from 3 seconds", bc_all;
+		sleep 1000;
+		announce "The server will be temporarily closed for maintenance -- from 2 seconds", bc_all;
+		sleep 1000;
+		announce "The server will be temporarily closed for maintenance -- from 1 second", bc_all;
+		.ModeStatus = 1;
+		atcommand "@kickall";
+		break;
+
+		case 2:
+		next;
+		mes "[^55aaff"+.NPCName$+"^000000]";
+		mes "Just speak to me if you want to turn on the server maintenance system.";
+		close;
+		break;
+		}
+	}
+	break;
+
+	case 2: //NO
+	mes "[^55aaff"+.NPCName$+"^000000]";
+	mes "Just speak to me if you want to turn on the server maintenance system.";
+	close;
+	break;
+	}
+	end;
+}
+end;
+
+OnPCLoginEvent:
+if(.ModeStatus == 1){
+	if(getgmlevel() > .GMLvLAccess || getcharid(3) == 32000005 || getcharid(3) == 32000505 || getcharid(3) == 32000002){
+		end;
+	}else{
+		mes "[^55aaff"+.NPCName$+"^000000]";
+		mes "Sorry but the server is temporarily out of service for maintenance.";
+		mes "Please try again later!";
+		mes ""+getcharid(3)+"";
+		mes ""+.AccID[.@i]+"";
+		sleep2 1000;
+		atcommand "@kick " + strcharinfo(0);
+		end;
+	}	
+}else{
+	end;
+}
+end;
+
+OnInit:
+	.NPCName$ = "Server Security";
+	.ModeStatus = 0; //0=OFF, 1=ON 
+	.GMLvLAccess = 99; //For GM LVL Access
+	bindatcmd "mode",strnpcinfo(0)+"::OnMaintenance",99,99;
+	end;
+}

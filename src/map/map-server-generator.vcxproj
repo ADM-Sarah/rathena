@@ -196,6 +196,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="autoattack.hpp" />
+    <ClInclude Include="autoattack_script.hpp" />
+    <ClInclude Include="autoslave.hpp" />
     <ClInclude Include="achievement.hpp" />
     <ClInclude Include="atcommand.hpp" />
     <ClInclude Include="battle.hpp" />
@@ -243,8 +246,12 @@
     <ClInclude Include="trade.hpp" />
     <ClInclude Include="unit.hpp" />
     <ClInclude Include="vending.hpp" />
+    <ClInclude Include="mod_soullink.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="autoattack.cpp" />
+    <ClCompile Include="autoattack_script.cpp" />
+    <ClCompile Include="autoslave.cpp" />
     <ClCompile Include="achievement.cpp" />
     <ClCompile Include="atcommand.cpp" />
     <ClCompile Include="battle.cpp" />
@@ -289,6 +296,7 @@
     <ClCompile Include="trade.cpp" />
     <ClCompile Include="unit.cpp" />
     <ClCompile Include="vending.cpp" />
+    <ClCompile Include="mod_soullink.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
@@ -382,6 +390,7 @@
     <Copy SourceFiles="$(SolutionDir)db\import-tmpl\status_disabled.txt" DestinationFolder="$(SolutionDir)db\import\" ContinueOnError="true" Condition="!Exists('$(SolutionDir)db\import\status_disabled.txt')" />
     <Copy SourceFiles="$(SolutionDir)db\import-tmpl\status.yml" DestinationFolder="$(SolutionDir)db\import\" ContinueOnError="true" Condition="!Exists('$(SolutionDir)db\import\status.yml')" />
     <Copy SourceFiles="$(SolutionDir)db\import-tmpl\stylist.yml" DestinationFolder="$(SolutionDir)db\import\" ContinueOnError="true" Condition="!Exists('$(SolutionDir)db\import\stylist.yml')" />
+    <Copy SourceFiles="$(SolutionDir)db\import-tmpl\soul_link_db.yml" DestinationFolder="$(SolutionDir)db\import\" ContinueOnError="true" Condition="!Exists('$(SolutionDir)db\import\soul_link_db.yml')" />
     <MakeDir Directories="$(SolutionDir)generated\clientside\data\luafiles514\lua files\navigation\" ContinueOnError="true" Condition="!Exists('$(SolutionDir)generated\clientside\data\luafiles514\lua files\navigation\')" />
     <MakeDir Directories="$(SolutionDir)generated\clientside\data\contentdata\" ContinueOnError="true" Condition="!Exists('$(SolutionDir)generated\clientside\data\contentdata\')" />
   </Target>

@@ -1,0 +1,650 @@
+//==============================================================
+// Refine Transfer NPC - FULL FIXED
+// Currency: Nostalgic Coin = 33048
+//==============================================================
+
+function	script	F_RTT_GetSlotName	{
+	.@slot = getarg(0);
+
+	switch (.@slot) {
+		case EQI_HEAD_TOP: return "Upper Headgear";
+		case EQI_HEAD_MID: return "Mid Headgear";
+		case EQI_HEAD_LOW: return "Lower Headgear";
+		case EQI_ARMOR:    return "Armor";
+		case EQI_HAND_R:   return "Weapon";
+		case EQI_HAND_L:   return "Shield";
+		case EQI_GARMENT:  return "Garment";
+		case EQI_SHOES:    return "Shoes";
+	}
+	return "Unknown";
+}
+
+function	script	F_RTT_IsAllowedSlot	{
+	.@slot = getarg(0);
+
+	if (.@slot == EQI_HEAD_TOP) return 1;
+	if (.@slot == EQI_HEAD_MID) return 1;
+	if (.@slot == EQI_HEAD_LOW) return 1;
+	if (.@slot == EQI_ARMOR)    return 1;
+	if (.@slot == EQI_HAND_R)   return 1;
+	if (.@slot == EQI_HAND_L)   return 1;
+	if (.@slot == EQI_GARMENT)  return 1;
+	if (.@slot == EQI_SHOES)    return 1;
+
+	return 0;
+}
+
+function	script	F_RTT_HasAnyCardOnSlot	{
+	.@slot = getarg(0);
+
+	if (getequipcardid(.@slot, 0) > 0) return 1;
+	if (getequipcardid(.@slot, 1) > 0) return 1;
+	if (getequipcardid(.@slot, 2) > 0) return 1;
+	if (getequipcardid(.@slot, 3) > 0) return 1;
+
+	return 0;
+}
+
+function	script	F_RTT_IsValidSourceSlot	{
+	.@slot = getarg(0);
+
+	if (!callfunc("F_RTT_IsAllowedSlot", .@slot)) return 0;
+	if (!getequipisequiped(.@slot)) return 0;
+	if (getequipid(.@slot) <= 0) return 0;
+	if (getequiprefinerycnt(.@slot) <= 0) return 0;
+	if (callfunc("F_RTT_HasAnyCardOnSlot", .@slot)) return 0;
+
+	return 1;
+}
+
+function	script	F_RTT_IsValidTargetSlot	{
+	.@slot = getarg(0);
+
+	if (!callfunc("F_RTT_IsAllowedSlot", .@slot)) return 0;
+	if (!getequipisequiped(.@slot)) return 0;
+	if (getequipid(.@slot) <= 0) return 0;
+	if (getequiprefinerycnt(.@slot) != 0) return 0;
+	if (callfunc("F_RTT_HasAnyCardOnSlot", .@slot)) return 0;
+
+	return 1;
+}
+
+function	script	F_RTT_GetSlotMenuText	{
+	.@slot = getarg(0);
+
+	if (!getequipisequiped(.@slot))
+		return "[" + callfunc("F_RTT_GetSlotName", .@slot) + "] Empty";
+
+	return "[" + callfunc("F_RTT_GetSlotName", .@slot) + "] " + getequipname(.@slot) + " +" + getequiprefinerycnt(.@slot);
+}
+
+function	script	F_RTT_ClearToken	{
+	#RTT_Ready = 0;
+	#RTT_Slot = 0;
+	#RTT_SourceItemID = 0;
+	#RTT_SourceItemName$ = "";
+	#RTT_SourceRefine = 0;
+	return 1;
+}
+
+function	script	F_RTT_SQLClearAccountToken	{
+	.@account_id = getarg(0);
+
+	query_sql "DELETE FROM `acc_reg_num` WHERE `account_id` = '"+ .@account_id +"' AND `key` IN ('#RTT_Ready','RTT_Ready','#RTT_Slot','RTT_Slot','#RTT_SourceItemID','RTT_SourceItemID','#RTT_SourceRefine','RTT_SourceRefine')";
+	query_sql "DELETE FROM `acc_reg_str` WHERE `account_id` = '"+ .@account_id +"' AND `key` IN ('#RTT_SourceItemName$','RTT_SourceItemName$')";
+
+	return 1;
+}
+
+function	script	F_RTT_SQLLoadToken	{
+	.@account_id = getarg(0);
+
+	$@RTT_GM_Ready = 0;
+	$@RTT_GM_Slot = 0;
+	$@RTT_GM_SourceItemID = 0;
+	$@RTT_GM_SourceRefine = 0;
+	$@RTT_GM_SourceName$ = "";
+
+	query_sql "SELECT `value` FROM `acc_reg_num` WHERE `account_id` = '"+ .@account_id +"' AND `key` IN ('#RTT_Ready','RTT_Ready') LIMIT 1", $@RTT_GM_Ready;
+	query_sql "SELECT `value` FROM `acc_reg_num` WHERE `account_id` = '"+ .@account_id +"' AND `key` IN ('#RTT_Slot','RTT_Slot') LIMIT 1", $@RTT_GM_Slot;
+	query_sql "SELECT `value` FROM `acc_reg_num` WHERE `account_id` = '"+ .@account_id +"' AND `key` IN ('#RTT_SourceItemID','RTT_SourceItemID') LIMIT 1", $@RTT_GM_SourceItemID;
+	query_sql "SELECT `value` FROM `acc_reg_num` WHERE `account_id` = '"+ .@account_id +"' AND `key` IN ('#RTT_SourceRefine','RTT_SourceRefine') LIMIT 1", $@RTT_GM_SourceRefine;
+	query_sql "SELECT `value` FROM `acc_reg_str` WHERE `account_id` = '"+ .@account_id +"' AND `key` IN ('#RTT_SourceItemName$','RTT_SourceItemName$') LIMIT 1", $@RTT_GM_SourceName$;
+
+	return 1;
+}
+
+function	script	F_RTT_SQLRestoreSourceItem	{
+	.@char_id = getarg(0);
+	.@item_id = getarg(1);
+	.@refine = getarg(2);
+
+	.@updated = query_sql(
+		"UPDATE `inventory` SET `refine` = '"+ .@refine +"' "
+		+ "WHERE `char_id` = '"+ .@char_id +"' "
+		+ "AND `nameid` = '"+ .@item_id +"' "
+		+ "AND `refine` = '0' "
+		+ "AND `card0` = '0' AND `card1` = '0' AND `card2` = '0' AND `card3` = '0' "
+		+ "ORDER BY `id` DESC LIMIT 1"
+	);
+
+	return .@updated;
+}
+
+valmorra,141,141,5	script	Refine Transfer	10815,{
+
+	.@coin_id = 33048;
+	.@coin_cost = 50;
+
+	mes "[ ^FF9900Refine Transfer^000000 ]";
+	mes "^FF0000Please read carefully before using this NPC.^000000";
+	mes "This NPC transfers refine from one equipped item to another item in the ^0055FFsame equipment slot^000000.";
+	mes "Example: Weapon to Weapon, Armor to Armor, Shoes to Shoes.";
+	next;
+
+	mes "[ ^FF9900Refine Transfer^000000 ]";
+	mes "^FF9900Important Information:^000000";
+	mes "- Extracting will reset your source item to ^FF0000+0^000000 immediately.";
+	mes "- The saved refine must be applied to a ^0055FF+0 target item^000000.";
+	mes "- Items with cards are not allowed.";
+	mes "- Transfer fee: ^FF9900" + .@coin_cost + " Nostalgic Coin^000000.";
+	next;
+
+L_Main:
+	mes "[ ^FF9900Refine Transfer Menu^000000 ]";
+
+	if (getgmlevel() >= 99) {
+		switch(select(
+			"^0055FFExtract Refine^000000:"
+			+ "^0055FFApply Saved Refine^000000:"
+			+ "^00AA00Check Saved Token^000000:"
+			+ "^FF6600Clear My Saved Token^000000:"
+			+ "^777777--------------------^000000:"
+			+ "^FF0000GM Panel^000000:"
+			+ "Cancel"
+		)) {
+			case 1: goto L_Extract;
+			case 2: goto L_Apply;
+			case 3: goto L_Check;
+			case 4: goto L_Clear;
+			case 6: goto L_GMMenu;
+			default: close;
+		}
+	} else {
+		switch(select(
+			"^0055FFExtract Refine^000000:"
+			+ "^0055FFApply Saved Refine^000000:"
+			+ "^00AA00Check Saved Token^000000:"
+			+ "^FF6600Clear Saved Token^000000:"
+			+ "Cancel"
+		)) {
+			case 1: goto L_Extract;
+			case 2: goto L_Apply;
+			case 3: goto L_Check;
+			case 4: goto L_Clear;
+			default: close;
+		}
+	}
+
+L_GMMenu:
+	if (getgmlevel() < 99) close;
+
+	mes "[ ^FF0000GM Panel^000000 ]";
+	switch(select(
+		"^0055FFSearch Character Token^000000:"
+		+ "^00AA00Restore Stuck Token^000000:"
+		+ "^FF0000Force Clear Token^000000:"
+		+ "^FF9900View Transfer Logs^000000:"
+		+ "Back"
+	)) {
+		case 1: goto L_GMSearchToken;
+		case 2: goto L_GMRestoreToken;
+		case 3: goto L_GMForceClear;
+		case 4: goto L_GMLogs;
+		default: goto L_Main;
+	}
+
+L_Extract:
+	mes "[ ^FF9900Refine Transfer^000000 ]";
+	mes "Equip your ^0055FFsource item^000000 first.";
+	mes "I will extract its refine and reset the item to ^FF0000+0^000000 immediately.";
+	next;
+
+	mes "[ ^FF9900Refine Transfer^000000 ]";
+	mes "Choose the source slot.";
+	next;
+
+	.@s = select(
+		callfunc("F_RTT_GetSlotMenuText", EQI_HEAD_TOP) + ":"
+		+ callfunc("F_RTT_GetSlotMenuText", EQI_HEAD_MID) + ":"
+		+ callfunc("F_RTT_GetSlotMenuText", EQI_HEAD_LOW) + ":"
+		+ callfunc("F_RTT_GetSlotMenuText", EQI_ARMOR) + ":"
+		+ callfunc("F_RTT_GetSlotMenuText", EQI_HAND_R) + ":"
+		+ callfunc("F_RTT_GetSlotMenuText", EQI_HAND_L) + ":"
+		+ callfunc("F_RTT_GetSlotMenuText", EQI_GARMENT) + ":"
+		+ callfunc("F_RTT_GetSlotMenuText", EQI_SHOES) + ":"
+		+ "Cancel"
+	);
+
+	switch (.@s) {
+		case 1: .@slot = EQI_HEAD_TOP; break;
+		case 2: .@slot = EQI_HEAD_MID; break;
+		case 3: .@slot = EQI_HEAD_LOW; break;
+		case 4: .@slot = EQI_ARMOR; break;
+		case 5: .@slot = EQI_HAND_R; break;
+		case 6: .@slot = EQI_HAND_L; break;
+		case 7: .@slot = EQI_GARMENT; break;
+		case 8: .@slot = EQI_SHOES; break;
+		default: close;
+	}
+
+	if (!callfunc("F_RTT_IsValidSourceSlot", .@slot)) {
+		mes "[ ^FF9900Refine Transfer^000000 ]";
+		mes "That equipped item is not a valid source.";
+		mes "^FF0000Requirements:^000000";
+		mes "- Must be equipped";
+		mes "- Must be above +0";
+		mes "- No cards";
+		close;
+	}
+
+	if (#RTT_Ready) {
+		mes "[ ^FF9900Refine Transfer^000000 ]";
+		mes "You already have a saved refine token.";
+		mes "Please apply it or clear it first.";
+		close;
+	}
+
+	.@src_itemid = getequipid(.@slot);
+	.@src_name$ = getequipname(.@slot);
+	.@src_ref = getequiprefinerycnt(.@slot);
+
+	mes "[ ^FF9900Refine Transfer^000000 ]";
+	mes "Please confirm extraction:";
+	mes "Slot: ^0055FF" + callfunc("F_RTT_GetSlotName", .@slot) + "^000000";
+	mes "Item: ^0055FF" + .@src_name$ + "^000000";
+	mes "Refine to extract: ^0055FF+" + .@src_ref + "^000000";
+	next;
+
+	if (select("Extract Refine:Cancel") == 2)
+		close;
+
+	if (!callfunc("F_RTT_IsValidSourceSlot", .@slot)) {
+		mes "[ ^FF9900Refine Transfer^000000 ]";
+		mes "The source item is no longer valid.";
+		close;
+	}
+
+	.@oldref = getequiprefinerycnt(.@slot);
+	.@oldid  = getequipid(.@slot);
+
+	successremovecards .@slot;
+
+	delitem2 .@oldid, 1, 1, .@oldref, 0, 0,0,0,0;
+	getitem2 .@oldid, 1, 1, 0,      0, 0,0,0,0;
+
+	#RTT_Ready = 1;
+	#RTT_Slot = .@slot;
+	#RTT_SourceItemID = .@src_itemid;
+	#RTT_SourceItemName$ = .@src_name$;
+	#RTT_SourceRefine = .@src_ref;
+
+	mes "[ ^FF9900Refine Transfer^000000 ]";
+	mes "Refine extracted successfully.";
+	mes "Saved Slot: ^0055FF" + callfunc("F_RTT_GetSlotName", #RTT_Slot) + "^000000";
+	mes "Saved Refine: ^0055FF+" + #RTT_SourceRefine + "^000000";
+	mes "Source item has been reset to ^FF0000+0^000000.";
+	next;
+
+	mes "[ ^FF9900Refine Transfer^000000 ]";
+	mes "Now equip your ^0055FFtarget item^000000 in the ^0055FFsame slot^000000.";
+	mes "Then choose ^0055FFApply Saved Refine^000000.";
+	close;
+
+L_Apply:
+	mes "[ ^FF9900Refine Transfer^000000 ]";
+	if (!#RTT_Ready) {
+		mes "There is no saved refine token.";
+		close;
+	}
+
+	mes "Saved refine token:";
+	mes "Slot: ^0055FF" + callfunc("F_RTT_GetSlotName", #RTT_Slot) + "^000000";
+	mes "Source Item: ^0055FF" + #RTT_SourceItemName$ + "^000000";
+	mes "Saved Refine: ^0055FF+" + #RTT_SourceRefine + "^000000";
+	next;
+
+	.@slot = #RTT_Slot;
+
+	if (!callfunc("F_RTT_IsValidTargetSlot", .@slot)) {
+		mes "[ ^FF9900Refine Transfer^000000 ]";
+		mes "Your equipped target item in that slot is not valid.";
+		mes "^FF0000Requirements:^000000";
+		mes "- Must be equipped in the same slot";
+		mes "- Must be exactly +0";
+		mes "- No cards";
+		close;
+	}
+
+	.@tgt_itemid = getequipid(.@slot);
+	.@tgt_name$ = getequipname(.@slot);
+
+	if (.@tgt_itemid == #RTT_SourceItemID && .@tgt_name$ == #RTT_SourceItemName$) {
+		mes "[ ^FF9900Refine Transfer^000000 ]";
+		mes "Please equip a different target item.";
+		close;
+	}
+
+	mes "[ ^FF9900Refine Transfer^000000 ]";
+	mes "Please confirm transfer:";
+	mes "Slot: ^0055FF" + callfunc("F_RTT_GetSlotName", .@slot) + "^000000";
+	mes "Source Token: ^0055FF" + #RTT_SourceItemName$ + " [+" + #RTT_SourceRefine + "]^000000";
+	mes "Target: ^0055FF" + .@tgt_name$ + " [+0]^000000";
+	mes "Fee: ^FF9900" + .@coin_cost + " Nostalgic Coin^000000";
+	next;
+
+	if (select("Apply Refine:Cancel") == 2)
+		close;
+
+	if (countitem(.@coin_id) < .@coin_cost) {
+		mes "[ ^FF9900Refine Transfer^000000 ]";
+		mes "You do not have enough Nostalgic Coin.";
+		close;
+	}
+
+	if (!callfunc("F_RTT_IsValidTargetSlot", .@slot)) {
+		mes "[ ^FF9900Refine Transfer^000000 ]";
+		mes "The target item is no longer valid.";
+		close;
+	}
+
+	.@src_ref = #RTT_SourceRefine;
+	.@src_itemid = #RTT_SourceItemID;
+	.@src_name$ = #RTT_SourceItemName$;
+
+	while (getequiprefinerycnt(.@slot) < .@src_ref) {
+		successrefitem .@slot;
+	}
+
+	delitem .@coin_id, .@coin_cost;
+
+	query_sql
+		"INSERT INTO `refine_transfer_log` "
+		+ "(`account_id`,`char_id`,`char_name`,`source_item_id`,`source_item_name`,`source_refine_before`,`source_refine_after`,"
+		+ "`target_item_id`,`target_item_name`,`target_refine_before`,`target_refine_after`,`slot_type`,`coin_item_id`,`coin_cost`) VALUES ("
+		+ "'"+ getcharid(3) +"',"
+		+ "'"+ getcharid(0) +"',"
+		+ "'"+ escape_sql(strcharinfo(0)) +"',"
+		+ "'"+ .@src_itemid +"',"
+		+ "'"+ escape_sql(.@src_name$) +"',"
+		+ "'"+ .@src_ref +"',"
+		+ "'0',"
+		+ "'"+ .@tgt_itemid +"',"
+		+ "'"+ escape_sql(.@tgt_name$) +"',"
+		+ "'0',"
+		+ "'"+ .@src_ref +"',"
+		+ "'"+ escape_sql(callfunc("F_RTT_GetSlotName", .@slot)) +"',"
+		+ "'"+ .@coin_id +"',"
+		+ "'"+ .@coin_cost +"'"
+		+ ")";
+
+	callfunc("F_RTT_ClearToken");
+
+	specialeffect EF_REFINEOK;
+	announce strcharinfo(0) +" has successfully used Refine Transfer.", bc_all;
+
+	mes "[ ^FF9900Refine Transfer^000000 ]";
+	mes "Transfer completed successfully.";
+	mes "Target item is now ^0055FF+" + .@src_ref + "^000000.";
+	close;
+
+L_Check:
+	mes "[ ^FF9900Refine Transfer^000000 ]";
+	if (!#RTT_Ready) {
+		mes "There is no saved refine token.";
+		close;
+	}
+
+	mes "Saved refine token:";
+	mes "Slot: ^0055FF" + callfunc("F_RTT_GetSlotName", #RTT_Slot) + "^000000";
+	mes "Source Item: ^0055FF" + #RTT_SourceItemName$ + "^000000";
+	mes "Saved Refine: ^0055FF+" + #RTT_SourceRefine + "^000000";
+	close;
+
+L_Clear:
+	mes "[ ^FF9900Refine Transfer^000000 ]";
+	mes "^FF0000Warning:^000000 This will clear your saved token only.";
+	mes "It will NOT restore refine to your original source item.";
+	next;
+
+	if (select("Clear My Token:Cancel") == 2)
+		close;
+
+	callfunc("F_RTT_ClearToken");
+	mes "[ ^FF9900Refine Transfer^000000 ]";
+	mes "Saved refine token has been cleared.";
+	close;
+
+L_GMSearchToken:
+	if (getgmlevel() < 99) close;
+
+	mes "[ ^FF0000GM Token Search^000000 ]";
+	mes "Enter exact character name:";
+	input .@find_name$;
+
+	query_sql "SELECT `char_id`,`account_id`,`name` FROM `char` WHERE `name` = '"+ escape_sql(.@find_name$) +"' LIMIT 1",
+		.@find_char_id, .@find_account_id, .@find_char_name$;
+
+	if (.@find_char_id <= 0) {
+		mes "Character not found.";
+		close;
+	}
+
+	.@gm_aid = getcharid(3);
+	.@online = 0;
+
+	$@RTT_GM_Ready = 0;
+	$@RTT_GM_Slot = 0;
+	$@RTT_GM_SourceItemID = 0;
+	$@RTT_GM_SourceRefine = 0;
+	$@RTT_GM_SourceName$ = "";
+
+	if (isloggedin(.@find_account_id, .@find_char_id)) {
+		if (attachrid(.@find_account_id)) {
+			.@online = 1;
+			$@RTT_GM_Ready = #RTT_Ready;
+			$@RTT_GM_Slot = #RTT_Slot;
+			$@RTT_GM_SourceItemID = #RTT_SourceItemID;
+			$@RTT_GM_SourceRefine = #RTT_SourceRefine;
+			$@RTT_GM_SourceName$ = #RTT_SourceItemName$;
+			attachrid(.@gm_aid);
+		}
+	}
+
+	if ($@RTT_GM_Ready != 1)
+		callfunc("F_RTT_SQLLoadToken", .@find_account_id);
+
+	mes "[ ^FF0000GM Token Search^000000 ]";
+	mes "Player: ^0055FF" + .@find_char_name$ + "^000000";
+	mes "Status: " + ((.@online) ? "^00AA00Online^000000" : "^777777Offline / SQL Check^000000");
+	next;
+
+	if ($@RTT_GM_Ready != 1) {
+		mes "No active stuck refine token found.";
+		close;
+	}
+
+	mes "^00AA00Active token found.^000000";
+	mes "Slot: ^0055FF" + callfunc("F_RTT_GetSlotName", $@RTT_GM_Slot) + "^000000";
+	mes "Source Item: ^0055FF" + $@RTT_GM_SourceName$ + "^000000";
+	mes "Item ID: ^777777" + $@RTT_GM_SourceItemID + "^000000";
+	mes "Saved Refine: ^0055FF+" + $@RTT_GM_SourceRefine + "^000000";
+	close;
+
+L_GMRestoreToken:
+	if (getgmlevel() < 99) close;
+
+	mes "[ ^FF0000GM Restore Token^000000 ]";
+	mes "Enter exact character name:";
+	input .@find_name$;
+
+	query_sql "SELECT `char_id`,`account_id`,`name` FROM `char` WHERE `name` = '"+ escape_sql(.@find_name$) +"' LIMIT 1",
+		.@find_char_id, .@find_account_id, .@find_char_name$;
+
+	if (.@find_char_id <= 0) {
+		mes "Character not found.";
+		close;
+	}
+
+	.@gm_aid = getcharid(3);
+	.@online = isloggedin(.@find_account_id, .@find_char_id);
+
+	$@RTT_GM_Ready = 0;
+	$@RTT_GM_Slot = 0;
+	$@RTT_GM_SourceItemID = 0;
+	$@RTT_GM_SourceRefine = 0;
+	$@RTT_GM_SourceName$ = "";
+
+	if (.@online) {
+		if (attachrid(.@find_account_id)) {
+			$@RTT_GM_Ready = #RTT_Ready;
+			$@RTT_GM_Slot = #RTT_Slot;
+			$@RTT_GM_SourceItemID = #RTT_SourceItemID;
+			$@RTT_GM_SourceRefine = #RTT_SourceRefine;
+			$@RTT_GM_SourceName$ = #RTT_SourceItemName$;
+			attachrid(.@gm_aid);
+		}
+	}
+
+	if ($@RTT_GM_Ready != 1)
+		callfunc("F_RTT_SQLLoadToken", .@find_account_id);
+
+	if ($@RTT_GM_Ready != 1) {
+		mes "No active stuck refine token found.";
+		close;
+	}
+
+	mes "Player: ^0055FF" + .@find_char_name$ + "^000000";
+	mes "Source Item: ^0055FF" + $@RTT_GM_SourceName$ + "^000000";
+	mes "Saved Refine: ^0055FF+" + $@RTT_GM_SourceRefine + "^000000";
+	next;
+
+	if (.@online) {
+		mes "^00AA00Player is online.^000000";
+		mes "Ask player to keep only the correct +0 source item in inventory.";
+		next;
+
+		if (select("Confirm Online Restore:Cancel") == 2)
+			close;
+
+		if (!attachrid(.@find_account_id)) {
+			mes "Failed to attach player.";
+			close;
+		}
+
+		if (countitem($@RTT_GM_SourceItemID) < 1) {
+			attachrid(.@gm_aid);
+			mes "Player does not have source item in inventory.";
+			mes "Token was NOT cleared.";
+			close;
+		}
+
+		delitem $@RTT_GM_SourceItemID, 1;
+		getitem2 $@RTT_GM_SourceItemID, 1, 1, $@RTT_GM_SourceRefine, 0, 0,0,0,0;
+		callfunc("F_RTT_ClearToken");
+		dispbottom "[Refine Transfer] GM restored your stuck refine token.";
+
+		attachrid(.@gm_aid);
+
+		mes "Online restore completed.";
+		close;
+	}
+
+	mes "^777777Player is offline.^000000";
+	mes "Offline restore will update one matching +0 source item in SQL inventory.";
+	next;
+
+	if (select("Confirm Offline Restore:Cancel") == 2)
+		close;
+
+	.@updated = callfunc("F_RTT_SQLRestoreSourceItem", .@find_char_id, $@RTT_GM_SourceItemID, $@RTT_GM_SourceRefine);
+
+	if (.@updated < 1) {
+		mes "Could not find matching +0 source item in inventory.";
+		mes "Token was NOT cleared.";
+		close;
+	}
+
+	callfunc("F_RTT_SQLClearAccountToken", .@find_account_id);
+
+	mes "Offline restore completed.";
+	close;
+
+L_GMForceClear:
+	if (getgmlevel() < 99) close;
+
+	mes "[ ^FF0000GM Force Clear^000000 ]";
+	mes "Enter exact character name:";
+	input .@find_name$;
+
+	query_sql "SELECT `char_id`,`account_id`,`name` FROM `char` WHERE `name` = '"+ escape_sql(.@find_name$) +"' LIMIT 1",
+		.@find_char_id, .@find_account_id, .@find_char_name$;
+
+	if (.@find_char_id <= 0) {
+		mes "Character not found.";
+		close;
+	}
+
+	mes "^FF0000Warning:^000000 This will delete token only.";
+	mes "It will NOT restore refine.";
+	next;
+
+	if (select("Confirm Force Clear:Cancel") == 2)
+		close;
+
+	.@gm_aid = getcharid(3);
+
+	if (isloggedin(.@find_account_id, .@find_char_id)) {
+		if (attachrid(.@find_account_id)) {
+			callfunc("F_RTT_ClearToken");
+			dispbottom "[Refine Transfer] GM force cleared your stuck refine token.";
+			attachrid(.@gm_aid);
+		}
+	}
+
+	callfunc("F_RTT_SQLClearAccountToken", .@find_account_id);
+
+	mes "Player token has been force cleared.";
+	close;
+
+L_GMLogs:
+	if (getgmlevel() < 99) close;
+
+	mes "[ ^FF9900GM Transfer Logs^000000 ]";
+	mes "Showing latest 30 records.";
+	next;
+
+	query_sql
+		"SELECT `created_at`,`char_name`,`slot_type`,`source_item_name`,`source_refine_before`,`target_item_name`,`target_refine_after`,`coin_cost` "
+		+ "FROM `refine_transfer_log` "
+		+ "ORDER BY `id` DESC LIMIT 30",
+		.@created_at$[0], .@char_name$[0], .@slot_type$[0], .@src_name2$[0], .@src_ref_before[0], .@tgt_name2$[0], .@tgt_ref_after[0], .@coin_cost_a[0];
+
+	.@rows = getarraysize(.@char_name$);
+	if (.@rows < 1) {
+		mes "No transfer logs found.";
+		close;
+	}
+
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		mes "^FF0000Record " + (.@i + 1) + "^000000";
+		mes "Time: ^777777" + .@created_at$[.@i] + "^000000";
+		mes "Player: ^0055FF" + .@char_name$[.@i] + "^000000";
+		mes "Slot: ^008800" + .@slot_type$[.@i] + "^000000";
+		mes "Source: ^990099" + .@src_name2$[.@i] + " [+" + .@src_ref_before[.@i] + "]^000000";
+		mes "Target: ^0033CC" + .@tgt_name2$[.@i] + " [+" + .@tgt_ref_after[.@i] + "]^000000";
+		mes "Cost: ^FF9900" + .@coin_cost_a[.@i] + " Nostalgic Coin^000000";
+		if (.@i < .@rows - 1) next;
+	}
+	close;
+}

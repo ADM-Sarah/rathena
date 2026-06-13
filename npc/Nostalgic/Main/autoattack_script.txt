@@ -1,0 +1,1278 @@
+function	script	convertToDHMS	{
+	.@ms = getarg(0);
+	if (.@ms <= 0)
+		return "^FF000000:00:00:00^000000";
+
+	.@totalSeconds = .@ms / 1000;
+	.@days    = .@totalSeconds / 86400;
+	.@hours   = (.@totalSeconds % 86400) / 3600;
+	.@minutes = (.@totalSeconds % 3600) / 60;
+	.@seconds = .@totalSeconds % 60;
+
+	return "^008000" + sprintf("%02d:%02d:%02d:%02d",
+		.@days, .@hours, .@minutes, .@seconds) + "^000000";
+}
+
+function	script	getDailyKey	{
+    return gettimestr("%Y-%m-%d", 21);
+}
+
+-	script	bot_at	-1,{
+    function is_hp_only;
+    function is_sp_only;
+OnInit:
+	bindatcmd "aa", strnpcinfo(3) + "::OnDo", 0, 99;
+
+	// Name
+	.n$ = "^FFB266[ Auto Grind System ]^000000";
+
+	// All Buff Items Configuration
+	setarray .lbuff_item[0],645,656,657,662,12016,12028,12030,12031,12033,12034,12118,12119,12120,12121,12122,12123,12208,12209,12210,12215,12216,12218,12219,12075,12090,12085,12080,12095,12100,12202,12203,12207,12204,12205,12206,12263,12411,12412,14534,14535,14536,14541,14542,14543,14544,14545,14592;
+	setarray .lbuff_sc[0],SC_ASPDPOTION0,SC_ASPDPOTION1,SC_ASPDPOTION2,SC_SPEEDUP0,SC_SPEEDUP1,SC_SPEEDUP0,SC_ATKPOTION,SC_MATKPOTION,SC_Intravision,SC_Silence,SC_ARMOR_ELEMENT_FIRE,SC_ARMOR_ELEMENT_WATER,SC_ARMOR_ELEMENT_EARTH,SC_ARMOR_ELEMENT_WIND,SC_HITFOOD,SC_FLEEFOOD,SC_EXPBOOST,SC_LIFEINSURANCE,SC_ITEMBOOST,SC_BLESSING,SC_INCREASEAGI,SC_ASSUMPTIO,SC_WINDWALK,SC_STRFOOD,SC_AGIFOOD,SC_VITFOOD,SC_INTFOOD,SC_DEXFOOD,SC_LUKFOOD,SC_FOOD_STR_CASH,SC_FOOD_AGI_CASH,SC_FOOD_VIT_CASH,SC_FOOD_INT_CASH,SC_FOOD_DEX_CASH,SC_FOOD_LUK_CASH,SC_EXPBOOST,SC_EXPBOOST,SC_ITEMBOOST,SC_S_LIFEPOTION,SC_L_LIFEPOTION,SC_INCCRI,SC_DEF_RATE,SC_DEF_RATE,SC_MDEF_RATE,SC_MDEF_RATE,SC_EXPBOOST,SC_JEXPBOOST;
+
+	setarray .HP_ONLY_POTIONS[0], 501,502,503,504,507,508,509,512,513,515,516,517,518,519,520,521,522,526,528,529,530,531,532,534,535,536,537,538,539,544,545,546,547,607,608,51000,12135;
+    setarray .SP_ONLY_POTIONS[0], 505,510,514,518,526,533,548,558,559,560,561,566,568,573,576,578,587,607,608,51000;
+
+    setarray .lpotion_disable_list[0], 14875, 14876;
+
+    setarray .potion_hp_threshold[0], 0;
+    setarray .potion_sp_threshold[0], 0;
+
+	.daily_free_battery = 18000000;
+
+	// Battery System
+	.battery_1hour_id = 672;
+	.battery_2hour_id = 670;
+	.battery_5hour_id = 676;
+
+	.battery_1hour = 3600000;    // 1 Hour
+	.battery_2hour = 7200000;    // 2 Hours
+	.battery_5hour = 18000000;   // 5 Hours
+end;
+
+OnPCLoginEvent:
+    if (!getbattleconf("autobattle.battery_system")) end;
+
+    .@aid = getcharid(3);
+    .@today_key$ = callfunc("getDailyKey");
+
+	query_sql(
+		"INSERT INTO z_aa_duration_data "
+		+ "(account_id, aa_free_duration, aa_paid_duration, last_free_reset) "
+		+ "VALUES (" + .@aid + ", 0, 0, '') "
+		+ "ON DUPLICATE KEY UPDATE account_id = account_id"
+	);
+
+    query_sql(
+        "SELECT aa_free_duration, aa_paid_duration, last_free_reset "
+        + "FROM z_aa_duration_data WHERE account_id = " + .@aid,
+        .@free, .@paid, .@last$
+    );
+
+    if (.@last$ != .@today_key$) {
+        .@free = .daily_free_battery;
+        query_sql(
+            "UPDATE z_aa_duration_data SET "
+            + "aa_free_duration = " + .@free + ", "
+            + "last_free_reset = '" + .@today_key$ + "' "
+            + "WHERE account_id = " + .@aid
+        );
+    }
+
+    set @aa_free_duration, .@free;
+    set @aa_paid_duration, .@paid;
+    set @aa_duration, (.@free + .@paid);
+end;
+
+OnClock0000:
+	if (!getbattleconf("autobattle.battery_system")) end;
+	stop_autoattack();
+	end;
+
+OnDo:
+if(getstatus(SC_AUTOATTACK)){
+	sc_end SC_AUTOATTACK;
+	message strcharinfo(0),"Auto-Battle System Disable";
+	end; 
+}
+
+if (getbattleconf("autobattle.battery_system")) {
+	if(@need_relog){
+		mes .n$;
+		mes "Free daily battery reset.";
+		mes "Please relog";
+		close;
+	}
+}
+main_menu:
+	mes .n$;
+	mes "Auto Grind System uses AI to manage";
+	mes "battles automating actions like";
+	mes "attacks and skills. It provides";
+	mes "convenience for repetitive tasks";
+	mes "and grinding, but may reduce player";
+	mes "control and strategic depth.";
+	mes "Allow players to adjust combat settings for optimal performance.";
+	next;
+	if (getbattleconf("autobattle.battery_system")) {
+		clear;
+		mes .n$;
+		.@aid = getcharid(3);
+		query_sql(
+			"SELECT aa_free_duration, aa_paid_duration FROM z_aa_duration_data WHERE account_id = " + .@aid,
+			.@free, .@paid
+		);
+		set @aa_duration, (.@free + .@paid);
+		mes "Your total Battery: ^008000" + convertToDHMS(@aa_duration) + "^000000";
+		if(countitem(.battery_1hour_id) == 0 && countitem(.battery_2hour_id) == 0 && countitem(.battery_5hour_id) == 0 ) {
+				mes "^ffffff_^000000 + ^ff0000You have nothing^000000";
+		}
+		if(countitem(.battery_1hour_id))
+			mes "^ffffff_^000000 + ^008B8BYou have^000000 ^DAA520"+(countitem(.battery_1hour_id))+"x^000000 ^008B8B"+getitemname(.battery_1hour_id)+"^000000";
+		if(countitem(.battery_2hour_id))
+			mes "^ffffff_^000000 + ^008B8BYou have^000000 ^DAA520"+(countitem(.battery_2hour_id))+"x^000000 ^008B8B"+getitemname(.battery_2hour_id)+"^000000";
+		if(countitem(.battery_5hour_id))
+			mes "^ffffff_^000000 + ^008B8BYou have^000000 ^DAA520"+(countitem(.battery_5hour_id))+"x^000000 ^008B8B"+getitemname(.battery_5hour_id)+"^000000";
+		next;
+	}
+
+	.@main_menu = select(
+		"^696969>^000000 ^800000Start Auto Grind System^000000",
+		getbattleconf("autobattle.battleoffline_system")?"^696969>^000000 ^800000Start Auto Grind System (Offline)^000000":"",
+		"^696969>^000000 ^C71585Configuration^000000",
+		getbattleconf("autobattle.battery_system")?"^FFA07ARe-Charge^000000":""
+	);
+
+	if( .@main_menu == 1 ){
+		clear;
+		if (getbattleconf("autobattle.battery_system")) {
+			if ((@aa_free_duration + @aa_paid_duration) < 1000) {
+				mes .n$;
+				mes "^FF0000The system has run out of battery!^000000";
+				mes "Please recharge before using Offline Mode.";
+				close;
+			}
+			mes .n$;
+			mes "You are about to start the Auto Grind System. When you close this window, Auto Grind System will be activated.";
+			close2;
+			if (@aa_duration >= 1000) {
+				sc_start SC_AUTOATTACK, 86400000, 0;
+			} else {
+				sc_end SC_AUTOATTACK;
+				message strcharinfo(0), "Auto Grind System cancelled: Battery empty.";
+			}
+			end;
+		}
+		mes .n$;
+		mes "You are about to start the Auto Grind System. When you close this window, Auto Grind System will be activated.";
+		close2;
+		message strcharinfo(0),"Auto Grind System Enable";
+		sc_start SC_AUTOATTACK,86400000,0;
+		end;
+	}
+	if( .@main_menu == 2 ){
+		mes .n$;
+		mes "You are about to start the Auto Grind System (Offline Mode).";
+		mes "Remaining Battery: ^008000" + convertToDHMS(@aa_duration) + "^000000";
+		mes "When you close this window, Auto Grind System will be activated.";
+		close2;
+		sc_start SC_AUTOATTACK, 86400000, 0;
+		if (@aa_duration >= 1000) {
+			atcommand "@battleoffline";
+		} else {
+			sc_end SC_AUTOATTACK;
+			message strcharinfo(0), "Auto Grind System cancelled: Battery empty.";
+		}
+		end;
+	}
+
+	if( .@main_menu == 3 ){
+		goto(config_menu);
+		end;
+	}
+
+	if( .@main_menu == 4 ){
+main_menu2:
+		clear;
+		mes .n$;
+		if(countitem(.battery_1hour_id)) {
+			mes "^008B8BYou have^000000 ^DAA520"+(countitem(.battery_1hour_id))+"x^000000 ^008B8B"+getitemname(.battery_1hour_id)+"^000000";
+		}
+		if(countitem(.battery_2hour_id)) {
+			mes "^008B8BYou have^000000 ^DAA520"+(countitem(.battery_2hour_id))+"x^000000 ^008B8B"+getitemname(.battery_2hour_id)+"^000000";
+		}
+		if(countitem(.battery_5hour_id)) {
+			mes "^008B8BYou have^000000 ^DAA520"+(countitem(.battery_5hour_id))+"x^000000 ^008B8B"+getitemname(.battery_5hour_id)+"^000000";
+		}
+		mes "You can use your battery to replace the low battery and enjoy Auto Grind System again.";
+		switch(select(
+			"^800000Go Back^000000 ^696969<^000000",
+			(countitem(.battery_1hour_id) > 0 )?"^8B4513>^000000 ^00CED1"+getitemname(.battery_1hour_id)+"^000000":"",
+			(countitem(.battery_2hour_id) > 0 )?"^8B4513>^000000 ^00CED1"+getitemname(.battery_2hour_id)+"^000000":"",
+			(countitem(.battery_5hour_id) > 0 )?"^8B4513>^000000 ^00CED1"+getitemname(.battery_5hour_id)+"^000000":""
+		)){
+		case 1:
+			clear;
+			goto(main_menu);
+			end;
+
+		case 2:
+			if(countitem(.battery_1hour_id)){
+				clear;
+				mes .n$;
+				mes "^008B8BYou have^000000 ^DAA520"+(countitem(.battery_1hour_id))+"x^000000 ^008B8B"+getitemname(.battery_1hour_id)+"^000000";
+				mes "You can use your battery to replace the low battery and enjoy Auto Grind System again.";
+				mes "^ff0000Are you sure you want to install the new battery?^000000";
+				next;
+				switch(select("No:Yes")){
+					case 1:
+						mes .n$;
+						mes "Oh, I understand if you're not ready to install the new battery yet.";
+						next;
+						goto(main_menu2);
+						end;
+					case 2:
+						if(countitem(.battery_1hour_id)){
+							clear;
+							delitem .battery_1hour_id,1;
+							query_sql(
+								"SELECT aa_free_duration, aa_paid_duration "
+								+ "FROM z_aa_duration_data WHERE account_id = " + getcharid(3),
+								@aa_free_duration, @aa_paid_duration
+							);
+							@aa_paid_duration += .battery_1hour;
+							query_sql(
+								"UPDATE z_aa_duration_data SET aa_paid_duration = " + @aa_paid_duration +
+								" WHERE account_id = " + getcharid(3)
+							);
+							set @aa_duration, (@aa_free_duration + @aa_paid_duration);
+							mes .n$;
+							mes "Your installation of the new battery was successful.";
+							mes "Your total Battery: ^008000"+convertToDHMS(@aa_duration)+"^000000";
+							close;
+						}
+						mes .n$;
+						mes "^ff0000Glitcher detected!! This system has";
+						mes "24/7 CCTV monitoring, and security";
+						mes "has observed that you are attempting to exploit the system^000000.";
+						close;
+				}
+			}
+
+		case 3:
+			if(countitem(.battery_2hour_id)){
+				clear;
+				mes .n$;
+				mes "^008B8BYou have^000000 ^DAA520"+(countitem(.battery_2hour_id))+"x^000000 ^008B8B"+getitemname(.battery_2hour_id)+"^000000";
+				mes "You can use your battery to replace the low battery and enjoy Auto Grind System again.";
+				mes "^ff0000Are you sure you want to install the new battery?^000000";
+				next;
+				switch(select("No:Yes")){
+					case 1:
+						mes .n$;
+						mes "Oh, I understand if you're not ready to install the new battery yet.";
+						next;
+						goto(main_menu2);
+						end;
+					case 2:
+						if(countitem(.battery_2hour_id)){
+							clear;
+							delitem .battery_2hour_id,1;
+							query_sql(
+								"SELECT aa_free_duration, aa_paid_duration "
+								+ "FROM z_aa_duration_data WHERE account_id = " + getcharid(3),
+								@aa_free_duration, @aa_paid_duration
+							);
+							@aa_paid_duration += .battery_2hour;
+							query_sql(
+								"UPDATE z_aa_duration_data SET aa_paid_duration = " + @aa_paid_duration +
+								" WHERE account_id = " + getcharid(3)
+							);
+							set @aa_duration, (@aa_free_duration + @aa_paid_duration);
+							mes .n$;
+							mes "Your installation of the new battery was successful.";
+							mes "Your total Battery: ^008000"+convertToDHMS(@aa_duration)+"^000000";
+							close;
+						}
+						mes .n$;
+						mes "^ff0000Glitcher detected!! This system has";
+						mes "24/7 CCTV monitoring, and security";
+						mes "has observed that you are attempting to exploit the system^000000.";
+						close;
+				}
+			}
+
+		case 4:
+			if(countitem(.battery_5hour_id)){
+				clear;
+				mes .n$;
+				mes "^008B8BYou have^000000 ^DAA520"+(countitem(.battery_5hour_id))+"x^000000 ^008B8B"+getitemname(.battery_5hour_id)+"^000000";
+				mes "You can use your battery to replace the low battery and enjoy Auto Grind System again.";
+				mes "^ff0000Are you sure you want to install the new battery?^000000";
+				next;
+				switch(select("No:Yes")){
+					case 1:
+						mes .n$;
+						mes "Oh, I understand if you're not ready to install the new battery yet.";
+						next;
+						goto(main_menu2);
+						end;
+					case 2:
+						if(countitem(.battery_5hour_id)){
+							clear;
+							delitem .battery_5hour_id,1;
+							query_sql(
+								"SELECT aa_free_duration, aa_paid_duration "
+								+ "FROM z_aa_duration_data WHERE account_id = " + getcharid(3),
+								@aa_free_duration, @aa_paid_duration
+							);
+							@aa_paid_duration += .battery_5hour;
+							query_sql(
+								"UPDATE z_aa_duration_data SET aa_paid_duration = " + @aa_paid_duration +
+								" WHERE account_id = " + getcharid(3)
+							);
+							set @aa_duration, (@aa_free_duration + @aa_paid_duration);
+							mes .n$;
+							mes "Your installation of the new battery was successful.";
+							mes "Your total Battery: ^008000"+convertToDHMS(@aa_duration)+"^000000";
+							close;
+						}
+						mes .n$;
+						mes "^ff0000Glitcher detected!! This system has";
+						mes "24/7 CCTV monitoring, and security";
+						mes "has observed that you are attempting to exploit the system^000000.";
+						close;
+				}
+			}
+		}
+	}
+
+config_menu:
+	clear;
+	mes .n$;
+	mes "Customize settings for attack priorities, skill usage, and target selection to optimize performance and adapt the combat to your style.";
+	next;
+	menu	"^800000Go Back^000000 ^8B4513<^000000",main_menu,
+			((BaseClass == Job_Acolyte))?"^8B4513>^000000 ^803480Support Slave^000000":"",autoslave,
+			aa_getautoattackint(19,0)?"   ^8B4513+^000000 ^4B3523Support Slave Skills^000000":"",autoslaveskills,
+			aa_getautoattackint(19,0)?"":"^8B4513>^000000 ^800080Regeneration^000000",regeneration_menu,
+			aa_getautoattackint(19,0)?"":"^8B4513>^000000 ^000080Battle Skills^000000",attackskills_menu,
+			aa_getautoattackint(19,0)?"":"^8B4513>^000000 ^FF4500Buff Skills^000000",buffskills_menu,
+			aa_getautoattackint(19,0)?"":"^8B4513>^000000 ^000080Buff Items^000000",buffitems_menu,
+			aa_getautoattackint(19,0)?"":"^8B4513>^000000 ^B8860BTeleport^000000",teleport_menu,
+			aa_getautoattackint(19,0)?"":"^8B4513>^000000 ^808000Monster Selection^000000",monsters_menu,
+			aa_getautoattackint(19,0)?"":"^8B4513>^000000 ^2F4F4FItems Pickup Selection^000000",pickupitems_menu,
+			aa_getautoattackint(19,0)?"":"^8B4513+^000000 ^4B3523Others configurations^000000",others_menu,
+			" ~ Reset all",reset_all;
+	end;
+
+pickupitems_menu:
+	clear;
+	mes .n$;
+	mes "--- Current Settings ---";
+	mes "Select the items to pick up";
+	mes aa_getautoattackstring(13,0);
+
+	.@pickupitems_menu = select("^800000Go Back^000000 ^8B4513<^000000",aa_getautoattackint(10,0)?"[^008000+^000000] Priorize loot over fight":"[^FF0000-^000000] Priorize loot over fight","Pick up configuration","Add an item","Remove an item","Clear the list");
+
+	switch(.@pickupitems_menu){
+		case 1:
+			goto(config_menu);
+		end;
+
+		case 2:
+			if(aa_getautoattackint(10,0))
+				aa_setautoattack("13;0");
+			else
+				aa_setautoattack("13;1");
+			break;
+
+		case 3:
+			.@pickup_config_choice = 0;
+			switch(aa_getautoattackint(9,0)){
+				case 0:
+					.@pickupitems_config_menu  = select("^800000Go Back^000000 ^8B4513<^000000","Pick up only items on the list","Don't pick up any item");
+					switch(.@pickupitems_config_menu){
+						case 1 :
+							goto(pickupitems_menu);
+							end;
+						case 2:
+							.@pickup_config_choice = 1;
+							break;
+						case 3 :
+							.@pickup_config_choice = 2;
+							break;
+					}
+					break;
+				case 1:
+					.@pickupitems_config_menu  = select("^800000Go Back^000000 ^8B4513<^000000","Pick up every items","Don't pick up any item");
+					switch(.@pickupitems_config_menu){
+						case 1 :
+							goto(pickupitems_menu);
+							end;
+						case 2:
+							.@pickup_config_choice = 0;
+							break;
+						case 3 :
+							.@pickup_config_choice = 2;
+							break;
+					}
+					break;
+				case 2:
+					.@pickupitems_config_menu  = select("^800000Go Back^000000 ^8B4513<^000000","Pick up every items","Pick up only items on the list");
+					switch(.@pickupitems_config_menu){
+						case 1 :
+							goto(pickupitems_menu);
+							end;
+						case 2:
+							.@pickup_config_choice = 0;
+							break;
+						case 3 :
+							.@pickup_config_choice = 1;
+							break;
+					}
+					break;				
+			}
+			aa_setautoattack("20;" + .@pickup_config_choice);
+			break;
+		case 4:
+			clear;
+			mes .n$;
+			mes "Enter the id of the item to add on the list (20 max)";
+			do {
+				input .@itempickup_id;
+			} while(.@itempickup_id < 1);
+
+			aa_setautoattack("21;1;" + .@itempickup_id);
+
+			break;
+		case 5:
+			if(aa_getautoattackint(17,0) > 0){
+				mes "Enter the id of the item to delete from the list";
+
+				do {
+					input .@itempickup_id;
+				} while(.@itempickup_id < 1);
+				aa_setautoattack("21;0;" + .@itempickup_id);
+			} else {
+				clear;
+				mes .n$;
+				mes "Sorry, you don't have any item of this list";
+				next;
+			}
+
+			break;
+		case 6:
+			aa_setautoattack("21;-1;0");
+			break;
+	}
+
+	goto(pickupitems_menu);
+	end;
+
+others_menu:
+	clear;
+	mes .n$;
+
+	.@others_menu = select(
+	"^800000Go Back^000000 ^8B4513<^000000",
+	aa_getautoattackint(7,0)?"[^008000+^000000] Token of Siegfried":"[^FF0000-^000000] Token of Siegfried",
+	aa_getautoattackint(11,0)==1?"[^FF0000-^000000] Melee attack":"[^008000+^000000] Melee attack",
+	aa_getautoattackint(11,0)==2?"[^008000+^000000] Melee attack only when SP below 100sp":"[^FF0000-^000000] Melee attack only when SP below 100sp"
+	);
+	switch(.@others_menu){
+		case 1:
+			goto(config_menu);
+			break;
+		case 2:
+			if(aa_getautoattackint(7,0))
+				aa_setautoattack("11;0");
+			else
+				aa_setautoattack("11;1");
+			break;
+		case 3:
+			if(aa_getautoattackint(11,0) == 1)
+				aa_setautoattack("7;0");
+			else
+				aa_setautoattack("7;1");
+			break;
+		case 4:
+			if(aa_getautoattackint(11,0) == 2)
+				aa_setautoattack("7;0");
+			else
+				aa_setautoattack("7;2");
+			break;
+	}
+	goto(others_menu);
+	end;
+
+action_on_end_menu:
+	clear;
+	mes .n$;
+	mes "--- Current Settings ---";
+	mes aa_getautoattackstring(4,0);
+
+	.@action_on_end_menu = select(
+	"^800000Go Back^000000 ^8B4513<^000000",
+	aa_getautoattackint(18,0) == 0?"^008000[x]^000000 Do nothing":"[ ] Do nothing",
+	aa_getautoattackint(18,0) == 1?"^008000[x]^000000 Teleport to save point":"[ ] Teleport to save point",
+	aa_getautoattackint(18,0) == 2?"^008000[x]^000000 Logout":"[ ] Logout"
+	);
+
+	switch(.@action_on_end_menu){
+		case 1:
+			clear;
+			goto(others_menu);
+			break;
+		case 2:
+			if(aa_getautoattackint(18,0) != 0)
+				aa_setautoattack("22;0");
+			break;
+		case 3:
+			if(aa_getautoattackint(18,0) != 1)
+				aa_setautoattack("22;1");
+			break;
+		case 4:
+			if(aa_getautoattackint(18,0) != 2)
+				aa_setautoattack("22;2");
+			break;
+	}
+
+	clear;
+	goto(others_menu);
+	end;
+
+reset_all:
+	clear;
+	mes .n$;
+	
+	.@reset_menu = select("^800000Go Back^000000 ^8B4513<^000000","Confirm the reset of all settings");
+
+	switch(.@reset_menu){
+		case 1:
+			goto(config_menu);
+			end;
+
+		case 2:
+			aa_setautoattack("10;0");
+			break;
+	}
+
+	goto(config_menu);
+	end;
+
+monsters_menu:
+	clear;
+	mes .n$;
+	mes "asdas";
+	menu "^800000Go Back^000000 ^8B4513<^000000",config_menu,aa_getautoattackint(16,0) ? "[^008000+^000000] Ignore aggressive mobs not in list" : "[^FF0000-^000000] Ignore aggressive mobs not in list", monsters_menu_ignore,
+     "Mob List", monsters_menu_list;
+
+monsters_menu_ignore:
+	if(aa_getautoattackint(16,0))
+		aa_setautoattack("18;0");
+	else
+		aa_setautoattack("18;1");
+	goto(monsters_menu);
+	end;
+
+monsters_menu_list:
+	clear;
+	mes .n$;
+	mes "--- Current Settings ---";
+	mes "Select here the monsters that you don't want to attack";
+	mes aa_getautoattackstring(12,0);
+	
+	if(getarraysize(.@mobs_menu_ids) == 0){
+		clear;
+		mes .n$;
+		mes "Sorry, there is no monsters on the map";
+		next;
+		goto(main_menu);
+	}
+	
+	.@mobs_menu_list$ = "^800000Go Back^000000 ^8B4513<^000000:" + .@mobs_menu_list$;
+	.@i = select( .@mobs_menu_list$ );
+
+	if(.@i == 1)
+		goto(monsters_menu);
+	else
+		.@i--;
+
+	if(.@mobs_menu_state[.@mobs_menu_ids[.@i]])
+		aa_setautoattack("19;"+ .@mobs_menu_ids[.@i] + ";0");
+	else
+		aa_setautoattack("19;"+ .@mobs_menu_ids[.@i] + ";1");
+
+	goto(monsters_menu_list);
+	end;
+
+teleport_menu:
+	clear;
+	mes .n$;
+	mes "--- Current Settings ---";
+	mes "["+aa_getautoattackstring(6,3)+"] Use Fly Wing to teleport";
+	mes "["+aa_getautoattackstring(6,4)+"] Use Teleport Skill to teleport";
+	mes "["+aa_getautoattackstring(6,0)+"] Min HP for emergency teleport";
+	mes "["+aa_getautoattackstring(6,1)+"] No-monster teleport delay";
+	mes "["+aa_getautoattackstring(6,2)+"] Max target count for auto-teleport";
+
+	.@teleport_menu = select(
+	"^800000Go Back^000000 ^8B4513<^000000",
+	aa_getautoattackint(12,0)?"[^FF0000-^000000] Use Fly Wing to teleport":"[^008000+^000000] Use Fly Wing to teleport",
+	aa_getautoattackint(13,0)?"[^FF0000-^000000] Use Teleport Skill to teleport":"[^008000+^000000] Use Teleport Skill to teleport",
+	"[^008000" + aa_getautoattackstring(6,0) + "^000000] Min HP for emergency teleport",
+	"[^008000" + aa_getautoattackstring(6,1) + "^000000] No-monster teleport delay",
+	"[^008000" + aa_getautoattackstring(6,2) + "^000000] Max target count for auto-teleport"
+	);
+	
+	switch(.@teleport_menu){
+		case 1:
+			goto(config_menu);
+			break;
+		case 2:
+			if(aa_getautoattackint(12,0))
+				aa_setautoattack("4;0");
+			else
+				aa_setautoattack("4;1");
+			break;
+		case 3:
+			if(aa_getautoattackint(13,0))
+				aa_setautoattack("6;0");
+			else
+				aa_setautoattack("6;1");
+			break;
+		case 4:
+			do {
+				clear;
+				mes .n$;
+				mes "Enter the minimum HP % at which you want to emergency teleport.";
+				mes "Valid range: 5% to 90%.";
+				mes "Enter 0 to disable this feature.";
+				input .@teleport_minhpvalue;
+			} while(.@teleport_minhpvalue != 0 && (.@teleport_minhpvalue < 5 || .@teleport_minhpvalue > 90));
+			aa_setautoattack("16;"+.@teleport_minhpvalue);
+			break;
+		case 5:
+			do {
+				clear;
+				mes .n$;
+				mes "Set the teleport delay (in seconds) when no monsters are detected.";
+				mes "Valid range: 2 to 600 seconds.";
+				mes "Enter 0 to disable this feature.";
+				input .@teleport_delayvalue;
+			} while(.@teleport_delayvalue != 0 && (.@teleport_delayvalue < 2 || .@teleport_delayvalue > 600));
+			.@teleport_delayvalue = .@teleport_delayvalue * 1000;
+			aa_setautoattack("17;"+.@teleport_delayvalue);
+			break;
+		case 6:
+			do {
+				clear;
+				mes .n$;
+				mes "Set the maximum number of monsters targeting you before auto-teleport activates.";
+				mes "Valid range: 1 to 30.";
+				mes "Enter 0 to disable this feature.";
+				input .@monster_surround;
+			} while(.@monster_surround != 0 && (.@monster_surround < 0 || .@monster_surround > 30));
+			aa_setautoattack("23;"+.@monster_surround);
+			break;
+	}
+
+	goto(teleport_menu);
+	end;
+
+regeneration_menu:
+	clear;
+	mes .n$;
+	mes "The process of restoring health, stamina, or resources after damage or exhaustion, often through healing abilities, items, or rest to regain full strength.";
+	menu	"^800000Go Back^000000 ^8B4513<^000000",config_menu,
+			" ~ Auto-Heal",heal_menu,
+			" ~ HP / SP Potions",main_sphp_menu,
+			" ~ Sit to Rest",sit_regen_menu;
+	end;
+
+heal_menu:
+	clear;
+	mes .n$;
+	mes "--- Current Settings ---";
+	mes "You can add / modify or remove the following skills";
+	setarray .@lheal_skill[0],28,2051,2043;
+
+	.@healskill_menu1$ = "";
+	.@j = 0;
+	
+	for (.@i = 0; .@i < getarraysize(.@lheal_skill); .@i++){
+		if(getskilllv(.@lheal_skill[.@i]))
+			.@lheal_skill2[.@j++] = .@lheal_skill[.@i];
+	}
+
+	if(getarraysize(.@lheal_skill2) == 0){
+		clear;
+		mes .n$;
+		mes "Sorry, you don't have any kind of heal skills allowed";
+		next;
+		goto(regeneration_menu);
+	}
+
+	for (.@i = 0; .@i < getarraysize(.@lheal_skill2); .@i++)
+		.@healskill_menu1$ = .@healskill_menu1$ + (.@i > 0 ? ":" : "") + aa_getautoattackstring(0,.@lheal_skill2[.@i],1);
+
+	.@i = select(.@healskill_menu1$) -1;
+
+	if(.@skill_menu_state[.@lheal_skill2[.@i]]){
+		aa_setautoattack("0;0;"+ .@lheal_skill[.@i] + ";0;0");
+		goto(regeneration_menu);
+		end;
+	} else {
+		do{
+			clear;
+			mes .n$;
+			mes "Choose the skill lv to use";
+			mes "Max lv : " + getskilllv(.@lheal_skill2[.@i]);
+			mes "";
+			mes "Current Settings : ";
+			mes aa_getautoattackstring(0,.@lheal_skill2[.@i],0);
+			input .@heal_skilllv;
+		} while(.@heal_skilllv < 1 || .@heal_skilllv > getskilllv(.@lheal_skill2[.@i]));
+
+		clear;
+		mes .n$;
+		mes "Choose the value of HP % to use the skill (ex : 10 to use skill if hp are below 10%)";
+		.@heal_percentage = select("10:20:30:40:50:60:70:80:90");
+		switch(.@heal_percentage){
+			case 1: aa_setautoattack("0;1;"+ .@lheal_skill2[.@i] + ";" + .@heal_skilllv + ";10"); break;
+			case 2: aa_setautoattack("0;1;"+ .@lheal_skill2[.@i] + ";" + .@heal_skilllv + ";20"); break;
+			case 3: aa_setautoattack("0;1;"+ .@lheal_skill2[.@i] + ";" + .@heal_skilllv + ";30"); break;
+			case 4: aa_setautoattack("0;1;"+ .@lheal_skill2[.@i] + ";" + .@heal_skilllv + ";40"); break;
+			case 5: aa_setautoattack("0;1;"+ .@lheal_skill2[.@i] + ";" + .@heal_skilllv + ";50"); break;
+			case 6: aa_setautoattack("0;1;"+ .@lheal_skill2[.@i] + ";" + .@heal_skilllv + ";60"); break;
+			case 7: aa_setautoattack("0;1;"+ .@lheal_skill2[.@i] + ";" + .@heal_skilllv + ";70"); break;
+			case 8: aa_setautoattack("0;1;"+ .@lheal_skill2[.@i] + ";" + .@heal_skilllv + ";80"); break;
+			case 9: aa_setautoattack("0;1;"+ .@lheal_skill2[.@i] + ";" + .@heal_skilllv + ";90"); break;
+		}
+		goto(regeneration_menu);
+	}
+	goto(regeneration_menu);
+	end;
+
+main_sphp_menu:
+	clear;
+	mes .n$;
+	mes "Please choose which type of potion you'd like to configure:";
+	mes "^008000HP Potions^000000 - Triggers when your HP falls below a set %.";
+	mes "^0000FFSP Potions^000000 - Triggers when your SP falls below a set %.";
+	mes "";
+
+	.@menu_choice = select("^800000Go Back^000000 ^8B4513<^000000", "^008000HP Potions^000000", "^0000FFSP Potions^000000");
+
+	if (.@menu_choice == 1) goto regeneration_menu;
+	if (.@menu_choice == 2) set .@potion_type, 0;
+	else if (.@menu_choice == 3) set .@potion_type, 1;
+
+	goto potion_menu;
+
+potion_menu:
+    clear;
+    mes .n$;
+    if (.@potion_type == 0) {
+		mes "^008000You are configuring HP Potions.^000000";
+		mes "These potions will automatically activate when your HP drops below a set percentage.";
+	} else if (.@potion_type == 1) {
+		mes "^0000FFYou are configuring SP Potions.^000000";
+		mes "These potions will automatically activate when your SP drops below a set percentage.";
+	}
+	mes "Select a potion from your inventory to configure it.";
+	mes aa_getautoattackstring(1,0);
+	deletearray .@filtered_ids;
+    deletearray .@source_ids;
+	.@filtered_size = 0;
+
+	if (.@potion_type == 0) {
+		copyarray .@source_ids, getd(".HP_ONLY_POTIONS"), getarraysize(getd(".HP_ONLY_POTIONS"));
+	} else if (.@potion_type == 1) {
+		copyarray .@source_ids, getd(".SP_ONLY_POTIONS"), getarraysize(getd(".SP_ONLY_POTIONS"));
+	}
+
+	for (.@i = 0; .@i < getarraysize(.@source_ids); .@i++) {
+		.@id = .@source_ids[.@i];
+		if (countitem(.@id) > 0) {
+			.@filtered_ids[.@filtered_size++] = .@id;
+		}
+	}
+
+	if (.@filtered_size == 0) {
+		mes "No potions match your selection.";
+		next;
+		goto main_sphp_menu;
+	}
+
+    .@menu_list$ = "^800000Go Back^000000 ^8B4513<^000000";
+	for (.@i = 0; .@i < .@filtered_size; .@i++) {
+		.@id = .@filtered_ids[.@i];
+
+		.@hp = getd("auto_hp_" + .@id);
+		.@sp = getd("auto_sp_" + .@id);
+
+		// HP Menu
+		if (.@potion_type == 0) {
+
+			if (.@hp > 0) {
+				.@menu_list$ += ":^008000[" + .@hp + "%]^000000 " + getitemname(.@id);
+			} else {
+				.@menu_list$ += ":[^FF0000-^000000] " + getitemname(.@id);
+			}
+
+		}
+		// SP Menu
+		else {
+
+			if (.@sp > 0) {
+				.@menu_list$ += ":^0000FF[" + .@sp + "%]^000000 " + getitemname(.@id);
+			} else {
+				.@menu_list$ += ":[^FF0000-^000000] " + getitemname(.@id);
+			}
+
+		}
+	}
+
+    .@selection = select(.@menu_list$);
+    if (.@selection == 1) { clear; goto main_sphp_menu; }
+
+    .@selection -= 2;
+    .@item_id = .@filtered_ids[.@selection];
+
+    goto set_threshold;
+
+set_threshold:
+    .@item$ = getitemname(.@item_id);
+
+    .@hp = getd("auto_hp_" + .@item_id);
+    .@sp = getd("auto_sp_" + .@item_id);
+
+    // HP configuration
+    if (.@potion_type == 0) {
+        clear;
+        mes .n$;
+        mes "Set HP% threshold for ^FF0000"+.@item$+"^000000.";
+        mes "Current: ^008000"+.@hp+"%^000000";
+        mes "Enter 0 to disable.";
+        mes "Range: 5% to 90%";
+
+        do {
+            input .@hp;
+        } while (.@hp != 0 && (.@hp < 5 || .@hp > 90));
+    }
+
+    // SP configuration
+    else {
+        clear;
+        mes .n$;
+        mes "Set SP% threshold for ^0000FF"+.@item$+"^000000.";
+        mes "Current: ^0000FF"+.@sp+"%^000000";
+        mes "Enter 0 to disable.";
+        mes "Range: 5% to 90%";
+
+        do {
+            input .@sp;
+        } while (.@sp != 0 && (.@sp < 5 || .@sp > 90));
+    }
+
+    aa_setautoattack(
+        "1;1;" +
+        .@item_id + ";" +
+        .@hp + ";" +
+        .@sp
+    );
+
+    setd("auto_hp_" + .@item_id, .@hp);
+    setd("auto_sp_" + .@item_id, .@sp);
+
+    goto potion_menu;
+
+attackskills_menu:
+	clear;
+	mes .n$;
+	mes aa_getautoattackstring(2, 0);
+	
+	if(getarraysize(.@skill_menu_ids) == 0){
+		clear;
+		mes .n$;
+		mes "Sorry, you don't have any kind of buff skills";
+		next;
+		goto(main_menu);
+	}
+	
+	.@skill_menu_list$ = "^800000Go Back^000000 ^8B4513<^000000:" + .@skill_menu_list$;
+	.@i = select( .@skill_menu_list$ );
+
+	if(.@i == 1)
+		goto(config_menu);
+	else
+		.@i--;
+
+	if(.@skill_menu_state[.@skill_menu_ids[.@i]]){
+		aa_setautoattack("2;0;"+ .@skill_menu_ids[.@i] + ";0");
+		goto(attackskills_menu);
+		end;
+	}
+	else{
+		do{
+			clear;
+			mes .n$;
+			mes "Select the Skill Level";
+			mes aa_getautoattackstring(2,.@skill_menu_ids[.@i],1);
+			mes "Maximum Level: ^800000" + getskilllv(.@skill_menu_ids[.@i]) + "^000000";
+			mes "";
+			input .@attack_skilllv;
+		} while(.@attack_skilllv < 1 || .@attack_skilllv > getskilllv(.@skill_menu_ids[.@i]));
+
+		clear;
+		aa_setautoattack("2;1;"+ .@skill_menu_ids[.@i] + ";" + .@attack_skilllv);
+		goto(attackskills_menu);
+		end;
+	}
+
+	goto(config_menu);
+	end;
+
+buffskills_menu:
+	clear;
+	mes .n$;
+	mes aa_getautoattackstring(3,0);
+	
+	if(getarraysize(.@skill_menu_ids) == 0){
+		clear;
+		mes .n$;
+		mes "Sorry, you don't have any kind of buff skills";
+		next;
+		goto(main_menu);
+	}
+
+	.@skill_menu_list$ = "^800000Go Back^000000 ^8B4513<^000000:" + .@skill_menu_list$;
+	.@i = select( .@skill_menu_list$ );
+
+	if(.@i == 1)
+		goto(config_menu);
+	else
+		.@i--;
+
+	if(.@skill_menu_state[.@skill_menu_ids[.@i]]){
+		aa_setautoattack("3;0;"+ .@skill_menu_ids[.@i] + ";0");
+		goto(buffskills_menu);
+		end;
+	}
+	else{
+		do{
+			clear;
+			mes .n$;
+			mes "Select the Skill Level";
+			mes aa_getautoattackstring(3,.@skill_menu_ids[.@i],1);
+			mes "Maximum Level: ^800000" + getskilllv(.@skill_menu_ids[.@i]) + "^000000";
+			mes "";
+			input .@buff_skilllv;
+		} while(.@buff_skilllv < 1 || .@buff_skilllv > getskilllv(.@skill_menu_ids[.@i]));
+
+		clear;
+		aa_setautoattack("3;1;"+ .@skill_menu_ids[.@i] + ";" + .@buff_skilllv);
+		goto(buffskills_menu);
+		end;
+	}
+
+	goto(config_menu);
+	end;
+
+buffitems_menu:
+	clear;
+	mes .n$;
+	mes aa_getautoattackstring(5,0);
+
+	.@buffitems_menu$ = "^800000Go Back^000000 ^8B4513<^000000";
+	deletearray .@filtered_items;
+	deletearray .@filtered_sc;
+	.@menu_index = 1;
+
+	for (.@i = 0; .@i < getarraysize(.lbuff_item); .@i++) {
+		if (countitem(.lbuff_item[.@i]) > 0) {
+			.@filtered_items[.@menu_index] = .lbuff_item[.@i];
+			.@filtered_sc[.@menu_index] = .lbuff_sc[.@i];
+			.@buffitems_menu$ += ":" + aa_getautoattackstring(5, .lbuff_item[.@i]);
+			.@menu_index++;
+		}
+	}
+
+	if (.@menu_index == 1) {
+		mes "You don't have any buff items in your inventory.";
+		close;
+	}
+
+	.@selection = select(.@buffitems_menu$);
+	if (.@selection == 1) goto config_menu;
+
+	.@selected_index = .@selection - 1;
+	.@item_id = .@filtered_items[.@selected_index];
+	.@sc_id = .@filtered_sc[.@selected_index];
+
+	.@varname$ = "#buffitem_menu_state_" + .@item_id;
+	.@enabled = getd(.@varname$);
+	if (.@enabled) {
+		aa_setautoattack("5;0;" + .@item_id + ";0");
+		setd(.@varname$, 0);
+	} else {
+		aa_setautoattack("5;1;" + .@item_id + ";" + .@sc_id);
+		setd(.@varname$, 1);
+	}
+	goto buffitems_menu;
+	end;
+
+sit_regen_menu:
+	clear;
+	mes .n$;
+	mes aa_getautoattackstring(4,1);
+	mes "";
+	mes aa_getautoattackstring(4,2);
+	menu "^800000Go Back^000000 ^8B4513<^000000",regeneration_menu,"HP",sit_regen_menu_hp,"SP",sit_regen_menu_sp;
+
+sit_regen_menu_hp:
+	clear;
+	mes .n$;
+	mes "--- Current Settings ---";
+	mes aa_getautoattackstring(4,1);
+
+	.@sit_regen_menu_hp = select(
+	"^800000Go Back^000000 ^8B4513<^000000",
+	aa_getautoattackint(14,0) == 1?"[^008000+^000000] Sit if HP < 75%":"[^FF0000-^000000] Sit if HP < 75%",
+	aa_getautoattackint(14,0) == 2?"[^008000+^000000] Sit if HP < 50%":"[^FF0000-^000000] Sit if HP < 50%",
+	aa_getautoattackint(14,0) == 3?"[^008000+^000000] Sit if HP < 25%":"[^FF0000-^000000] Sit if HP < 25%"
+	);
+
+	switch(.@sit_regen_menu_hp){
+		case 1:
+			clear;
+			goto(sit_regen_menu);
+			break;
+		case 2:
+			if(aa_getautoattackint(14,0) == 1)
+				aa_setautoattack("14;0;0");
+			else
+				aa_setautoattack("14;75;100");
+			break;
+		case 3:
+			if(aa_getautoattackint(14,0) == 2)
+				aa_setautoattack("14;0;0");
+			else
+				aa_setautoattack("14;50;100");
+			break;
+		case 4:
+			if(aa_getautoattackint(14,0) == 3)
+				aa_setautoattack("14;0;0");
+			else
+				aa_setautoattack("14;25;100");
+			break;
+	}
+	clear;
+	goto(sit_regen_menu_hp);
+	end;
+
+sit_regen_menu_sp:
+	clear;
+	mes .n$;
+	mes "--- Current Settings ---";
+	mes aa_getautoattackstring(4,2);
+
+	.@sit_regen_menu_sp = select(
+	"^800000Go Back^000000 ^8B4513<^000000",
+	aa_getautoattackint(15,0) == 1?"[^008000+^000000] Sit if SP < 75%":"[^FF0000-^000000] Sit if SP < 75%",
+	aa_getautoattackint(15,0) == 2?"[^008000+^000000] Sit if SP < 50%":"[^FF0000-^000000] Sit if SP < 50%",
+	aa_getautoattackint(15,0) == 3?"[^008000+^000000] Sit if SP < 25%":"[^FF0000-^000000] Sit if SP < 25%"
+	);
+
+	switch(.@sit_regen_menu_sp){
+		case 1:
+			clear;
+			goto(sit_regen_menu);
+			break;
+		case 2:
+			if(aa_getautoattackint(15,0) == 1)
+				aa_setautoattack("15;0;0");
+			else
+				aa_setautoattack("15;75;100");
+			break;
+		case 3:
+			if(aa_getautoattackint(15,0) == 2)
+				aa_setautoattack("15;0;0");
+			else
+				aa_setautoattack("15;50;100");
+			break;
+		case 4:
+			if(aa_getautoattackint(15,0) == 3)
+				aa_setautoattack("15;0;0");
+			else
+				aa_setautoattack("15;25;100");
+			break;
+	}
+	clear;
+	goto(sit_regen_menu_sp);
+	end;
+
+autoslave:
+	clear;
+	mes .n$;
+	mes aa_getautoattackstring(14,0);
+	mes "^ffffff_^000000";
+	mes "Acolyte class are key support characters known for healing, buffing, and reviving allies. They enhance team survivability and effectiveness in battles.";
+	.@melee_menu = select("^800000Go Back^000000 ^8B4513<^000000",aa_getautoattackint(19,0)?"^8B4513>^000000 ^FF0000Disable^000000":"^8B4513>^000000 ^00ff00Enable^000000");
+	if( .@melee_menu == 1 )
+		goto(config_menu);
+
+	if( .@melee_menu == 2 ){
+		if(aa_getautoattackint(19,0))
+			aa_setautoattack("24;0");
+		else
+			aa_setautoattack("24;1");
+		clear;
+		goto(autoslave);
+	}
+
+autoslaveskills:
+	clear;
+	mes .n$;
+	mes "-------- Slave Support Skills --------";
+	if (getskilllv(28) > 0) { mes aa_getautoattackstring(16,0); }
+	if (getskilllv(29) > 0) { mes aa_getautoattackstring(17,0); }
+	if (getskilllv(34) > 0) { mes aa_getautoattackstring(18,0); }
+	if (getskilllv(33) > 0) { mes aa_getautoattackstring(19,0); }
+	if (getskilllv(73) > 0) { mes aa_getautoattackstring(20,0); }
+	if (getskilllv(74) > 0) { mes aa_getautoattackstring(21,0); }
+	if (getskilllv(66) > 0) { mes aa_getautoattackstring(15,0); }
+	if (getskilllv(75) > 0) { mes aa_getautoattackstring(22,0); }
+	if (getskilllv(54) > 0) { mes aa_getautoattackstring(25,0); }
+	if (getskilllv(67) > 0) { mes aa_getautoattackstring(23,0); }
+	if (getskilllv(361) > 0) { mes aa_getautoattackstring(24,0); }
+	mes "^ffffff_^000000";
+	mes "Acolyte class are key support characters known for healing, buffing, and reviving allies. They enhance team survivability and effectiveness in battles.";
+	.@melee_menu = select("^800000Go Back^000000 ^8B4513<^000000",
+	(getskilllv(28) > 0) ? aa_getautoattackint(21,0)?"^8B4513>^000000 ^FF0000Heal^000000":"^8B4513>^000000 ^00ff00Heal^000000" : "",
+	(getskilllv(29) > 0) ? aa_getautoattackint(22,0)?"^8B4513>^000000 ^FF0000Increase Agility^000000":"^8B4513>^000000 ^00ff00Increase Agility^000000" : "",
+	(getskilllv(34) > 0) ? aa_getautoattackint(23,0)?"^8B4513>^000000 ^FF0000Blessing^000000":"^8B4513>^000000 ^00ff00Blessing^000000" : "",
+	(getskilllv(33) > 0) ? aa_getautoattackint(24,0)?"^8B4513>^000000 ^FF0000Angelus^000000":"^8B4513>^000000 ^00ff00Angelus^000000" : "",
+	(getskilllv(73) > 0) ? aa_getautoattackint(25,0)?"^8B4513>^000000 ^FF0000Kyrie Eleison^000000":"^8B4513>^000000 ^00ff00Kyrie Eleison^000000" : "",
+	(getskilllv(74) > 0) ? aa_getautoattackint(26,0)?"^8B4513>^000000 ^FF0000Magnificat^000000":"^8B4513>^000000 ^00ff00Magnificat^000000" : "",
+	(getskilllv(66) > 0) ? aa_getautoattackint(20,0)?"^8B4513>^000000 ^FF0000Impositio Manus^000000":"^8B4513>^000000 ^00ff00Impositio Manus^000000" : "",
+	(getskilllv(75) > 0) ? aa_getautoattackint(27,0)?"^8B4513>^000000 ^FF0000Gloria^000000":"^8B4513>^000000 ^00ff00Gloria^000000" : "",
+	(getskilllv(54) > 0) ? aa_getautoattackint(30,0)?"^8B4513>^000000 ^FF0000Resurrection^000000":"^8B4513>^000000 ^00ff00Resurrection^000000" : "",
+	(getskilllv(67) > 0) ? aa_getautoattackint(28,0)?"^8B4513>^000000 ^FF0000Suffragium^000000":"^8B4513>^000000 ^00ff00Suffragium^000000" : "",
+	(getskilllv(361) > 0) ? aa_getautoattackint(29,0)?"^8B4513>^000000 ^FF0000Assumptio^000000":"^8B4513>^000000 ^00ff00Assumptio^000000" : ""
+	);
+	if( .@melee_menu == 1 )
+		goto(config_menu);
+
+	if( .@melee_menu == 2 ){
+		if(aa_getautoattackint(21,0))
+			aa_setautoattack("26;0");
+		else
+			aa_setautoattack("26;1");
+		clear;
+		goto(autoslaveskills);
+	}
+	if( .@melee_menu == 3 ){
+		if(aa_getautoattackint(22,0))
+			aa_setautoattack("27;0");
+		else
+			aa_setautoattack("27;1");
+		clear;
+		goto(autoslaveskills);
+	}
+	if( .@melee_menu == 4 ){
+		if(aa_getautoattackint(23,0))
+			aa_setautoattack("28;0");
+		else
+			aa_setautoattack("28;1");
+		clear;
+		goto(autoslaveskills);
+	}
+	if( .@melee_menu == 5 ){
+		if(aa_getautoattackint(24,0))
+			aa_setautoattack("29;0");
+		else
+			aa_setautoattack("29;1");
+		clear;
+		goto(autoslaveskills);
+	}
+	if( .@melee_menu == 6 ){
+		if(aa_getautoattackint(25,0))
+			aa_setautoattack("30;0");
+		else
+			aa_setautoattack("30;1");
+			aa_setautoattack("34;0");
+		clear;
+		goto(autoslaveskills);
+	}
+	if( .@melee_menu == 7){
+		if(aa_getautoattackint(26,0))
+			aa_setautoattack("31;0");
+		else
+			aa_setautoattack("31;1");
+		clear;
+		goto(autoslaveskills);
+	}
+	if( .@melee_menu == 8 ){
+		if(aa_getautoattackint(20,0))
+			aa_setautoattack("25;0");
+		else
+			aa_setautoattack("25;1");
+		clear;
+		goto(autoslaveskills);
+	}
+	if( .@melee_menu == 9 ){
+		if(aa_getautoattackint(27,0))
+			aa_setautoattack("32;0");
+		else
+			aa_setautoattack("32;1");
+		clear;
+		goto(autoslaveskills);
+	}
+	if( .@melee_menu == 10 ){
+		if(aa_getautoattackint(30,0))
+			aa_setautoattack("35;0");
+		else
+			aa_setautoattack("35;1");
+		clear;
+		goto(autoslaveskills);
+	}
+	if( .@melee_menu == 11 ){
+		if(aa_getautoattackint(28,0))
+			aa_setautoattack("33;0");
+		else
+			aa_setautoattack("33;1");
+		clear;
+		goto(autoslaveskills);
+	}
+	if( .@melee_menu == 12 ){
+		if(aa_getautoattackint(29,0))
+			aa_setautoattack("34;0");
+		else
+			aa_setautoattack("34;1");
+			aa_setautoattack("30;0");
+		clear;
+		goto(autoslaveskills);
+	}
+
+    function is_hp_only {
+		.@id = getarg(0);
+		.@size = getarraysize(getd(".HP_ONLY_POTIONS"));
+		for (.@i = 0; .@i < .@size; .@i++) {
+			if (.@id == getd(".HP_ONLY_POTIONS[" + .@i + "]")) return 1;
+		}
+		return 0;
+	}
+    function is_sp_only {
+		.@id = getarg(0);
+		.@size = getarraysize(getd(".SP_ONLY_POTIONS"));
+		for (.@i = 0; .@i < .@size; .@i++) {
+			if (.@id == getd(".SP_ONLY_POTIONS[" + .@i + "]")) return 1;
+		}
+		return 0;
+	}
+}
+
+worldboss	mapflag	noautoattack

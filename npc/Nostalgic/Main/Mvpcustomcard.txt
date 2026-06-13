@@ -1,0 +1,240 @@
+// Shop NPCs -- supplying no argument displays entire menu.
+// callfunc "F_customcard1"{,<shop ID>{,<shop ID>{,...}}};
+//============================================================
+valmorra,172,219,4	script	Custom MVP Card	10991,{
+	callfunc "F_customcard1",1;
+	end;
+}
+
+//============================================================
+// Script Core
+//============================================================
+-	script	F_customcard_core	-1,{
+	function	Add;
+	function	Chk;
+	function	Slot;
+	function	Line;
+
+OnInit:
+	freeloop(1);
+
+	.Announce = 1;
+	.ShowSlot = 0;
+	.ShowID = 0;
+	.ShowZeny = 0;
+	.MaxStack = 1;
+	.ignore_secure_npctimeout = 1;
+
+	.DialogW = 360;
+	.DialogH = 300;
+
+	setarray .Points$[0], "#HEADGEARPOINTS", "Headgear Points";
+
+	setarray .Shops$[0], "~ Custom MVP Card";
+
+	Add(1,51006,1,0,0,51004,100,51005,50,969,10000);
+	Add(1,51007,1,0,0,51004,100,51005,50,969,10000);
+	Add(1,51008,1,0,0,51004,100,51005,50,969,10000);
+	Add(1,51009,1,0,0,51004,100,51005,50,969,10000);
+	Add(1,51010,1,0,0,51004,100,51005,50,969,10000);
+	Add(1,51011,1,0,0,51004,100,51005,50,969,10000);
+
+	freeloop(0);
+
+	.menu$ = "";
+	for (.@i = 0; .@i < getarraysize(.Shops$); .@i++) {
+		.menu$ += .Shops$[.@i] + ":";
+		npcshopdelitem "CustomCardShop" + (.@i + 1), 909;
+	}
+	end;
+
+OnMenu:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 1;
+
+	setdialogsize(.DialogW,.DialogH);
+	setdialogalign(DIALOG_ALIGN_CENTER);
+
+	.@size = getarraysize(@i);
+
+	if (!.@size) {
+		@shop_index = select(.menu$);
+	} else if (.@size == 1) {
+		@shop_index = @i[0];
+	} else {
+		.@menu$ = "";
+		for (.@j = 0; .@j < .@size; .@j++)
+			.@menu$ += .Shops$[@i[.@j] - 1] + ":";
+		@shop_index = @i[select(.@menu$) - 1];
+	}
+
+	deletearray @i[0], getarraysize(@i);
+
+	if (@shop_index <= 0 || @shop_index > getarraysize(.Shops$)) {
+		message strcharinfo(0), "An error has occurred.";
+		end;
+	}
+
+	dispbottom "Select one item at a time.";
+	callshop "CustomCardShop" + @shop_index, 1;
+	npcshopattach "CustomCardShop" + @shop_index;
+	end;
+
+OnBuyItem:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 1;
+
+	setdialogsize(.DialogW,.DialogH);
+	setdialogalign(DIALOG_ALIGN_CENTER);
+
+	if (getarraysize(@bought_nameid) <= 0 || getarraysize(@bought_quantity) <= 0)
+		end;
+
+	setarray .@q[0], @bought_nameid[0], ((@bought_quantity[0] > .MaxStack) ? .MaxStack : @bought_quantity[0]);
+	copyarray .@q[3], getd(".q_" + @shop_index + "_" + .@q[0] + "[0]"), getarraysize(getd(".q_" + @shop_index + "_" + .@q[0]));
+	.@q[2] = .@q[1] * .@q[3];
+
+	if (!.@q[2] || .@q[2] > 30000) {
+		message strcharinfo(0), "You can't purchase that many " + getitemname(.@q[0]) + ".";
+		end;
+	}
+
+	mes "<b>^000000[ ^FF7F00Custom MVP Card^000000 ]</b>";
+	mes "^000000Hello, ^1E90FF" + strcharinfo(0) + "^000000!";
+	mes "^000000Shop:^000000 ^FF7F00" + .Shops$[@shop_index - 1] + "^000000";
+	mes "^000000Your Zeny:^000000 ^1E90FF" + F_InsertComma(Zeny) + "^000000";
+	mes Line();
+
+	mes "<b>^000000Reward:^000000</b> ^0055FF"
+		+ ((.@q[2] > 1) ? .@q[2] + "x " : "")
+		+ "^i[" + .@q[0] + "] "
+		+ Slot(.@q[0])
+		+ "^000000";
+
+	mes "<b>^000000Requirements:^000000</b>";
+
+	disable_items;
+	@qe[0] = 0;
+
+	if (.@q[4])
+		mes "^3CB371»^000000 " + Chk(Zeny, .@q[4] * .@q[1]) + F_InsertComma(.@q[4] * .@q[1]) + " Zeny^000000";
+
+	if (.@q[5])
+		mes "^3CB371»^000000 "
+			+ Chk(getd(.Points$[0]), .@q[5] * .@q[1])
+			+ (.@q[5] * .@q[1]) + " " + .Points$[1]
+			+ " ^777777(" + getd(.Points$[0]) + "/" + (.@q[5] * .@q[1]) + ")^000000";
+
+	if (.@q[6]) {
+		for (.@i = 6; .@i < getarraysize(.@q); .@i += 2)
+			mes "^3CB371»^000000 "
+				+ Chk(countitem(.@q[.@i]), .@q[.@i + 1] * .@q[1])
+				+ ((.ShowID) ? "{" + .@q[.@i] + "} " : "")
+				+ "^i[" + .@q[.@i] + "] "
+				+ "<ITEM>" + Slot(.@q[.@i]) + "<INFO>" + .@q[.@i] + "</INFO></ITEM> "
+				+ "^777777(" + countitem(.@q[.@i]) + "/" + (.@q[.@i + 1] * .@q[1]) + ")^000000";
+	}
+
+	setdialogsize(.DialogW,.DialogH);
+	setdialogalign(DIALOG_ALIGN_CENTER);
+	next;
+
+	switch(select(
+		"^3CB371» Purchase ^0055FF"+getitemname(.@q[0])+"^000000:"
+		+ "^FF0000» Cancel^000000"
+	)) {
+	case 1:
+		if (@qe[0]) {
+			mes "<b>^000000[ ^FF7F00Custom MVP Card^000000 ]</b>";
+			mes "^FF0000You do not meet the requirements.^000000";
+			close;
+		}
+
+		if (!checkweight(.@q[0], .@q[2])) {
+			mes "<b>^000000[ ^FF7F00Custom MVP Card^000000 ]</b>";
+			mes "^FF0000You need more weight capacity to complete this trade.^000000";
+			close;
+		}
+
+		if (.@q[4]) Zeny -= (.@q[4] * .@q[1]);
+		if (.@q[5]) setd .Points$[0], getd(.Points$[0]) - (.@q[5] * .@q[1]);
+
+		if (.@q[6]) {
+			for (.@i = 6; .@i < getarraysize(.@q); .@i += 2)
+				delitem .@q[.@i], .@q[.@i + 1] * .@q[1];
+		}
+
+		getitem .@q[0], .@q[2];
+
+		if (.Announce)
+			announce strcharinfo(0) + " has created " + ((.@q[2] > 1) ? .@q[2] + "x " + getitemname(.@q[0]) : callfunc("F_InsertArticle", getitemname(.@q[0]))) + "!", bc_all;
+
+		specialeffect2 EF_FLOWERLEAF;
+
+		mes "<b>^000000[ ^FF7F00Custom MVP Card^000000 ]</b>";
+		mes "^1E90FFTrade completed successfully!^000000";
+		mes "^000000You received:^000000 ^0055FF"
+			+ ((.@q[2] > 1) ? .@q[2] + "x " : "")
+			+ "^i[" + .@q[0] + "] "
+			+ Slot(.@q[0])
+			+ "^000000";
+		close;
+
+	case 2:
+		close;
+	}
+	end;
+
+function	Add {
+	if (getitemname(getarg(1)) == "null") {
+		debugmes "Quest reward #" + getarg(1) + " invalid (skipped).";
+		return;
+	}
+
+	setarray .@j[0], getarg(2), getarg(3), getarg(4);
+
+	for (.@i = 5; .@i < getargcount(); .@i += 2) {
+		if (getitemname(getarg(.@i)) == "null") {
+			debugmes "Quest requirement #" + getarg(.@i) + " invalid (skipped).";
+			return;
+		}
+		setarray .@j[.@i - 2], getarg(.@i), getarg(.@i + 1);
+	}
+
+	copyarray getd(".q_" + getarg(0) + "_" + getarg(1) + "[0]"), .@j[0], getarraysize(.@j);
+	npcshopadditem "CustomCardShop" + getarg(0), getarg(1), ((.ShowZeny) ? getarg(3) : 0);
+	return;
+}
+
+function	Chk {
+	if (getarg(0) < getarg(1)) {
+		@qe[0] = 1;
+		return "^FF0000";
+	}
+	return "^00BFFF";
+}
+
+function	Slot {
+	return getitemname(getarg(0));
+}
+
+function	Line {
+	return "^777777--------------------------------------------------^000000";
+}
+}
+
+//============================================================
+// Function wrapper
+//============================================================
+function	script	F_customcard1	{
+	deletearray @i[0], getarraysize(@i);
+	for (.@i = 0; .@i < getargcount(); .@i++)
+		@i[.@i] = getarg(.@i);
+	doevent "F_customcard_core::OnMenu";
+	end;
+}
+
+//============================================================
+// Dummy shop data
+//============================================================
+-	shop	CustomCardShop1	-1,909:-1

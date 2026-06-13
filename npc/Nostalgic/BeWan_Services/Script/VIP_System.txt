@@ -1,0 +1,104 @@
+//===== rAthena Script =======================================
+//= VIP Level 1 to 10 with timer.
+//===== By: ==================================================
+//= BeWan
+//https://rathena.org/board/profile/62232-bewan/
+//===== Current Version: =====================================
+//= 2.0
+//============================================================
+-	script	NewVIPSystem	-1,{
+
+OnVipUpdate:
+OnPCLoginEvent:
+	bonus_script_clear 8;
+	fakeIcon(getcharid(0),2000,0,0); fakeIcon(getcharid(0),2001,0,0);
+	fakeIcon(getcharid(0),2002,0,0); fakeIcon(getcharid(0),2003,0,0);
+	fakeIcon(getcharid(0),2004,0,0); fakeIcon(getcharid(0),2005,0,0);
+	fakeIcon(getcharid(0),2006,0,0); fakeIcon(getcharid(0),2007,0,0);
+	fakeIcon(getcharid(0),2008,0,0); fakeIcon(getcharid(0),2009,0,0);
+	
+if(#NewVIP == 1){
+	fakeIcon(getcharid(0),2000,(#VipTimeL1 - gettimetick(2)) * 1000,1);
+	
+	addtimer 1000,strnpcinfo(0)+"::OnVipTimeCheck";
+	bonus_script "{ bonus bAllStats,+1; }", 2073600, 8;
+	end;
+}else if(#NewVIP == 2){
+	fakeIcon(getcharid(0),2001,(#VipTimeL2 - gettimetick(2)) * 1000,1);
+		
+	addtimer 1000,strnpcinfo(0)+"::OnVipTimeCheck";
+	bonus_script "{ bonus bAllStats,+2; }", 2073600, 8;
+	end;
+}else if(#NewVIP == 3){
+	fakeIcon(getcharid(0),2002,(#VipTimeL3 - gettimetick(2)) * 1000,1);
+		
+	addtimer 1000,strnpcinfo(0)+"::OnVipTimeCheck";
+	bonus_script "{ bonus bAllStats,+3; }", 2073600, 8;
+	end;
+}else if(#NewVIP == 4){
+	fakeIcon(getcharid(0),2003,(#VipTimeL4 - gettimetick(2)) * 1000,1);
+	
+	addtimer 1000,strnpcinfo(0)+"::OnVipTimeCheck";
+	bonus_script "{ bonus bAllStats,+4; }", 2073600, 8;
+	end;
+}else if(#NewVIP == 5){
+	fakeIcon(getcharid(0),2004,(#VipTimeL5 - gettimetick(2)) * 1000,1);
+		
+	addtimer 1000,strnpcinfo(0)+"::OnVipTimeCheck";
+	bonus_script "{ bonus bAllStats,+5; }", 2073600, 8;
+	end;
+}else if(#NewVIP == 6){
+	fakeIcon(getcharid(0),2005,(#VipTimeL6 - gettimetick(2)) * 1000,1);
+	
+	addtimer 1000,strnpcinfo(0)+"::OnVipTimeCheck";
+	bonus_script "{ bonus bAllStats,+6; }", 2073600, 8;
+	end;
+}else if(#NewVIP == 7){
+	fakeIcon(getcharid(0),2006,(#VipTimeL7 - gettimetick(2)) * 1000,1);
+	
+	addtimer 1000,strnpcinfo(0)+"::OnVipTimeCheck";
+	bonus_script "{ bonus bAllStats,+7; }", 2073600, 8;
+	end;
+}else if(#NewVIP == 8){
+	fakeIcon(getcharid(0),2007,(#VipTimeL8 - gettimetick(2)) * 1000,1);
+	
+	addtimer 1000,strnpcinfo(0)+"::OnVipTimeCheck";
+	bonus_script "{ bonus bAllStats,+8; }", 2073600, 8;
+	end;
+}else if(#NewVIP == 9){
+	fakeIcon(getcharid(0),2008,(#VipTimeL9 - gettimetick(2)) * 1000,1);
+	
+	addtimer 1000,strnpcinfo(0)+"::OnVipTimeCheck";
+	bonus_script "{ bonus bAllStats,+9; }", 2073600, 8;
+	end;
+}else if(#NewVIP == 10){
+	fakeIcon(getcharid(0),2009,(#VipTimeL10 - gettimetick(2)) * 1000,1);
+		
+	addtimer 1000,strnpcinfo(0)+"::OnVipTimeCheck";
+	bonus_script "{ bonus bAllStats,+10; }", 2073600, 8;
+	end;
+}else{
+	//vip level 0
+	end;
+}
+end;
+
+OnVipTimeCheck:
+	if(#VipTimeL1 > gettimetick(2) || #VipTimeL2 > gettimetick(2) || #VipTimeL3 > gettimetick(2) || #VipTimeL4 > gettimetick(2) || #VipTimeL5 > gettimetick(2) ||
+		#VipTimeL6 > gettimetick(2) || #VipTimeL7 > gettimetick(2) || #VipTimeL8 > gettimetick(2) || #VipTimeL9 > gettimetick(2) || #VipTimeL10 > gettimetick(2)){
+		addtimer 1000,strnpcinfo(0)+"::OnVipTimeCheck";
+		end;
+	}else{
+		bonus_script_clear 8;
+		set #NewVIP,0;
+		
+		fakeIcon(getcharid(0),2000,0,0); fakeIcon(getcharid(0),2001,0,0);
+		fakeIcon(getcharid(0),2002,0,0); fakeIcon(getcharid(0),2003,0,0);
+		fakeIcon(getcharid(0),2004,0,0); fakeIcon(getcharid(0),2005,0,0);
+		fakeIcon(getcharid(0),2006,0,0); fakeIcon(getcharid(0),2007,0,0);
+		fakeIcon(getcharid(0),2008,0,0); fakeIcon(getcharid(0),2009,0,0);
+		end;
+	}
+end;
+
+}

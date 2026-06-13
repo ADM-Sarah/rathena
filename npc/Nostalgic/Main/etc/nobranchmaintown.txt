@@ -1,0 +1,5 @@
+-	script	MaintownFlags	-1,{
+OnInit:
+	setmapflag "valmorra", mf_nobranch;
+	end;
+}

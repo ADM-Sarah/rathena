@@ -23,11 +23,5 @@ void SkillEswoo::castendNoDamageId(block_list *src, block_list *target, uint16 s
 		status_change_end(target, SC_SWOO);
 		return;
 	}
-	if (sd && !battle_config.allow_es_magic_pc && target->type != BL_MOB) {
-		clif_skill_fail( *sd, getSkillId() );
-		status_change_start(src,src,SC_STUN,10000,skill_lv,0,0,0,500,SCSTART_NOTICKDEF|SCSTART_NORATEDEF);
-		return;
-	}
-
 	StatusSkillImpl::castendNoDamageId(src, target, skill_lv, tick, flag);
 }

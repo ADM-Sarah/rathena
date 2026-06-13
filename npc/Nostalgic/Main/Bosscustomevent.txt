@@ -1,0 +1,220 @@
+//============================================================
+// KING PORING REWARD NPC (FULL FINAL)
+// NPC   : pvp_arena2,28,65
+// MOB   : pvp_arena2,50,52 (Mob ID 3540 = KING PORING)
+//============================================================
+
+function	script	F_KP_FindClaimIP	{
+	.@ip$ = getarg(0);
+	for (.@i = 0; .@i < getarraysize($@KP_ClaimedIP$); .@i++) {
+		if ($@KP_ClaimedIP$[.@i] == .@ip$)
+			return .@i;
+	}
+	return -1;
+}
+
+function	script	F_KP_ShowRewards	{
+	.@size = getarraysize($@KP_RewardItem);
+	if (.@size <= 0) {
+		mes "No reward has been set yet.";
+		return;
+	}
+
+	mes "Current reward list:";
+	for (.@i = 0; .@i < .@size; .@i++) {
+		mes "[" + (.@i + 1) + "] Item ID: " + $@KP_RewardItem[.@i] + " x" + $@KP_RewardAmount[.@i];
+	}
+	return;
+}
+
+pvp_arena2,28,65,4	script	King Poring Reward	4_M_01,{
+
+	//========================================================
+	// GM MENU ONLY
+	//========================================================
+	if (getgmlevel() >= 99) {
+		mes "[^FF0000King Poring Reward NPC^000000]";
+		mes "Hello GM.";
+		next;
+
+		switch(select(
+			"^FF0000[ GM PANEL ] Summon KING PORING^000000",
+			"^FF0000[ GM PANEL ] Add Reward^000000",
+			"^FF0000[ GM PANEL ] Clear Reward^000000",
+			"^FF0000[ GM PANEL ] Clear Claimed IP^000000",
+			"^FF0000[ GM PANEL ] Reset Session^000000",
+			"^FF0000[ GM PANEL ] Show Reward List^000000",
+			"Claim Reward",
+			"Close"
+		)) {
+
+		case 1:
+			if (.MobAlive) {
+				mes "[^FF0000King Poring Reward NPC^000000]";
+				mes "KING PORING is still alive.";
+				close;
+			}
+			if (.SessionOpen && !.CanClaim) {
+				mes "[^FF0000King Poring Reward NPC^000000]";
+				mes "A session is already running.";
+				mes "Wait until the mob dies or use Reset Session.";
+				close;
+			}
+
+			killmonster "pvp_arena2", strnpcinfo(3) + "::OnKingDead";
+
+			monster "pvp_arena2",50,52,"KING PORING",3540,1,strnpcinfo(3) + "::OnKingDead";
+			.MobAlive = 1;
+			.SessionOpen = 1;
+			.CanClaim = 0;
+
+			mapannounce "pvp_arena2","[King Poring] KING PORING has been summoned at the center of the arena!",bc_map|bc_yellow;
+			mes "[^FF0000King Poring Reward NPC^000000]";
+			mes "KING PORING summoned successfully.";
+			close;
+
+		case 2:
+			mes "[^FF0000King Poring Reward NPC^000000]";
+			mes "Enter Item ID:";
+			input .@item_id;
+			if (.@item_id <= 0) {
+				mes "Invalid item ID.";
+				close;
+			}
+
+			mes "Enter Amount:";
+			input .@amount;
+			if (.@amount <= 0) {
+				mes "Invalid amount.";
+				close;
+			}
+
+			.@sz = getarraysize($@KP_RewardItem);
+			$@KP_RewardItem[.@sz] = .@item_id;
+			$@KP_RewardAmount[.@sz] = .@amount;
+
+			mes "Reward added successfully:";
+			mes "Item ID " + .@item_id + " x" + .@amount;
+			close;
+
+		case 3:
+			mes "[^FF0000King Poring Reward NPC^000000]";
+			deletearray $@KP_RewardItem[0], getarraysize($@KP_RewardItem);
+			deletearray $@KP_RewardAmount[0], getarraysize($@KP_RewardAmount);
+			mes "All rewards have been cleared.";
+			close;
+
+		case 4:
+			mes "[^FF0000King Poring Reward NPC^000000]";
+			deletearray $@KP_ClaimedIP$[0], getarraysize($@KP_ClaimedIP$);
+			mes "All claimed IP records have been cleared.";
+			close;
+
+		case 5:
+			mes "[^FF0000King Poring Reward NPC^000000]";
+			killmonster "pvp_arena2", strnpcinfo(3) + "::OnKingDead";
+			.MobAlive = 0;
+			.SessionOpen = 0;
+			.CanClaim = 0;
+			deletearray $@KP_ClaimedIP$[0], getarraysize($@KP_ClaimedIP$);
+			mes "Session has been reset.";
+			mes "All claimed IP records have also been cleared.";
+			close;
+
+		case 6:
+			mes "[^FF0000King Poring Reward NPC^000000]";
+			callfunc "F_KP_ShowRewards";
+			close;
+
+		case 7:
+			goto L_ClaimReward;
+
+		default:
+			close;
+		}
+	}
+
+	//========================================================
+	// NORMAL PLAYER MENU
+	//========================================================
+	mes "[King Poring Reward NPC]";
+	switch(select("Claim Reward:Close")) {
+	case 1:
+		goto L_ClaimReward;
+	default:
+		close;
+	}
+
+L_ClaimReward:
+	//========================================================
+	// CLAIM REWARD
+	//========================================================
+	mes "[King Poring Reward NPC]";
+
+	if (!.CanClaim) {
+		mes "Reward cannot be claimed yet.";
+		mes "You can only claim after KING PORING dies.";
+		close;
+	}
+
+	.@ip$ = getcharip();
+	if (.@ip$ == "") {
+		mes "Unable to detect your IP.";
+		mes "Please try again.";
+		close;
+	}
+
+	if (callfunc("F_KP_FindClaimIP", .@ip$) != -1) {
+		mes "This IP has already claimed the reward for this session.";
+		close;
+	}
+
+	.@sz = getarraysize($@KP_RewardItem);
+	if (.@sz <= 0) {
+		mes "No reward has been configured yet.";
+		close;
+	}
+
+	for (.@i = 0; .@i < .@sz; .@i++) {
+		if (!checkweight($@KP_RewardItem[.@i], $@KP_RewardAmount[.@i])) {
+			mes "You do not have enough weight space for the rewards.";
+			close;
+		}
+	}
+
+	for (.@i = 0; .@i < .@sz; .@i++) {
+		getitem $@KP_RewardItem[.@i], $@KP_RewardAmount[.@i];
+	}
+
+	.@claimed_size = getarraysize($@KP_ClaimedIP$);
+	$@KP_ClaimedIP$[.@claimed_size] = .@ip$;
+
+	mes "You have successfully claimed your reward.";
+	close;
+
+
+OnInit:
+	.MobAlive = 0;
+	.SessionOpen = 0;
+	.CanClaim = 0;
+
+	//========================================================
+	// MAP RESTRICTIONS
+	//========================================================
+	setmapflag "pvp_arena2", mf_nowarp;               // cannot warp out
+	setmapflag "pvp_arena2", mf_nowarpto;             // cannot warp into map
+	setmapflag "pvp_arena2", mf_nosave, "SavePoint";  // cannot save here
+	setmapflag "pvp_arena2", mf_noteleport;           // cannot fly wing / teleport
+	setmapflag "pvp_arena2", mf_noreturn;             // cannot butterfly wing / return
+	setmapflag "pvp_arena2", mf_nobranch;             // cannot use branch
+
+	end;
+
+OnKingDead:
+	.MobAlive = 0;
+	.SessionOpen = 1;
+	.CanClaim = 1;
+
+	mapannounce "pvp_arena2","[King Poring] KING PORING has been defeated! Players may now claim rewards at the NPC.",bc_map|bc_green;
+	end;
+}

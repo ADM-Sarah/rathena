@@ -44,7 +44,7 @@ void SkillAsuraStrike::castendDamageId(block_list* src, block_list* target, uint
 		y = 0;
 
 	if (unit_movepos(src, src->x + x, src->y + y, 1, 1)) {
-		clif_blown(src);
+		//clif_blown(src);
 		clif_spiritball(src);
 	}
 }

@@ -1,0 +1,149 @@
+//===== rAthena Script =======================================
+//= @security command
+//===== Description: =========================================
+//= Allows the player to set a password that blocks all item 
+//= and zeny movements to prevent stealing. 
+//===== Additional Comments: =================================
+//= 1.0 Initial script. [Daegaladh]
+//= 1.1 Added an option to temporarily disable security, and 
+//=     some optimization. [Daegaladh]
+//= 1.2 Fixed a bug that causes permissions not enabling when
+//=     changing from temp. enabled to enabled. [Daegaladh] (Thanks xVector)
+//============================================================
+
+-	script	atcmd_security	-1,{
+OnInit:
+//============================================================
+// Configuration
+//============================================================
+	.maxfails = 3; //Set 0 to disable.
+//============================================================
+	bindatcmd "security",strnpcinfo(3)+"::OnAtcommand",0,100;
+	end;
+
+OnPCLoginEvent:
+	if (#SECURITY) atcommand "@rmvperm can_trade";
+	end;
+
+OnAtcommand:
+	if (.maxfails && #SECURITYFAILS == .maxfails)
+		goto L_kick;
+	mes "[^FFA000Security system^000000]";
+	mes "This system protects your items and zeny with a password.";
+	mes "Even so, ^C2262Dwe do recommend not to share your account data^000000.";
+	mes " ";
+	if (@SECURITY_TEMP) {
+		.@status$ = "^FFA000Temporarily disabled";
+		setarray .@menu_array$[0],"^00AA00Enable^000000","^FF0000Disable^000000","Change password","Cancel";
+	}
+	else if (#SECURITY) {
+		.@status$ = "^00AA00Enabled";
+		setarray .@menu_array$[0],"^FFA000Disable temporarily^000000","^FF0000Disable^000000","Change password","Cancel";
+	}
+	else {
+		.@status$ = "^FF0000Disabled";
+		setarray .@menu_array$[0],"^00AA00Enable^000000","Cancel";
+	}
+	mes "Status: "+ .@status$ +"^000000";
+	next;
+	for (.@i = 0; .@i < getarraysize(.@menu_array$); .@i++)
+		.@menu$ = .@menu$ + .@menu_array$[.@i] + ":";
+	.@j = select(.@menu$) - 1;
+
+	if (.@menu_array$[.@j] == "^00AA00Enable^000000") {
+		if (@SECURITY_TEMP)
+			@SECURITY_TEMP = 0;
+		else
+			callsub L_setpass;
+		atcommand "@rmvperm can_trade";
+		#SECURITY = 1;
+		mes "[^FFA000Security system^000000]";
+		mes "The security system has been ^00AA00enabled^000000, your items and zeny are protected now.";
+	}
+	else if (.@menu_array$[.@j] == "^FF0000Disable^000000") {
+		callsub L_checkpass;
+		atcommand "@addperm can_trade";
+		#SECURITY = 0;
+		mes "[^FFA000Security system^000000]";
+		mes "The security system has been ^FF0000disabled^000000, you can transfer zeny and items again.";
+	}
+	else if (.@menu_array$[.@j] == "^FFA000Disable temporarily^000000") {
+		callsub L_checkpass;
+		atcommand "@addperm can_trade";
+		@SECURITY_TEMP = 1;
+		mes "[^FFA000Security system^000000]";
+		mes "The security system has been ^FF0000temporarily disabled^000000, you can transfer zeny and items until logging out.";
+	}
+	else if (.@menu_array$[.@j] == "Change password") {
+		callsub L_checkpass;
+		callsub L_setpass;
+		mes "[^FFA000Security system^000000]";
+		mes "Your security password has been changed.";
+	}
+	close;
+
+L_checkpass:
+	while (1) {
+		mes "[^FFA000Security system^000000]";
+		mes "Enter your security password:";
+		next;
+		input .@pass$;
+		if (.@pass$ != #SECURITYCODE$){
+			logmes "@security password fail - IP:" + getcharip();
+			mes "[^FFA000Security system^000000]";
+			mes "^FF0000Incorrect security password^000000";
+			if (.maxfails) {
+				#SECURITYFAILS++;
+				if (#SECURITYFAILS == .maxfails){
+					next;
+					mes "[^FFA000Security system^000000]";
+					mes "^FF0000You have exceeded the password attempts limit.^000000";
+					mes " ";
+					mes "Due security reasons we have changed your account password and cleared your security password.";
+					mes "Now you will be disconnected from the server.";
+					next;
+					mes "[^FFA000Security system^000000]";
+					mes "If you're the real owner of the account, please recover your account via the control panel and, back again ingame, type @security to set out a new security password.";
+					close2;
+					goto L_kick;
+				}
+				mes "You have "+(.maxfails - #SECURITYFAILS)+" attempt(s) left.";
+			}
+		}
+		else {
+			if (.maxfails) #SECURITYFAILS = 0;
+			break;
+		}
+		next;
+	}
+	next;
+	return;
+
+L_setpass:
+	while (1) {
+		mes "[^FFA000Security system^000000]";
+		mes "Enter your new security password:";
+		next;
+		input .@pass$;
+		mes "[^FFA000Security system^000000]";
+		mes "Please, confirm your security password:";
+		next;
+		input .@pass2$;
+		if (.@pass$ == .@pass2$) break;
+		mes "[^FFA000Security system^000000]";
+		mes "The passwords you entered does not match, please try again.";
+		next;
+	}
+	#SECURITYCODE$ = .@pass$;
+	next;
+	return;
+
+L_kick:
+	.@newpass$ = md5(md5(rand(0,2147483646)+""+rand(0,2147483646)+""+rand(0,2147483646)));
+	query_sql("UPDATE `login` SET `user_pass` = '"+.@newpass$+"' WHERE `account_id` = "+ getcharid(3));
+	#SECURITYFAILS = 0;
+	#SECURITYCODE$ = "";
+	#SECURITY = 0;
+	atcommand "@kick "+strcharinfo(0);
+	end;
+}

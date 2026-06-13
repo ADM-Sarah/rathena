@@ -91,7 +91,7 @@ Header:
 Body:
   - Id: 670
     AegisName: Gold_Coin_Moneybag
-    Name: Bag of Gold Coins
+    Name: 2 Hours Timer Bag
     Type: Etc
     Buy: 100000
     Weight: 400
@@ -103,7 +103,7 @@ Body:
     Weight: 40
   - Id: 672
     AegisName: Copper_Coin_Moneybag
-    Name: Bag of Bronze Coins
+    Name: 1 Hours Timer Bag
     Type: Etc
     Buy: 1000
     Weight: 400
@@ -127,7 +127,7 @@ Body:
     Weight: 40
   - Id: 676
     AegisName: Silver_Coin_Moneybag
-    Name: Bag of Silver Coins
+    Name: 5 Hours Timer Bag
     Type: Etc
     Buy: 50000
     Weight: 400
@@ -1118,7 +1118,7 @@ Body:
     Name: Gold
     Type: Etc
     Buy: 200000
-    Weight: 200
+    Weight: 0
     Flags:
       BuyingStore: true
   - Id: 970
@@ -1230,7 +1230,7 @@ Body:
     Name: Oridecon
     Type: Etc
     Buy: 1100
-    Weight: 200
+    Weight: 0
     Flags:
       BuyingStore: true
   - Id: 985
@@ -1238,7 +1238,7 @@ Body:
     Name: Elunium
     Type: Etc
     Buy: 1100
-    Weight: 200
+    Weight: 0
     Flags:
       BuyingStore: true
   - Id: 986
@@ -4172,7 +4172,7 @@ Body:
     Flags:
       BuyingStore: true
     Script: |
-      bonus bNoMagicDamage,100;
+      bonus bNoMagicDamage,60;
       bonus bUseSPrate,100;
   - Id: 4129
     AegisName: Baphomet__Card
@@ -4210,7 +4210,7 @@ Body:
     Flags:
       BuyingStore: true
     Script: |
-      bonus bSpeedRate,25;
+      bonus bSpeedRate,40;
   - Id: 4132
     AegisName: Mistress_Card
     Name: Mistress Card
@@ -4347,7 +4347,7 @@ Body:
     Flags:
       BuyingStore: true
     Script: |
-      bonus bAspdRate,10;
+      bonus bAspdRate,100;
   - Id: 4143
     AegisName: Orc_Hero_Card
     Name: Orc Hero Card
@@ -7874,7 +7874,10 @@ Body:
     Flags:
       BuyingStore: true
     Script: |
-      bonus bDelayRate,-30;
+      bonus bAllStats,3;
+      skill "MG_SIGHT",1;
+      bonus bAtkRate,2;
+      bonus bMatkRate,2;
   - Id: 4404
     AegisName: Skogul_Card
     Name: Skogul Card
@@ -8052,8 +8055,7 @@ Body:
     Flags:
       BuyingStore: true
     Script: |
-      bonus2 bSkillAtk,"MG_COLDBOLT",25;
-      bonus2 bCastrate,"MG_COLDBOLT",-25;
+      bonus2 bSkillAtk,"MG_COLDBOLT",20;
   - Id: 4417
     AegisName: Ice_Titan_Card
     Name: Ice Titan Card
@@ -8286,8 +8288,7 @@ Body:
     Flags:
       BuyingStore: true
     Script: |
-      bonus2 bSkillAtk,"MG_FIREBOLT",25;
-      bonus2 bCastrate,"MG_FIREBOLT",-25;
+      bonus2 bSkillAtk,"MG_FIREBOLT",20;
   - Id: 4434
     AegisName: Knocker_Card
     Name: Knocker Card
@@ -8420,9 +8421,7 @@ Body:
     Script: |
       bonus bMatkRate,10;
       bonus bMaxSPrate,-50;
-      bonus2 bMagicAddRace,RC_Angel,50;
-      bonus2 bMagicAddRace,RC_DemiHuman,50;
-      bonus2 bMagicAddRace,RC_Player_Human,50;
+      bonus2 bMagicAddRace,RC_DemiHuman,15; bonus2 bMagicAddRace,RC_Player_Human,15;
   - Id: 4442
     AegisName: Tatacho_Card
     Name: Tatacho Card
@@ -17933,10 +17932,6 @@ Body:
     Name: War Badge
     Type: Etc
     Trade:
-      NoDrop: true
-      NoTrade: true
-      NoCart: true
-      NoStorage: true
       NoGuildStorage: true
       NoMail: true
       NoAuction: true

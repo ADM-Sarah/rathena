@@ -1,0 +1,178 @@
+prontera,144,229,5	script	Supply Exchanger	820,{
+
+switch(select("100x "+getitemname(.ItemA1)+" to 1x "+getitemname(.ItemA2)+"", "100x "+getitemname(.ItemB1)+" to 1x "+getitemname(.ItemB2)+"", "100x "+getitemname(.ItemC1)+" to 1x "+getitemname(.ItemC2)+"", "100x "+getitemname(.ItemD1)+" to 1x "+getitemname(.ItemD2)+"", "100x "+getitemname(.ItemE1)+" to 1x "+getitemname(.ItemE2)+"")){
+	case 1:
+		mes "[ Box Trader ]";
+		mes "How many you want to exchange?";
+		input .@count1;
+		set .Trade1, .@count1 * 100;
+		
+		if(.@count1 <= 0){
+			next;
+			mes "[ Box Trader ]";
+			mes "Enter more than one.";
+			close;
+		}else if(countitem(.ItemA2) >= 5000){
+			next;
+			mes "[ Box Trader ]";
+			mes "Your "+getitemname(.ItemA2)+" is more than 5,000 put some in storage.";
+			close;
+		}else if(countitem(.ItemA1) < .Trade1){
+			next;
+			mes "[ Box Trader ]";
+			mes "You don't have enough "+getitemname(.ItemA1)+" to trade.";
+			close;
+		}else{
+			if(countitem(.ItemA1) < .Trade1) end;
+			next;
+			mes "[ Box Trader ]";
+			mes "You convert your "+.Trade1+" "+getitemname(.ItemA1)+" to "+.@count1+" "+getitemname(.ItemA2)+".";
+			delitem .ItemA1,.Trade1;
+			getitem .ItemA2,.@count1;
+			close;
+		}
+		
+	case 2:
+		mes "[ Box Trader ]";
+		mes "How many you want to exchange?";
+		input .@count1;
+		set .Trade1, .@count1 * 100;
+		
+		if(.@count1 <= 0){
+			next;
+			mes "[ Box Trader ]";
+			mes "Enter more than one.";
+			close;
+		}else if(countitem(.ItemB2) >= 5000){
+			next;
+			mes "[ Box Trader ]";
+			mes "Your "+getitemname(.ItemB2)+" is more than 5,000 put some in storage.";
+			close;
+		}else if(countitem(.ItemB1) < .Trade1){
+			next;
+			mes "[ Box Trader ]";
+			mes "You don't have enough "+getitemname(.ItemB1)+" to trade.";
+			close;
+		}else{
+			if(countitem(.ItemB1) < .Trade1) end;
+			next;
+			mes "[ Box Trader ]";
+			mes "You convert your "+.Trade1+" "+getitemname(.ItemB1)+" to "+.@count1+" "+getitemname(.ItemB2)+".";
+			delitem .ItemB1,.Trade1;
+			getitem .ItemB2,.@count1;
+			close;
+		}
+
+	case 3:
+		mes "[ Box Trader ]";
+		mes "How many you want to exchange?";
+		input .@count1;
+		set .Trade1, .@count1 * 100;
+		
+		if(.@count1 <= 0){
+			next;
+			mes "[ Box Trader ]";
+			mes "Enter more than one.";
+			close;
+		}else if(countitem(.ItemC2) >= 5000){
+			next;
+			mes "[ Box Trader ]";
+			mes "Your "+getitemname(.ItemC2)+" is more than 5,000 put some in storage.";
+			close;
+		}else if(countitem(.ItemC1) < .Trade1){
+			next;
+			mes "[ Box Trader ]";
+			mes "You don't have enough "+getitemname(.ItemC1)+" to trade.";
+			close;
+		}else{
+			if(countitem(.ItemC1) < .Trade1) end;
+			next;
+			mes "[ Box Trader ]";
+			mes "You convert your "+.Trade1+" "+getitemname(.ItemC1)+" to "+.@count1+" "+getitemname(.ItemC2)+".";
+			delitem .ItemC1,.Trade1;
+			getitem .ItemC2,.@count1;
+			close;
+		}	
+
+	case 4:
+		mes "[ Box Trader ]";
+		mes "How many you want to exchange?";
+		input .@count1;
+		set .Trade1, .@count1 * 100;
+		
+		if(.@count1 <= 0){
+			next;
+			mes "[ Box Trader ]";
+			mes "Enter more than one.";
+			close;
+		}else if(countitem(.ItemD2) >= 5000){
+			next;
+			mes "[ Box Trader ]";
+			mes "Your "+getitemname(.ItemD2)+" is more than 5,000 put some in storage.";
+			close;
+		}else if(countitem(.ItemD1) < .Trade1){
+			next;
+			mes "[ Box Trader ]";
+			mes "You don't have enough "+getitemname(.ItemD1)+" to trade.";
+			close;
+		}else{
+			if(countitem(.ItemD1) < .Trade1) end;
+			next;
+			mes "[ Box Trader ]";
+			mes "You convert your "+.Trade1+" "+getitemname(.ItemD1)+" to "+.@count1+" "+getitemname(.ItemD2)+".";
+			delitem .ItemD1,.Trade1;
+			getitem .ItemD2,.@count1;
+			close;
+		}	
+
+	case 5:
+		mes "[ Box Trader ]";
+		mes "How many you want to exchange?";
+		input .@count1;
+		set .Trade1, .@count1 * 100;
+		
+		if(.@count1 <= 0){
+			next;
+			mes "[ Box Trader ]";
+			mes "Enter more than one.";
+			close;
+		}else if(countitem(.ItemE2) >= 5000){
+			next;
+			mes "[ Box Trader ]";
+			mes "Your "+getitemname(.ItemE2)+" is more than 5,000 put some in storage.";
+			close;
+		}else if(countitem(.ItemE1) < .Trade1){
+			next;
+			mes "[ Box Trader ]";
+			mes "You don't have enough "+getitemname(.ItemE1)+" to trade.";
+			close;
+		}else{
+			if(countitem(.ItemE1) < .Trade1) end;
+			next;
+			mes "[ Box Trader ]";
+			mes "You convert your "+.Trade1+" "+getitemname(.ItemE1)+" to "+.@count1+" "+getitemname(.ItemE2)+".";
+			delitem .ItemE1,.Trade1;
+			getitem .ItemE2,.@count1;
+			close;
+		}		
+}
+
+OnInit:
+	.ItemA1 = 607;
+	.ItemA2 = 33021;
+
+	.ItemB1 = 608;
+	.ItemB2 = 33022;
+
+	.ItemC1 = 606;
+	.ItemC2 = 33023;
+
+	.ItemD1 = 12030;
+	.ItemD2 = 33024;
+
+	.ItemE1 = 12028;
+	.ItemE2 = 33025;
+
+	//waitingroom "Supply Exchanger",0;
+end;
+}

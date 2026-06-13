@@ -1,0 +1,41 @@
+-	script	news_main	-1,{
+
+OnInit:
+	// Message List
+	setarray .news_list$,
+		"Server Announcer : Welcome to Nostalgic Ragnarok Online!",
+		"Server Announcer : Enjoy balanced gameplay and relive your nostalgic adventure!",
+		"Server Announcer : Card Drop Rates: MVP 20%% | Mini-Boss 50%% | Normal 80%% | Rare MVP 1%%",
+		"Server Announcer : Use @quest to instantly travel to Quest Zones",
+		"Server Announcer : Use @donor to access the Donation Area",
+		"Server Announcer : Use @fishing to start fishing at the Fishing Area",
+		"Server Announcer : Use @punch to test your damage output",
+		"Server Announcer : Need supplies? Use @mall to access the Main Shopping Area",
+		"Server Announcer : Want to trade? Use @vending to enter the Vending Market",
+		"Server Announcer : Need help? Use @request to contact our Support Team",
+		"Server Announcer : Help keep the server fair - report abuse, hacks, or suspicious activity to staff",
+		"Server Announcer : Visit our official website at www.nostalgicro.com";
+
+	.news_list_size = getarraysize(.news_list$);
+	.index = 0;
+
+	// Announce first message immediately after server start / script reload
+	announce .news_list$[.index], bc_all;
+	.index++;
+
+	if (.index >= .news_list_size)
+		.index = 0;
+
+	initnpctimer;
+	end;
+
+OnTimer240000:
+	announce .news_list$[.index], bc_all;
+
+	.index++;
+	if (.index >= .news_list_size)
+		.index = 0;
+
+	initnpctimer;
+	end;
+}

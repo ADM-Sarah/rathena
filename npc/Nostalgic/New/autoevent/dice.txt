@@ -1,0 +1,258 @@
+//=========================== KafraShop.net ===============================
+//=        _    _       ____                   _         
+//=       | |  / /     /  __\                 / \
+//=       | |_/ / ___ _| |____ ___ ___ _  ____| |___  _____ _____
+//=       |  _  \/ _ ' |  __/ '__/  _ ' |/ ___|  _  \/  _  \  __ \
+//=       | | \ | |_|  | |  | |  | |_|  | ___ | | | |  |_| | |_| |
+//=       \_/  \ \__,|_| |  \_/   \__,|_|\____/_| | |\____/| .___/
+//=             \_/    \_/                        \_/      | |
+//=                                                        \_/
+//=========================================================================
+//= Mini-Games : Dice
+//================= Description ===========================================
+//= The last player on the map will receive the reward.
+//================= Current Version =======================================
+//= 1.0
+//================= Changelogs ============================================
+//= 1.0 - Implementation
+//=========================================================================
+
+-	script	MG_Dice	FAKE_NPC,{
+	end;
+
+	function F_WarpOut;
+
+OnInit:
+	.evtName$ = "Dice";
+	disablenpc("Box 1#dice");
+	disablenpc("Box 2#dice");
+	disablenpc("Box 3#dice");
+	disablenpc("Box 4#dice");
+	disablenpc("Box 5#dice");
+	disablenpc("Box 6#dice");
+
+	setarray .areaList[0],
+						29, 53, 42, 58,
+						29, 41, 42, 46,
+						29, 29, 42, 34,
+						57, 53, 70, 58,
+						57, 41, 70, 46,
+						57, 29, 70, 34;
+	end;
+
+OnStart:
+	$EVT_DICE = 2;
+	mapannounce("dice_ev", sprintf("[%s] Welcome to the Dice Mini-Game.", .evtName$), bc_map|bc_blue);
+	sleep(2000);
+	mapannounce("dice_ev", sprintf("[%s] The rules are simple...", .evtName$), bc_map|bc_blue);
+	sleep(2000);
+	mapannounce("dice_ev", sprintf("[%s] I'm going to randomly pick a number from 1 to 6.", .evtName$), bc_map|bc_blue);
+	sleep(2000);
+	mapannounce("dice_ev", sprintf("[%s] All you need to do is to select what box you want.", .evtName$), bc_map|bc_blue);
+	sleep(2000);
+	mapannounce("dice_ev", sprintf("[%s] For example, if I rolled a number [4], all players from 1, 2, 3, 5 and 6 will be warped out.", .evtName$), bc_map|bc_blue);
+	sleep(2000);
+	mapannounce("dice_ev", sprintf("[%s] This event will continue until one [1] player is left.", .evtName$), bc_map|bc_blue);
+	sleep(2000);
+	mapannounce("dice_ev", sprintf("[%s] Just a reminder, if you didn't select a box, you will be also warped out.", .evtName$), bc_map|bc_blue);
+	sleep(2000);
+	mapannounce("dice_ev", sprintf("[%s] Let's start the event...", .evtName$), bc_map|bc_blue);
+	sleep(2000);
+	donpcevent(strnpcinfo(0)+"::OnCountdown");
+	end;
+
+OnCountdown:
+	if (getmapusers("dice_ev") <= 1) {
+		switch($EVT_DICE_ROLL) {
+			case 1: .@cnt = getareaunits(BL_PC, "dice_ev", 29, 53, 42, 58, .@unit[0]); break;
+			case 2: .@cnt = getareaunits(BL_PC, "dice_ev", 29, 41, 42, 46, .@unit[0]); break;
+			case 3: .@cnt = getareaunits(BL_PC, "dice_ev", 29, 29, 42, 34, .@unit[0]); break;
+			case 4: .@cnt = getareaunits(BL_PC, "dice_ev", 57, 53, 70, 58, .@unit[0]); break;
+			case 5: .@cnt = getareaunits(BL_PC, "dice_ev", 57, 41, 70, 46, .@unit[0]); break;
+			case 6: .@cnt = getareaunits(BL_PC, "dice_ev", 57, 29, 70, 34, .@unit[0]); break;
+		}
+		if (!.@cnt) {
+			announce("["+.evtName$+"] No winners for this event. Better luck next time.", bc_npc|bc_blue);
+			mapwarp("dice_ev", "prontera", 149, 156);
+		} else {
+			sleep(2000);
+			if (attachrid(.@unit)) {
+				$EVT_DICE_WINNER$ = strcharinfo(0);
+				if (getarraysize($EVT_DICE_ITEM) > 1) {
+					for (.@i=0; .@i<getarraysize($EVT_DICE_ITEM); .@i+=2)
+						getitem($EVT_DICE_ITEM[.@i], $EVT_DICE_ITEM[.@i+1]);
+				}
+				if ($EVT_DICE_POINT > 0) {
+					F_PointGain(0, $EVT_DICE_POINT, .evtName$);
+					F_ShowCurrency("#EVENTPOINT", "Event", $EVT_DICE_POINT);
+					EVENTWINS += $EVT_DICE_POINT;
+					EVENTWINS_DICE += $EVT_DICE_POINT;
+				}
+				mapannounce("dice_ev", sprintf("[%s] %s has won the mini-game!", .evtName$, strcharinfo(0)), bc_map|bc_blue);
+				sleep2(2000);
+				warp("prontera", 149, 156);
+			}
+			detachrid();
+		}
+		stopnpctimer();
+		donpcevent(strnpcinfo(0)+"::OnStop");
+		end;
+	} else
+		donpcevent(strnpcinfo(0)+"::OnBoxRegroup");
+	enablenpc("Box 1#dice");
+	enablenpc("Box 2#dice");
+	enablenpc("Box 3#dice");
+	enablenpc("Box 4#dice");
+	enablenpc("Box 5#dice");
+	enablenpc("Box 6#dice");
+	setnpctimer(300000);
+	startnpctimer();
+	end;
+
+OnTimer300001:
+	mapannounce("dice_ev", sprintf("[%s] Generating the number... Please select a box of your choice!", .evtName$), bc_map|bc_blue);
+	end;
+
+OnTimer320001:
+	mapannounce("dice_ev", sprintf("[%s] Revealing the number in 5.....", .evtName$), bc_map|bc_blue);
+	end;
+
+OnTimer321001:
+	mapannounce("dice_ev", sprintf("[%s] Revealing the number in 4....", .evtName$), bc_map|bc_blue);
+	end;
+
+OnTimer322001:
+	mapannounce("dice_ev", sprintf("[%s] Revealing the number in 3...", .evtName$), bc_map|bc_blue);
+	end;
+
+OnTimer323001:
+	mapannounce("dice_ev", sprintf("[%s] Revealing the number in 2..", .evtName$), bc_map|bc_blue);
+	end;
+
+OnTimer324001:
+	mapannounce("dice_ev", sprintf("[%s] Revealing the number in 1.", .evtName$), bc_map|bc_blue);
+	end;
+
+OnTimer325000:
+	stopnpctimer();
+	disablenpc("Box 1#dice");
+	disablenpc("Box 2#dice");
+	disablenpc("Box 3#dice");
+	disablenpc("Box 4#dice");
+	disablenpc("Box 5#dice");
+	disablenpc("Box 6#dice");
+	donpcevent(strnpcinfo(0)+"::OnReveal");
+	end;
+
+OnReveal:
+	if (getmapusers("dice_ev") > 0) {
+		$EVT_DICE_ROLL = rand(1, 6);
+		mapannounce("dice_ev", sprintf("[%s] I rolled the number... [%d] !!", .evtName$, $EVT_DICE_ROLL), bc_map|bc_blue);
+		for (.@i=1; .@i<7; .@i++) {
+			if (.@i != $EVT_DICE_ROLL)
+				F_WarpOut(.areaList[(.@i-1)*4], .areaList[(.@i-1)*4+1], .areaList[(.@i-1)*4+2], .areaList[(.@i-1)*4+3]);
+		}
+		areawarp("dice_ev", 30, 16, 69, 23, "prontera", 149, 156);
+		areawarp("dice_ev", 44, 24, 53, 28, "prontera", 149, 156);
+		areawarp("dice_ev", 30, 64, 69, 79, "prontera", 149, 156);
+		donpcevent(strnpcinfo(0)+"::OnCountdown");
+	} else
+		donpcevent(strnpcinfo(0)+"::OnStop");
+	end;
+
+OnBoxRegroup:
+	.@cnt = getmapunits(BL_PC, "dice_ev", .@units);
+	if (.@cnt) {
+		for (.@i=0; .@i<.@cnt; .@i++) {
+			if (attachrid(.@units[.@i]))
+				warp("dice_ev", rand(48, 51), rand(70, 73));
+		}
+		detachrid();
+	}
+	end;
+
+OnStop:
+	stopnpctimer();
+	$EVT_DICE = 0;
+	mapwarp("dice_ev", "prontera", 149, 156);
+	end;
+
+function	F_WarpOut	{
+	.@cnt = getareaunits(BL_PC, "dice_ev", getarg(0), getarg(1), getarg(2), getarg(3), .@units[0]);
+	if (!.@cnt) return;
+	for (.@i=0; .@i<.@cnt; .@i++) {
+		attachrid(.@units[.@i]);
+		if ($EVT_DICE_CONSO_POINT) {
+			F_PointGain(1, $EVT_DICE_CONSO_POINT, .evtName$);
+			F_ShowCurrency("#EVENTPOINT", "Event", $EVT_DICE_CONSO_POINT);
+			EVENTWINS += $EVT_DICE_CONSO_POINT;
+			EVENTWINS_DICE += $EVT_DICE_CONSO_POINT;
+		}
+		warp("SavePoint", 0, 0);
+		detachrid();
+	}
+	return;
+}
+}
+
+dice_ev,45,58,4	script	Box 1#dice	4_BULLETIN_BOARD2,{
+	if (@DICE_CD + 15 < gettimetick(2)) {
+		@DICE_CD = gettimetick(2);
+		warp("dice_ev", rand(34, 37), rand(54, 57));
+	}
+	end;
+}
+
+dice_ev,45,46,4	script	Box 2#dice	4_BULLETIN_BOARD2,{
+	if (@DICE_CD + 15 < gettimetick(2)) {
+		@DICE_CD = gettimetick(2);
+		warp("dice_ev", rand(34, 37), rand(42, 45));
+	}
+	end;
+}
+
+dice_ev,45,34,4	script	Box 3#dice	4_BULLETIN_BOARD2,{
+	if (@DICE_CD + 15 < gettimetick(2)) {
+		@DICE_CD = gettimetick(2);
+		warp("dice_ev", rand(34, 37), rand(30, 33));
+	}
+	end;
+}
+
+dice_ev,54,58,4	script	Box 4#dice	4_BULLETIN_BOARD2,{
+	if (@DICE_CD + 15 < gettimetick(2)) {
+		@DICE_CD = gettimetick(2);
+		warp("dice_ev", rand(62, 65), rand(54, 57));
+	}
+	end;
+}
+
+dice_ev,54,46,4	script	Box 5#dice	4_BULLETIN_BOARD2,{
+	if (@DICE_CD + 15 < gettimetick(2)) {
+		@DICE_CD = gettimetick(2);
+		warp("dice_ev", rand(62, 65), rand(42, 45));
+	}
+	end;
+}
+
+dice_ev,54,34,4	script	Box 6#dice	4_BULLETIN_BOARD2,{
+	if (@DICE_CD + 15 < gettimetick(2)) {
+		@DICE_CD = gettimetick(2);
+		warp("dice_ev", rand(62, 65), rand(30, 33));
+	}
+	end;
+}
+
+//dice_ev	mapflag	macprotect
+dice_ev	mapflag	nobranch
+dice_ev	mapflag	nodrop
+dice_ev	mapflag	noexp
+dice_ev	mapflag	noicewall
+dice_ev	mapflag	noloot
+dice_ev	mapflag	nomemo
+dice_ev	mapflag	nosave	SavePoint
+dice_ev	mapflag	noskill
+dice_ev	mapflag	noteleport
+dice_ev	mapflag	nowarp
+dice_ev	mapflag	nowarpto
+dice_ev	mapflag	pvp	off

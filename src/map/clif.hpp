@@ -54,6 +54,9 @@ enum e_macro_report_status : uint8;
 enum e_hom_state2 : uint8;
 enum _sp;
 enum e_searchstore_failure : uint16;
+enum EEmotionStatus : uint8;
+enum EEmotionExpantionStatus : uint8;
+struct PACKET_ZC_EMOTION2_EXPANTION_LIST_SUB;
 
 #define DMGVAL_IGNORE -30000
 
@@ -239,6 +242,8 @@ enum send_target : uint8_t {
 	BG_AREA_WOS,
 
 	CLAN,				// Clan System
+
+	IGNORE_DROP,		// @seeitems [Geezy]
 };
 
 enum broadcast_flags : uint8_t {
@@ -349,6 +354,27 @@ enum emotion_type {
 	ET_YUT5,
 	ET_YUT6,
 	ET_YUT7,
+	ET_CLICK_ME,
+	ET_DAILY_QUEST,
+	ET_EVENT,
+	ET_JOB_QUEST,
+	ET_TRAFFIC_LINE_QUEST,
+	ET_CUSTOM_1,
+	ET_CUSTOM_2,
+	ET_CUSTOM_3,
+	ET_CUSTOM_4,
+	ET_CUSTOM_5,
+	ET_CUSTOM_6,
+	ET_CUSTOM_7,
+	ET_CUSTOM_8,
+	ET_CUSTOM_9,
+	ET_CUSTOM_10,
+	ET_CUSTOM_11,
+	ET_CUSTOM_12,
+	ET_CUSTOM_13,
+	ET_CUSTOM_14,
+	ET_CUSTOM_15,
+	ET_EMOTION_LAST,
 	//
 	ET_MAX
 };
@@ -951,6 +977,14 @@ void clif_parse_ActionRequest_sub( map_session_data& sd, uint8 action_type, int3
 void clif_parse_LoadEndAck( int32 fd,map_session_data* sd );
 void clif_hotkeys_send( const map_session_data* sd, int32 tab );
 
+void clif_parse_emotion2(const int fd, map_session_data* const sd);
+void clif_emotion2(block_list* const bl, const uint16 ExpantionId, const uint16 EmotionId);
+void clif_emotion2_fail(map_session_data* const sd, const uint16 ExpantionId, const uint16 EmotionId, const EEmotionStatus Status);
+void clif_parse_emotion2_expantion(const int fd, map_session_data* const sd);
+void clif_emotion2_expantion(map_session_data* const sd, const uint16 ExpantionId, const bool bRented, const uint32 RentEndTime);
+void clif_emotion2_expantion_fail(map_session_data* const sd, const uint16 ExpantionId, const EEmotionExpantionStatus Status);
+void clif_emotion2_expantion_list(map_session_data* const sd, const std::vector<PACKET_ZC_EMOTION2_EXPANTION_LIST_SUB>& List);
+
 // trade
 void clif_traderequest(map_session_data& sd, const char* name);
 void clif_traderesponse( map_session_data& sd, e_ack_trade_response result );
@@ -1400,6 +1434,12 @@ void clif_dressing_room( const map_session_data& sd );
 void clif_navigateTo( const map_session_data* sd, const char* mapname, uint16 x, uint16 y, uint8 flag, bool hideWindow, uint16 mob_id );
 void clif_SelectCart( const map_session_data* sd );
 
+// (^~_~^) Color Nicks Start
+
+void clif_send_colornicks(map_session_data* sd);
+
+// (^~_~^) Color Nicks End
+
 /// Achievement System
 void clif_achievement_list_all( map_session_data *sd );
 void clif_achievement_update( map_session_data *sd, const achievement *ach, int32 count );
@@ -1500,6 +1540,8 @@ void clif_macro_checker( const map_session_data& sd, e_macro_checker_result resu
 
 void clif_dynamicnpc_result( const map_session_data& sd, e_dynamicnpc_result result );
 
+int clif_vend(struct map_session_data *sd, int skill_lv);
+
 void clif_set_dialog_align( const map_session_data& sd, int32 npcid, e_say_dialog_align align );
 void clif_set_npc_window_size( const map_session_data& sd, int32 width, int32 height );
 void clif_set_npc_window_pos( const map_session_data& sd, int32 x, int32 y );
@@ -1508,5 +1550,11 @@ void clif_set_npc_window_pos_percent( const map_session_data& sd, int32 x, int32
 void clif_noask_sub( const map_session_data& sd, const map_session_data& tsd, int32 type );
 
 void clif_specialpopup(const map_session_data& sd, int32 id);
+
+// (^~_~^) LGP Start
+
+void clif_gepard_send_lgp_settings(map_session_data * sd);
+
+// (^~_~^) LGP End
 
 #endif /* CLIF_HPP */

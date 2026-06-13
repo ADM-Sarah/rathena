@@ -46,8 +46,50 @@ Body:
     Name: Player
     Level: 0
     Commands:
+      commands: true
+      storage: true
       changedress: true
       resurrect: true
+      storeall: true
+      warp: true
+      jump: true
+      load: true
+      go: true
+      allskill: true
+      autoloot: true
+      alootid: true
+      whodrops: true
+      autoloottype: true
+      feelreset: true
+      guildstorage: true
+      glvl: true
+      duel: true
+      invite: true
+      reject: true
+      leave: true
+      request: true
+      refresh: true
+      time: true
+      whereis: true
+      noask: true
+      homevolve: true
+      homstats: true
+      homfriendly: true
+      petfriendly: true
+      homlevel: true
+      pettalk: true
+      mobinfo: true
+      iteminfo: true
+      changegm: true
+      noks: true
+      autotrade: true
+      accept: true
+      afk: true
+      hatredreset: true
+      nobc: true
+      nobc2: true
+      seeitems: true
+      resist: true
     Permissions:
       # without this basic permissions regular players could not trade or party
       can_trade: true
@@ -131,20 +173,24 @@ Body:
     LogCommands: true
     Permissions:
       any_warp: true
-  - Id: 4
+  - Id: 6
     Name: Event Manager
     Inherit:
       Support: true
     Level: 1
     Commands:
+      resetstat: true
+      blvl: true
+      jlvl: true
+      jobchange: true
+      broadcast: true
+      hide: true
       monster: true
-      monstersmall: true
-      monsterbig: true
+      speed: true
+      recall: true
       killmonster2: true
       cleanarea: true
       cleanmap: true
-      item: true
-      zeny: true
       disguise: true
       undisguise: true
       size: true
@@ -163,9 +209,8 @@ Body:
       marry: true
       divorce: true
       refreshall: true
+      battleignore: true
     CharCommands:
-      item: true
-      zeny: true
       disguise: true
       undisguise: true
       size: true
@@ -175,6 +220,15 @@ Body:
       any_warp: true
   - Id: 5
     Name: VIP
+    # Can do everything Players can
+    Inherit:
+      Player: true
+    Level: 0
+    Commands:
+      rates: true
+      who: true
+  - Id: 7
+    Name: Maintenance Tester
     # Can do everything Players can
     Inherit:
       Player: true
@@ -229,7 +283,7 @@ Body:
       can_party: true
       command_enable: true
       all_skill: false
-      all_equipment: false
+      all_equipment: true
       skill_unconditional: false
       use_check: true
       use_changemaptype: true

@@ -1,0 +1,1028 @@
+//===== eAthena / rAthena Script =============================================
+//= PVP / WoE Ladder with Dota Sound + Top 3 Statue + Weekly + Monthly
+//= Features:
+//= - Global announce when player enters PvP/WoE trigger map
+//= - guild_vs2 needs 2 deaths before warp to SavePoint
+//= - Dota kill streak / multikill / ownage sounds
+//= - Top 3 statue with saved look
+//= - Weekly / Monthly / All-time ladder
+//= - WoE support via trigger maps (NO pvp mapflag needed for WoE maps)
+//============================================================================
+
+// WoE Maps (loadevent only, no pvp flag)
+// Uncomment / tambah ikut castle yang kau guna
+prtg_cas01	mapflag	loadevent
+prtg_cas02	mapflag	loadevent
+payg_cas01	mapflag	loadevent
+aldeg_cas01	mapflag	loadevent
+prtg_cas03	mapflag	loadevent
+koe_rachel	mapflag	loadevent
+koe_hyper	mapflag	loadevent
+
+//============================================================
+// SAVE LOOK
+//============================================================
+function	script	F_PvpSaveLook	{
+	if (!getcharid(0)) return;
+
+	.@hair        = getlook(LOOK_HAIR);
+	.@hair_color  = getlook(LOOK_HAIR_COLOR);
+	.@cloth_color = getlook(LOOK_CLOTHES_COLOR);
+	.@weapon      = getlook(LOOK_WEAPON);
+	.@shield      = getlook(LOOK_SHIELD);
+	.@head_top    = getlook(LOOK_HEAD_TOP);
+	.@head_mid    = getlook(LOOK_HEAD_MIDDLE);
+	.@head_bottom = getlook(LOOK_HEAD_BOTTOM);
+	.@class       = Class;
+	.@sex         = Sex;
+
+	if (.@hair < 0) .@hair = 0;
+	if (.@hair_color < 0) .@hair_color = 0;
+	if (.@cloth_color < 0) .@cloth_color = 0;
+	if (.@weapon < 0) .@weapon = 0;
+	if (.@shield < 0) .@shield = 0;
+	if (.@head_top < 0) .@head_top = 0;
+	if (.@head_mid < 0) .@head_mid = 0;
+	if (.@head_bottom < 0) .@head_bottom = 0;
+	if (.@class < 0) .@class = 0;
+	if (.@sex < 0) .@sex = 0;
+
+	query_sql "REPLACE INTO `pvpladder_looks` "
+		+"(`char_id`,`name`,`class`,`sex`,`hair`,`hair_color`,`cloth_color`,`weapon`,`shield`,`head_top`,`head_mid`,`head_bottom`,`updated_at`) VALUES ("
+		+ getcharid(0) + ","
+		+ "'" + escape_sql(strcharinfo(0)) + "',"
+		+ .@class + ","
+		+ .@sex + ","
+		+ .@hair + ","
+		+ .@hair_color + ","
+		+ .@cloth_color + ","
+		+ .@weapon + ","
+		+ .@shield + ","
+		+ .@head_top + ","
+		+ .@head_mid + ","
+		+ .@head_bottom + ","
+		+ "NOW())";
+	return;
+}
+
+//============================================================
+// RESET STATUE LOOK
+//============================================================
+function	script	F_PvpResetStatue	{
+	.@npc$ = getarg(0);
+	.@gid = getnpcid(0,.@npc$);
+	if (!.@gid) return;
+
+	setunitdata .@gid, UNPC_CLASS, Job_Novice;
+	setunitdata .@gid, UNPC_SEX, 0;
+	setunitdata .@gid, UNPC_HAIRSTYLE, 0;
+	setunitdata .@gid, UNPC_HAIRCOLOR, 0;
+	setunitdata .@gid, UNPC_CLOTHCOLOR, 0;
+	setunitdata .@gid, UNPC_WEAPON, 0;
+	setunitdata .@gid, UNPC_SHIELD, 0;
+	setunitdata .@gid, UNPC_HEADTOP, 0;
+	setunitdata .@gid, UNPC_HEADMIDDLE, 0;
+	setunitdata .@gid, UNPC_HEADBOTTOM, 0;
+	return;
+}
+
+//============================================================
+// APPLY STATUE LOOK
+//============================================================
+function	script	F_PvpApplyStatue	{
+	.@npc$        = getarg(0);
+	.@class       = getarg(1);
+	.@sex         = getarg(2);
+	.@hair        = getarg(3);
+	.@hair_color  = getarg(4);
+	.@cloth_color = getarg(5);
+	.@weapon      = getarg(6);
+	.@shield      = getarg(7);
+	.@head_top    = getarg(8);
+	.@head_mid    = getarg(9);
+	.@head_bottom = getarg(10);
+
+	.@gid = getnpcid(0,.@npc$);
+	if (!.@gid) return;
+
+	if (.@class < 0) .@class = 0;
+	if (.@sex < 0) .@sex = 0;
+	if (.@hair < 0) .@hair = 0;
+	if (.@hair_color < 0) .@hair_color = 0;
+	if (.@cloth_color < 0) .@cloth_color = 0;
+	if (.@weapon < 0) .@weapon = 0;
+	if (.@shield < 0) .@shield = 0;
+	if (.@head_top < 0) .@head_top = 0;
+	if (.@head_mid < 0) .@head_mid = 0;
+	if (.@head_bottom < 0) .@head_bottom = 0;
+
+	setunitdata .@gid, UNPC_CLASS, .@class;
+	setunitdata .@gid, UNPC_SEX, .@sex;
+	setunitdata .@gid, UNPC_HAIRSTYLE, .@hair;
+	setunitdata .@gid, UNPC_HAIRCOLOR, .@hair_color;
+	setunitdata .@gid, UNPC_CLOTHCOLOR, .@cloth_color;
+	setunitdata .@gid, UNPC_WEAPON, .@weapon;
+	setunitdata .@gid, UNPC_SHIELD, .@shield;
+	setunitdata .@gid, UNPC_HEADTOP, .@head_top;
+	setunitdata .@gid, UNPC_HEADMIDDLE, .@head_mid;
+	setunitdata .@gid, UNPC_HEADBOTTOM, .@head_bottom;
+	return;
+}
+
+//============================================================
+// UPDATE WEEKLY LADDER
+//============================================================
+function	script	F_PvpUpdateWeekly	{
+	.@mode = getarg(0); // 1 = kill, 2 = death
+	.@year = atoi(gettimestr("%Y", 21));
+	.@week = atoi(gettimestr("%W", 21));
+	.@cid = getcharid(0);
+	.@name$ = escape_sql(strcharinfo(0));
+
+	query_sql "INSERT IGNORE INTO `pvpladder_weekly` "
+		+"(`year`,`week`,`char_id`,`name`,`kills`,`deaths`,`streak`,`best_streak`,`updated_at`) VALUES ("
+		+ .@year + ","
+		+ .@week + ","
+		+ .@cid + ","
+		+ "'" + .@name$ + "',"
+		+ "0,0,0,0,NOW())";
+
+	if (.@mode == 1) {
+		query_sql "UPDATE `pvpladder_weekly` "
+			+"SET `name`='" + .@name$ + "',"
+			+"`kills`=`kills`+1,"
+			+"`streak`=`streak`+1,"
+			+"`updated_at`=NOW() "
+			+"WHERE `year`=" + .@year + " AND `week`=" + .@week + " AND `char_id`=" + .@cid;
+
+		query_sql "UPDATE `pvpladder_weekly` "
+			+"SET `best_streak`=`streak` "
+			+"WHERE `year`=" + .@year + " AND `week`=" + .@week + " AND `char_id`=" + .@cid + " AND `streak` > `best_streak`";
+	}
+	else if (.@mode == 2) {
+		query_sql "UPDATE `pvpladder_weekly` "
+			+"SET `name`='" + .@name$ + "',"
+			+"`deaths`=`deaths`+1,"
+			+"`streak`=0,"
+			+"`updated_at`=NOW() "
+			+"WHERE `year`=" + .@year + " AND `week`=" + .@week + " AND `char_id`=" + .@cid;
+	}
+	return;
+}
+
+//============================================================
+// UPDATE MONTHLY LADDER
+//============================================================
+function	script	F_PvpUpdateMonthly	{
+	.@mode = getarg(0); // 1 = kill, 2 = death
+	.@year = atoi(gettimestr("%Y", 21));
+	.@month = atoi(gettimestr("%m", 21));
+	.@cid = getcharid(0);
+	.@name$ = escape_sql(strcharinfo(0));
+
+	query_sql "INSERT IGNORE INTO `pvpladder_monthly` "
+		+"(`year`,`month`,`char_id`,`name`,`kills`,`deaths`,`streak`,`best_streak`,`updated_at`) VALUES ("
+		+ .@year + ","
+		+ .@month + ","
+		+ .@cid + ","
+		+ "'" + .@name$ + "',"
+		+ "0,0,0,0,NOW())";
+
+	if (.@mode == 1) {
+		query_sql "UPDATE `pvpladder_monthly` "
+			+"SET `name`='" + .@name$ + "',"
+			+"`kills`=`kills`+1,"
+			+"`streak`=`streak`+1,"
+			+"`updated_at`=NOW() "
+			+"WHERE `year`=" + .@year + " AND `month`=" + .@month + " AND `char_id`=" + .@cid;
+
+		query_sql "UPDATE `pvpladder_monthly` "
+			+"SET `best_streak`=`streak` "
+			+"WHERE `year`=" + .@year + " AND `month`=" + .@month + " AND `char_id`=" + .@cid + " AND `streak` > `best_streak`";
+	}
+	else if (.@mode == 2) {
+		query_sql "UPDATE `pvpladder_monthly` "
+			+"SET `name`='" + .@name$ + "',"
+			+"`deaths`=`deaths`+1,"
+			+"`streak`=0,"
+			+"`updated_at`=NOW() "
+			+"WHERE `year`=" + .@year + " AND `month`=" + .@month + " AND `char_id`=" + .@cid;
+	}
+	return;
+}
+
+//============================================================
+// DOTA PVP / WOE CORE
+//============================================================
+-	script	DOTAPVP	-1,{
+OnInit:
+	// 0 disable, 1 play to all on current map, 2 broader/global, 3 killer only
+	set .sound, 1;
+
+	// 0 global, 1 map
+	set .announce, 0;
+	set .announcemap, 1;
+
+	set .announcekill, 0;
+	set .msg_die, 0;
+	set .msg_kill, 0;
+
+	set .gmnokill, 0;
+
+	set .enable_join_announce, 1;
+	set .join_announce_color, bc_all|bc_blue;
+
+	set .killingspree, 3;
+	set .dominating, 4;
+	set .megakill, 5;
+	set .unstoppable, 6;
+	set .wickedsick, 7;
+	set .monsterkill, 8;
+	set .godlike, 9;
+	set .holyshit, 10;
+	set .continue, 1;
+
+	set .owned, 5;
+	set .owncontinue, 1;
+
+	set .min_gm_menu, 90;
+	set .showtotal, 10;
+	set .showpage, 10;
+	set .loweststreak, 3;
+	set .lowestownage, 5;
+
+	// Trigger maps
+	// PvP maps
+	// WoE maps boleh tambah di sini sekali
+	setarray .maptrigger$[0],
+		"izlude2",
+  		"guild_vs1",
+		"guild_vs2",
+		"guild_vs3",
+		"guild_vs4",
+		"guild_vs5",
+		"prtg_cas01",
+		"prtg_cas02",
+		"payg_cas01",
+		"aldeg_cas01",
+		"koe_rachel",
+		"koe_hyper",
+		"prtg_cas03";
+
+	set .lvltokill, 0;
+	set .counttopunish, 6;
+	set .minlvlrange, 0;
+
+	if ( .announce < 0 || .announce > 1 ) set .announce, 0;
+	if ( .continue < 1 ) set .continue, 1;
+	if ( .owncontinue < 1 ) set .owncontinue, 1;
+	if ( .gmnokill <= 0 ) set .gmnokill, 100;
+	if ( .lvltokill <= 1 ) set .lvltokill, 0;
+	if ( .counttopunish <= 1 ) set .counttopunish, 0;
+
+	set .maptriggersize, getarraysize(.maptrigger$);
+
+	donpcevent "PVP_STATUE_CTRL::OnRefresh";
+	end;
+
+OnPCLoginEvent:
+	callfunc "F_PvpSaveLook";
+	PVP_LastJoinMap$ = "";
+	GVG2_DeathCount = 0;
+	end;
+
+OnPCLoadMapEvent:
+	callfunc "F_PvpSaveLook";
+
+	getmapxy .@map$, .@x, .@y, BL_PC;
+
+	for ( set .@i, 0; .@i < .maptriggersize; set .@i, .@i + 1 ) {
+		if ( .@map$ == .maptrigger$[.@i] ) break;
+	}
+	if ( .@i == .maptriggersize ) {
+		if (PVP_LastJoinMap$ != "guild_vs2")
+			GVG2_DeathCount = 0;
+		PVP_LastJoinMap$ = .@map$;
+		end;
+	}
+
+	if (.@map$ != "guild_vs2")
+		GVG2_DeathCount = 0;
+
+	if (.enable_join_announce) {
+		if (.@map$ == "izlude2")
+			.@room$ = "Party PvP Room";
+		else if (.@map$ == "guild_vs3")
+			.@room$ = "Deathmatch Room";
+		else if (.@map$ == "guild_vs2")
+			.@room$ = "Guild vs Guild Room";
+		else if (.@map$ == "guild_vs5")
+			.@room$ = "1vs1 Room";
+		else
+			.@room$ = "";
+
+		if (.@room$ != "")
+			announce "[PvP] " + strcharinfo(0) + " has entered " + .@room$ + ".", .join_announce_color;
+	}
+
+	if ( @dota_sql_kills == 0 && @dota_sql_deaths == 0 ) {
+		query_sql "SELECT `kills`,`deaths`,`streaks`,UNIX_TIMESTAMP(`streaktime`) FROM `pvpladder` WHERE `char_id` = "+ getcharid(0),
+			@dota_sql_kills, @dota_sql_deaths, @dota_sql_streaks, @dota_sql_streaktime;
+	}
+
+	if ( getcharid(2) && getd(".dota_sql_"+ getcharid(2) +"_h") == 0 ) {
+		query_sql "SELECT `currentown`,`highestown`,UNIX_TIMESTAMP(`owntime`) FROM `ownladder` WHERE `guild_id` = "+ getcharid(2),
+			.@c, .@h, .@t;
+		setd ".dota_sql_"+ getcharid(2) +"_c", .@c;
+		setd ".dota_sql_"+ getcharid(2) +"_h", .@h;
+		setd ".dota_sql_"+ getcharid(2) +"_t", .@t;
+	}
+
+	PVP_LastJoinMap$ = .@map$;
+	end;
+
+OnPCDieEvent:
+	getmapxy .@map$, .@x, .@y, BL_PC;
+
+	if (.@map$ == "guild_vs2") {
+		GVG2_DeathCount += 1;
+
+		if (GVG2_DeathCount >= 2) {
+			GVG2_DeathCount = 0;
+			dispbottom "[Guild vs Guild] You have been defeated twice. Returning to town.";
+			sleep2 200;
+			warp "SavePoint",0,0;
+			end;
+		}
+		else {
+			dispbottom "[Guild vs Guild] First death recorded. Your guildmates may still resurrect you. Second death will return you to town.";
+		}
+	}
+	end;
+
+OnPCKillEvent:
+	if ( getgmlevel() >= .gmnokill ) end;
+
+	getmapxy .@map$, .@x, .@y, 1;
+
+	for ( set .@i, 0; .@i < .maptriggersize; set .@i, .@i +1 ) {
+		if ( .@map$ == .maptrigger$[.@i] ) break;
+	}
+	if ( .@i == .maptriggersize ) end;
+
+	callfunc "F_PvpSaveLook";
+
+	attachrid killedrid;
+	if ( killerrid != getcharid(3) && ( .msg_die || .msg_kill ) ) {
+		if ( .msg_die ) message strcharinfo(0),"You have been killed by "+ rid2name(killerrid);
+		if ( .msg_kill ) message rid2name(killerrid),"You just killed "+ strcharinfo(0);
+	}
+
+	if ( @PlayersKilledStreak >= .holyshit )
+		set .@streakname$,"Beyond Godlike";
+	else if ( @PlayersKilledStreak >= .godlike )
+		set .@streakname$,"Godlike";
+	else if ( @PlayersKilledStreak >= .monsterkill )
+		set .@streakname$,"Monster Kill";
+	else if ( @PlayersKilledStreak >= .wickedsick )
+		set .@streakname$,"Wicked Sick";
+	else if ( @PlayersKilledStreak >= .unstoppable )
+		set .@streakname$,"Unstoppable";
+	else if ( @PlayersKilledStreak >= .megakill )
+		set .@streakname$,"Mega-kill";
+	else if ( @PlayersKilledStreak >= .dominating )
+		set .@streakname$,"Dominating";
+	else if ( @PlayersKilledStreak >= .killingspree )
+		set .@streakname$,"Killing Spree";
+
+	if ( @PlayersKilledStreak >= .killingspree && killerrid == getcharid(3) )
+		announce strcharinfo(0) +" has ended "+( (sex)?"him":"her" )+" own "+ .@streakname$ +"["+ @PlayersKilledStreak +"] streak "+( (.announcemap)?("at "+ .@map$):""),16|.announce;
+	else if ( @PlayersKilledStreak >= .killingspree )
+		announce rid2name(killerrid) +" has ended "+ strcharinfo(0) +"'s "+ .@streakname$ +"["+ @PlayersKilledStreak +"] streak "+( (.announcemap)?("at "+ .@map$):""),16|.announce;
+	else if ( .announcekill && killerrid != getcharid(3) )
+		announce rid2name(killerrid) +" has pawned "+ strcharinfo(0) +"'s head "+( (.announcemap)?("at "+ .@map$):""),16|.announce;
+
+	set @PlayersKilledStreak,0;
+	set @dota_sql_deaths, @dota_sql_deaths +1;
+	set @dota_multikills,0;
+
+	callfunc "F_PvpUpdateWeekly", 2;
+	callfunc "F_PvpUpdateMonthly", 2;
+
+	query_sql "REPLACE INTO `pvpladder` VALUES ( "
+		+ getcharid(0) +", '"
+		+ escape_sql(strcharinfo(0)) +"', "
+		+ @dota_sql_streaks +", "
+		+ @dota_sql_kills +", "
+		+ @dota_sql_deaths +", "
+		+ "FROM_UNIXTIME("+ @dota_sql_streaktime +") )";
+
+	set .@killed_gid, getcharid(2);
+	if ( .@killed_gid ) {
+		setd ".dota_sql_"+ .@killed_gid +"_c", 0;
+		if ( getd(".dota_sql_"+ .@killed_gid +"_h") )
+			query_sql "REPLACE INTO `ownladder` VALUES ( "
+				+ .@killed_gid +", '"
+				+ escape_sql(getguildname(.@killed_gid)) +"', "
+				+ getd(".dota_sql_"+ .@killed_gid +"_c") +", "
+				+ getd(".dota_sql_"+ .@killed_gid +"_h") +", "
+				+ "FROM_UNIXTIME("+ getd(".dota_sql_"+ .@killed_gid +"_t") +") )";
+	}
+
+	if ( killerrid == getcharid(3) || baselevel < .lvltokill ) {
+		donpcevent "PVP_STATUE_CTRL::OnRefresh";
+		end;
+	}
+
+	if ( .minlvlrange ) set .@killedlvl, baselevel;
+	attachrid killerrid;
+
+	callfunc "F_PvpSaveLook";
+
+	if ( .minlvlrange && .@killedlvl + .minlvlrange < baselevel ) {
+		donpcevent "PVP_STATUE_CTRL::OnRefresh";
+		end;
+	}
+
+	if ( .counttopunish ) {
+		if ( @sitkillminute != gettime(2) ) {
+			deletearray @sitkillid, 128;
+			deletearray @sitkilltimes, 128;
+			set @sitkillminute, gettime(2);
+		}
+
+		set .@sitkillsize, getarraysize(@sitkillid);
+		for ( set .@i,0; .@i < .@sitkillsize; set .@i, .@i +1 ) {
+			if ( @sitkillid[.@i] != killedrid ) continue;
+			else {
+				set @sitkilltimes[.@i], @sitkilltimes[.@i] +1;
+				if ( @sitkilltimes[.@i] >= .counttopunish ) {
+					warp "SavePoint",0,0;
+					announce strcharinfo(0) +" , Stop killing "+ rid2name(killedrid) + " !!!",0;
+					debugmes strcharinfo(0) +" is sit-killing "+ rid2name(killedrid) +" for "+ @sitkilltimes[.@i] + " times";
+					logmes "is sit-killing "+ rid2name(killedrid) +" for "+ @sitkilltimes[.@i] +" times";
+
+					if ( @PlayersKilledStreak == @dota_sql_streaks ) {
+						set @dota_sql_streaks, @dota_sql_streaks +1 - .counttopunish;
+						set @dota_sql_streaktime, gettimetick(2);
+					}
+
+					set @PlayersKilledStreak, @PlayersKilledStreak +1 - .counttopunish;
+					set @dota_sql_kills, @dota_sql_kills +1 - .counttopunish;
+
+					query_sql "REPLACE INTO `pvpladder` VALUES ( "
+						+ getcharid(0) +", '"
+						+ escape_sql(strcharinfo(0)) +"', "
+						+ @dota_sql_streaks +", "
+						+ @dota_sql_kills +", "
+						+ @dota_sql_deaths +", "
+						+ "FROM_UNIXTIME("+ @dota_sql_streaktime +") )";
+
+					set .@killer_gid, getcharid(2);
+					if ( .@killer_gid ) {
+						if ( getd(".dota_sql_"+ .@killer_gid +"_c") == getd(".dota_sql_"+ .@killer_gid +"_h") ) {
+							setd ".dota_sql_"+ .@killer_gid +"_h", getd(".dota_sql_"+ .@killer_gid +"_h") +1 - .counttopunish;
+							setd ".dota_sql_"+ .@killer_gid +"_t", gettimetick(2);
+						}
+						setd ".dota_sql_"+ .@killer_gid +"_c", getd(".dota_sql_"+ .@killer_gid +"_c") +1 - .counttopunish;
+
+						query_sql "REPLACE INTO `ownladder` VALUES ( "
+							+ .@killer_gid +", '"
+							+ escape_sql(getguildname(.@killer_gid)) +"', "
+							+ getd(".dota_sql_"+ .@killer_gid +"_c") +", "
+							+ getd(".dota_sql_"+ .@killer_gid +"_h") +", "
+							+ "FROM_UNIXTIME("+ getd(".dota_sql_"+ .@killer_gid +"_t") +") )";
+					}
+					donpcevent "PVP_STATUE_CTRL::OnRefresh";
+					end;
+				}
+				break;
+			}
+		}
+		if ( .@i == .@sitkillsize ) {
+			set @sitkillid[.@i], killedrid;
+			set @sitkilltimes[.@i], 1;
+		}
+	}
+
+	set @PlayersKilledStreak, @PlayersKilledStreak +1;
+	set @dota_sql_kills, @dota_sql_kills +1;
+
+	callfunc "F_PvpUpdateWeekly", 1;
+	callfunc "F_PvpUpdateMonthly", 1;
+
+	if ( @PlayersKilledStreak > @dota_sql_streaks ) {
+		set @dota_sql_streaks, @PlayersKilledStreak;
+		set @dota_sql_streaktime, gettimetick(2);
+	}
+
+	query_sql "REPLACE INTO `pvpladder` VALUES ( "
+		+ getcharid(0) +", '"
+		+ escape_sql(strcharinfo(0)) +"', "
+		+ @dota_sql_streaks +", "
+		+ @dota_sql_kills +", "
+		+ @dota_sql_deaths +", "
+		+ "FROM_UNIXTIME("+ @dota_sql_streaktime +") )";
+
+	if ( @PlayersKilledStreak == .killingspree )
+		setarray .@streakname$[0],"killingspree.wav","is on a KILLING SPREE","!";
+	else if ( @PlayersKilledStreak == .dominating )
+		setarray .@streakname$[0],"dominating.wav","is DOMINATING","!";
+	else if ( @PlayersKilledStreak == .megakill )
+		setarray .@streakname$[0],"megakill.wav","has a MEGA KILL","!";
+	else if ( @PlayersKilledStreak == .unstoppable )
+		setarray .@streakname$[0],"unstoppable.wav","is UNSTOPPABLE","!!";
+	else if ( @PlayersKilledStreak == .wickedsick )
+		setarray .@streakname$[0],"wickedsick.wav","is WICKED SICK","!!";
+	else if ( @PlayersKilledStreak == .monsterkill )
+		setarray .@streakname$[0],"monsterkill.wav","has a MONSTER KILL","!!";
+	else if ( @PlayersKilledStreak == .godlike )
+		setarray .@streakname$[0],"godlike.wav","is GODLIKE","!!!";
+	else if ( @PlayersKilledStreak >= .holyshit && ( (@PlayersKilledStreak - .holyshit) % .continue == 0 ) )
+		setarray .@streakname$[0],"holyshit.wav","is BEYOND GODLIKE",". Someone KILL "+( (sex)?"HIM":"HER" ) +"!!!!!!";
+
+	if ( .@streakname$[1] != "" ) {
+		announce strcharinfo(0) +" "+ .@streakname$[1] +"["+ @PlayersKilledStreak +"] "+( (.announcemap)?("at "+ .@map$):"") + .@streakname$[2],16|.announce;
+		if ( .sound == 1 ) soundeffectall .@streakname$[0],0,.@map$;
+		else if ( .sound == 2 ) soundeffectall .@streakname$[0],0;
+		else if ( .sound == 3 ) soundeffect .@streakname$[0],0;
+	}
+
+	set @dota_multikills, @dota_multikills + 1;
+	deltimer "DOTAPVP::OnStreakReset";
+	addtimer 18000,"DOTAPVP::OnStreakReset";
+
+	set .@killer_gid, getcharid(2);
+	if ( .@killer_gid && .@killer_gid != .@killed_gid ) {
+		setd ".dota_sql_"+ .@killer_gid +"_c", getd(".dota_sql_"+ .@killer_gid +"_c") +1;
+		if ( getd(".dota_sql_"+ .@killer_gid +"_c") > getd(".dota_sql_"+ .@killer_gid +"_h") ) {
+			setd ".dota_sql_"+ .@killer_gid +"_h", getd(".dota_sql_"+ .@killer_gid +"_c");
+			setd ".dota_sql_"+ .@killer_gid +"_t", gettimetick(2);
+		}
+		query_sql "REPLACE INTO `ownladder` VALUES ( "
+			+ .@killer_gid +", '"
+			+ escape_sql(getguildname(.@killer_gid)) +"', "
+			+ getd(".dota_sql_"+ .@killer_gid +"_c") +", "
+			+ getd(".dota_sql_"+ .@killer_gid +"_h") +", "
+			+ "FROM_UNIXTIME("+ getd(".dota_sql_"+ .@killer_gid +"_t") +") )";
+	}
+
+	set .@dota_multikills, @dota_multikills;
+	set .@origin, getcharid(3);
+
+	donpcevent "PVP_STATUE_CTRL::OnRefresh";
+
+	sleep 1500;
+	if ( .@killer_gid && .@killer_gid != .@killed_gid && getd(".dota_sql_"+ .@killer_gid +"_c") >= .owned && ( ( getd(".dota_sql_"+ .@killer_gid +"_c") - .owned ) % .owncontinue == 0 ) ) {
+		if ( .announce ) mapannounce .@map$, "The guild ["+ getguildname(.@killer_gid) +"] is OWNING["+ getd(".dota_sql_"+ .@killer_gid +"_c") +"] !!!",16;
+		else announce "The guild ["+ getguildname(.@killer_gid) +"] is OWNING["+ getd(".dota_sql_"+ .@killer_gid +"_c") +"] !!!",16;
+		if ( .sound == 1 ) soundeffectall "ownage.wav",0,.@map$;
+		else if ( .sound == 2 ) soundeffectall "ownage.wav",0;
+		else if ( .sound == 3 && attachrid(.@origin) ) soundeffect "ownage.wav",0;
+	}
+
+	sleep 1250;
+	if ( !attachrid(.@origin) ) end;
+
+	if ( .@dota_multikills == 2 ) {
+		if ( .announce ) mapannounce .@map$, strcharinfo(0) +" just got a Double Kill !",16;
+		else announce strcharinfo(0) +" just got a Double Kill !",16;
+		if ( .sound == 1 ) soundeffectall "doublekill.wav",0,.@map$;
+		else if ( .sound == 2 ) soundeffectall "doublekill.wav",0;
+		else if ( .sound == 3 ) soundeffect "doublekill.wav",0;
+	}
+	else if ( .@dota_multikills == 3 ) {
+		if ( .announce ) mapannounce .@map$, strcharinfo(0) +" just got a Triple Kill !!!",16;
+		else announce strcharinfo(0) +" just got a Triple Kill !!!",16;
+		if ( .sound == 1 ) soundeffectall "triplekill.wav",0,.@map$;
+		else if ( .sound == 2 ) soundeffectall "triplekill.wav",0;
+		else if ( .sound == 3 ) soundeffect "triplekill.wav",0;
+	}
+	else if ( .@dota_multikills == 4 ) {
+		if ( .announce ) mapannounce .@map$, strcharinfo(0) +" just got a Ultra Kill !!!",16;
+		else announce strcharinfo(0) +" just got a Ultra Kill !!!",16;
+		if ( .sound == 1 ) soundeffectall "ultrakill.wav",0,.@map$;
+		else if ( .sound == 2 ) soundeffectall "ultrakill.wav",0;
+		else if ( .sound == 3 ) soundeffect "ultrakill.wav",0;
+	}
+	else if ( .@dota_multikills >= 5 ) {
+		if ( .announce ) mapannounce .@map$, strcharinfo(0) +" is on a Rampage !!!",16;
+		else announce strcharinfo(0) +" is on a Rampage !!!",16;
+		if ( .sound == 1 ) soundeffectall "rampage.wav",0,.@map$;
+		else if ( .sound == 2 ) soundeffectall "rampage.wav",0;
+		else if ( .sound == 3 ) soundeffect "rampage.wav",0;
+	}
+	end;
+
+OnStreakReset:
+	set @dota_multikills, 0;
+	end;
+
+OnWhisperGlobal:
+	if ( @spam_dotapvp + 3 >= gettimetick(2) )
+		end;
+
+	set @spam_dotapvp, gettimetick(2);
+
+	if ( @dota_sql_kills == 0 && @dota_sql_deaths == 0 )
+		query_sql "SELECT `kills`,`deaths`,`streaks`,UNIX_TIMESTAMP(`streaktime`) FROM `pvpladder` WHERE `char_id` = "+ getcharid(0),
+			@dota_sql_kills, @dota_sql_deaths, @dota_sql_streaks, @dota_sql_streaktime;
+
+	if ( @dota_sql_kills || @dota_sql_deaths ) {
+		dispbottom "Your current Streak      : "+ @PlayersKilledStreak;
+		dispbottom "Your total Kills         : "+ @dota_sql_kills;
+		dispbottom "Your total Deaths        : "+ @dota_sql_deaths;
+		dispbottom "Your highest Streak      : "+ @dota_sql_streaks;
+		query_sql "SELECT DATE_FORMAT(FROM_UNIXTIME("+ @dota_sql_streaktime +"),'%a %e/%c/%y %r')", .@time1$;
+		dispbottom "Your highest Streak on   : "+ .@time1$;
+	}
+	else
+		dispbottom "You are not in the pvp ladder yet.";
+
+	if ( getcharid(2) ) {
+		if ( getd(".dota_sql_"+ getcharid(2) +"_h") == 0 ) {
+			query_sql "SELECT `currentown`,`highestown`,UNIX_TIMESTAMP(`owntime`) FROM `ownladder` WHERE `guild_id` = "+ getcharid(2),
+				.@c, .@h, .@t;
+			setd ".dota_sql_"+ getcharid(2) +"_c", .@c;
+			setd ".dota_sql_"+ getcharid(2) +"_h", .@h;
+			setd ".dota_sql_"+ getcharid(2) +"_t", .@t;
+		}
+		if ( getd(".dota_sql_"+ getcharid(2) +"_h") ) {
+			dispbottom "Your guild current Own   : "+ getd(".dota_sql_"+ getcharid(2) +"_c");
+			dispbottom "Your guild highest Own   : "+ getd(".dota_sql_"+ getcharid(2) +"_h");
+			query_sql "SELECT DATE_FORMAT(FROM_UNIXTIME("+ getd(".dota_sql_"+ getcharid(2) +"_t") +"),'%a %e/%c/%y %r')", .@time2$;
+			dispbottom "Your guild highest Own on: "+ .@time2$;
+		}
+		else
+			dispbottom "Your guild is not in the ladder yet.";
+	}
+	end;
+}
+
+//============================================================
+// PVP STATS VIEWER STYLE
+//============================================================
+valmorra,161,161,4	script	PvP-StatsViewer	746,{
+
+	.@cTitle$ = "^3366FF";
+	.@cName$  = "^3366FF";
+	.@cKill$  = "^00FF00";
+	.@cDeath$ = "^FF5555";
+	.@cStrk$  = "^66CCFF";
+	.@cDate$  = "^AAAAAA";
+	.@cRed$   = "^FF0000";
+	.@cOff$   = "^000000";
+
+	.@year = atoi(gettimestr("%Y", 21));
+	.@week = atoi(gettimestr("%W", 21));
+	.@month = atoi(gettimestr("%m", 21));
+	.@today$ = gettimestr("%Y-%m-%d %H:%M:%S", 21);
+
+	mes "[PvP Stats Viewer]";
+
+	if (getgmlevel() >= 99)
+		.@menu$ = "Top 10 Kills:Top 20 Kills:Top Weekly:Top Monthly:Highest Streak:Longest Ownage:My Info:"+.@cRed$+"Reset Player (GM 99)"+.@cOff$+":"+.@cRed$+"Reset All Ladder (GM 99)"+.@cOff$+":Cancel";
+	else
+		.@menu$ = "Top 10 Kills:Top 20 Kills:Top Weekly:Top Monthly:Highest Streak:Longest Ownage:My Info:Cancel";
+
+	switch(select(.@menu$)) {
+
+	case 1:
+		mes "[PvP Stats Viewer]";
+		mes .@cTitle$+"Top 10 PvP Kills"+.@cOff$;
+
+		.@n = query_sql(
+			"SELECT `name`,`kills`,`deaths`,`streaks`,DATE_FORMAT(`streaktime`,'%Y-%m-%d %H:%i:%s') "
+			+"FROM `pvpladder` "
+			+"ORDER BY `kills` DESC, `streaks` DESC, `deaths` ASC, `char_id` ASC "
+			+"LIMIT 10",
+			.@name$, .@kills, .@deaths, .@bstreak, .@updated$
+		);
+
+		if (!.@n) {
+			mes "No PvP data yet.";
+			close;
+		}
+
+		for (.@i = 0; .@i < .@n; .@i++) {
+			mes .@cTitle$+(.@i+1)+". "+.@cName$+.@name$[.@i]+.@cOff$;
+			mes .@cKill$+"Kills: "+.@kills[.@i]+.@cOff$+"  "+.@cDeath$+"Deaths: "+.@deaths[.@i]+.@cOff$;
+			mes .@cStrk$+"Best Streak: "+.@bstreak[.@i]+.@cOff$;
+			mes .@cDate$+"Updated: "+.@updated$[.@i]+.@cOff$;
+			if (.@i + 1 < .@n) next;
+		}
+		close;
+
+	case 2:
+		mes "[PvP Stats Viewer]";
+		mes .@cTitle$+"Top 20 PvP Kills"+.@cOff$;
+
+		.@n = query_sql(
+			"SELECT `name`,`kills`,`deaths`,`streaks`,DATE_FORMAT(`streaktime`,'%Y-%m-%d %H:%i:%s') "
+			+"FROM `pvpladder` "
+			+"ORDER BY `kills` DESC, `streaks` DESC, `deaths` ASC, `char_id` ASC "
+			+"LIMIT 20",
+			.@name$, .@kills, .@deaths, .@bstreak, .@updated$
+		);
+
+		if (!.@n) {
+			mes "No PvP data yet.";
+			close;
+		}
+
+		for (.@i = 0; .@i < .@n; .@i++) {
+			mes .@cTitle$+(.@i+1)+". "+.@cName$+.@name$[.@i]+.@cOff$;
+			mes .@cKill$+"Kills: "+.@kills[.@i]+.@cOff$+"  "+.@cDeath$+"Deaths: "+.@deaths[.@i]+.@cOff$;
+			mes .@cStrk$+"Best Streak: "+.@bstreak[.@i]+.@cOff$;
+			mes .@cDate$+"Updated: "+.@updated$[.@i]+.@cOff$;
+			if (.@i + 1 < .@n) next;
+		}
+		close;
+
+	case 3:
+		mes "[PvP Stats Viewer]";
+		mes .@cTitle$+"Top Weekly PvP"+.@cOff$;
+		mes .@cDate$+"Server Time Now: "+.@today$+.@cOff$;
+		mes .@cDate$+"Week Key: Year "+.@year+" / Week "+.@week+.@cOff$;
+		next;
+
+		.@n = query_sql(
+			"SELECT `name`,`kills`,`deaths`,`streak`,`best_streak`,DATE_FORMAT(`updated_at`,'%Y-%m-%d %H:%i:%s') "
+			+"FROM `pvpladder_weekly` "
+			+"WHERE `year`="+.@year+" AND `week`="+.@week+" "
+			+"ORDER BY `kills` DESC, `best_streak` DESC, `deaths` ASC, `char_id` ASC "
+			+"LIMIT 10",
+			.@name$, .@kills, .@deaths, .@streak, .@bstreak, .@updated$
+		);
+
+		if (!.@n) {
+			mes "No weekly PvP data yet.";
+			close;
+		}
+
+		for (.@i = 0; .@i < .@n; .@i++) {
+			mes .@cTitle$+(.@i+1)+". "+.@cName$+.@name$[.@i]+.@cOff$;
+			mes .@cKill$+"Kills: "+.@kills[.@i]+.@cOff$+"  "+.@cDeath$+"Deaths: "+.@deaths[.@i]+.@cOff$;
+			mes .@cStrk$+"Current Streak: "+.@streak[.@i]+.@cOff$+"  "+.@cStrk$+"Best Streak: "+.@bstreak[.@i]+.@cOff$;
+			mes .@cDate$+"Updated: "+.@updated$[.@i]+.@cOff$;
+			if (.@i + 1 < .@n) next;
+		}
+		close;
+
+	case 4:
+		mes "[PvP Stats Viewer]";
+		mes .@cTitle$+"Top Monthly PvP"+.@cOff$;
+		mes .@cDate$+"Server Time Now: "+.@today$+.@cOff$;
+		mes .@cDate$+"Month Key: Year "+.@year+" / Month "+.@month+.@cOff$;
+		next;
+
+		.@n = query_sql(
+			"SELECT `name`,`kills`,`deaths`,`streak`,`best_streak`,DATE_FORMAT(`updated_at`,'%Y-%m-%d %H:%i:%s') "
+			+"FROM `pvpladder_monthly` "
+			+"WHERE `year`="+.@year+" AND `month`="+.@month+" "
+			+"ORDER BY `kills` DESC, `best_streak` DESC, `deaths` ASC, `char_id` ASC "
+			+"LIMIT 10",
+			.@name$, .@kills, .@deaths, .@streak, .@bstreak, .@updated$
+		);
+
+		if (!.@n) {
+			mes "No monthly PvP data yet.";
+			close;
+		}
+
+		for (.@i = 0; .@i < .@n; .@i++) {
+			mes .@cTitle$+(.@i+1)+". "+.@cName$+.@name$[.@i]+.@cOff$;
+			mes .@cKill$+"Kills: "+.@kills[.@i]+.@cOff$+"  "+.@cDeath$+"Deaths: "+.@deaths[.@i]+.@cOff$;
+			mes .@cStrk$+"Current Streak: "+.@streak[.@i]+.@cOff$+"  "+.@cStrk$+"Best Streak: "+.@bstreak[.@i]+.@cOff$;
+			mes .@cDate$+"Updated: "+.@updated$[.@i]+.@cOff$;
+			if (.@i + 1 < .@n) next;
+		}
+		close;
+
+	case 5:
+		mes "[PvP Stats Viewer]";
+		mes .@cTitle$+"Top Highest Streak"+.@cOff$;
+
+		.@n = query_sql(
+			"SELECT `name`,`kills`,`deaths`,`streaks`,DATE_FORMAT(`streaktime`,'%Y-%m-%d %H:%i:%s') "
+			+"FROM `pvpladder` "
+			+"WHERE `streaks` >= "+getvariableofnpc(.loweststreak,"DOTAPVP")+" "
+			+"ORDER BY `streaks` DESC, `kills` DESC, `deaths` ASC, `char_id` ASC "
+			+"LIMIT 10",
+			.@name$, .@kills, .@deaths, .@bstreak, .@updated$
+		);
+
+		if (!.@n) {
+			mes "No streak data yet.";
+			close;
+		}
+
+		for (.@i = 0; .@i < .@n; .@i++) {
+			mes .@cTitle$+(.@i+1)+". "+.@cName$+.@name$[.@i]+.@cOff$;
+			mes .@cStrk$+"Best Streak: "+.@bstreak[.@i]+.@cOff$;
+			mes .@cKill$+"Kills: "+.@kills[.@i]+.@cOff$+"  "+.@cDeath$+"Deaths: "+.@deaths[.@i]+.@cOff$;
+			mes .@cDate$+"Time: "+.@updated$[.@i]+.@cOff$;
+			if (.@i + 1 < .@n) next;
+		}
+		close;
+
+	case 6:
+		mes "[PvP Stats Viewer]";
+		mes .@cTitle$+"Top Longest Ownage"+.@cOff$;
+
+		.@n = query_sql(
+			"SELECT `name`,`highestown`,DATE_FORMAT(`owntime`,'%Y-%m-%d %H:%i:%s') "
+			+"FROM `ownladder` "
+			+"WHERE `highestown` >= "+getvariableofnpc(.lowestownage,"DOTAPVP")+" "
+			+"ORDER BY `highestown` DESC, `guild_id` ASC "
+			+"LIMIT 10",
+			.@name$, .@owned, .@updated$
+		);
+
+		if (!.@n) {
+			mes "No ownage data yet.";
+			close;
+		}
+
+		for (.@i = 0; .@i < .@n; .@i++) {
+			mes .@cTitle$+(.@i+1)+". "+.@cName$+.@name$[.@i]+.@cOff$;
+			mes "^00AAAAOwnage: "+.@owned[.@i]+"^000000";
+			mes .@cDate$+"Updated: "+.@updated$[.@i]+.@cOff$;
+			if (.@i + 1 < .@n) next;
+		}
+		close;
+
+	case 7:
+		mes "[PvP Stats Viewer]";
+
+		if ( @dota_sql_kills == 0 && @dota_sql_deaths == 0 )
+			query_sql "SELECT `kills`,`deaths`,`streaks`,UNIX_TIMESTAMP(`streaktime`),DATE_FORMAT(`streaktime`,'%Y-%m-%d %H:%i:%s') "
+				+"FROM `pvpladder` WHERE `char_id`="+getcharid(0),
+				@dota_sql_kills, @dota_sql_deaths, @dota_sql_streaks, @dota_sql_streaktime, .@updated$;
+
+		if ( @dota_sql_kills == 0 && @dota_sql_deaths == 0 ) {
+			mes "You have no PvP data yet.";
+			close;
+		}
+
+		mes .@cTitle$+"Name: "+.@cName$+strcharinfo(0)+.@cOff$;
+		mes .@cStrk$+"Current Streak: "+@PlayersKilledStreak+.@cOff$;
+		mes .@cKill$+"Kills: "+@dota_sql_kills+.@cOff$;
+		mes .@cDeath$+"Deaths: "+@dota_sql_deaths+.@cOff$;
+		mes .@cStrk$+"Best Streak: "+@dota_sql_streaks+.@cOff$;
+		query_sql "SELECT DATE_FORMAT(FROM_UNIXTIME("+ @dota_sql_streaktime +"),'%Y-%m-%d %H:%i:%s')", .@time1$;
+		mes .@cDate$+"Best Streak Time: "+.@time1$+.@cOff$;
+		next;
+
+		if ( getcharid(2) ) {
+			if ( getd(".dota_sql_"+ getcharid(2) +"_h") == 0 ) {
+				query_sql "SELECT `currentown`,`highestown`,UNIX_TIMESTAMP(`owntime`) FROM `ownladder` WHERE `guild_id` = "+ getcharid(2),
+					.@c, .@h, .@t;
+				setd ".dota_sql_"+ getcharid(2) +"_c", .@c;
+				setd ".dota_sql_"+ getcharid(2) +"_h", .@h;
+				setd ".dota_sql_"+ getcharid(2) +"_t", .@t;
+			}
+
+			mes .@cTitle$+"Guild: "+.@cName$+strcharinfo(2)+.@cOff$;
+			mes "^00AAAACurrent Ownage: "+getd(".dota_sql_"+ getcharid(2) +"_c")+"^000000";
+			mes "^00AAAABest Ownage: "+getd(".dota_sql_"+ getcharid(2) +"_h")+"^000000";
+			query_sql "SELECT DATE_FORMAT(FROM_UNIXTIME("+ getd(".dota_sql_"+ getcharid(2) +"_t") +"),'%Y-%m-%d %H:%i:%s')", .@time2$;
+			mes .@cDate$+"Best Ownage Time: "+.@time2$+.@cOff$;
+		}
+		close;
+
+	case 8:
+		if (getgmlevel() < 99) close;
+		mes "[PvP Stats Viewer]";
+		mes .@cRed$+"Enter player name to reset."+.@cOff$;
+		input .@InputName$;
+
+		query_sql "DELETE FROM `pvpladder` WHERE `name`='"+escape_sql(.@InputName$)+"'";
+		query_sql "DELETE FROM `pvpladder_looks` WHERE `name`='"+escape_sql(.@InputName$)+"'";
+		query_sql "DELETE FROM `pvpladder_weekly` WHERE `name`='"+escape_sql(.@InputName$)+"'";
+		query_sql "DELETE FROM `pvpladder_monthly` WHERE `name`='"+escape_sql(.@InputName$)+"'";
+		donpcevent "PVP_STATUE_CTRL::OnRefresh";
+
+		mes .@cRed$+"Player ladder reset done."+.@cOff$;
+		close;
+
+	case 9:
+		if (getgmlevel() < 99) close;
+		mes "[PvP Stats Viewer]";
+		mes .@cRed$+"This will reset all PvP ladder data."+.@cOff$;
+		mes .@cRed$+"This includes All-Time, Weekly and Monthly."+.@cOff$;
+		if (select("No:Yes") == 1) close;
+
+		query_sql "TRUNCATE TABLE `pvpladder`";
+		query_sql "TRUNCATE TABLE `pvpladder_looks`";
+		query_sql "TRUNCATE TABLE `pvpladder_weekly`";
+		query_sql "TRUNCATE TABLE `pvpladder_monthly`";
+		query_sql "TRUNCATE TABLE `ownladder`";
+		donpcevent "PVP_STATUE_CTRL::OnRefresh";
+
+		mes .@cRed$+"PvP ladder reset done."+.@cOff$;
+		close;
+
+	default:
+		close;
+	}
+}
+
+//============================================================
+// STATUE CONTROLLER
+//============================================================
+-	script	PVP_STATUE_CTRL	-1,{
+
+OnInit:
+	initnpctimer;
+	end;
+
+OnTimer10000:
+	donpcevent strnpcinfo(0)+"::OnRefresh";
+	initnpctimer;
+	end;
+
+OnRefresh:
+	.@count = query_sql(
+		"SELECT p.`name`, l.`class`, l.`sex`, l.`hair`, l.`hair_color`, l.`cloth_color`, l.`weapon`, l.`shield`, l.`head_top`, l.`head_mid`, l.`head_bottom` "
+		+"FROM `pvpladder` p "
+		+"LEFT JOIN `pvpladder_looks` l ON l.`char_id` = p.`char_id` "
+		+"ORDER BY p.`kills` DESC, p.`streaks` DESC, p.`deaths` ASC, p.`char_id` ASC "
+		+"LIMIT 3",
+		.@name$, .@class, .@sex, .@hair, .@hair_color, .@cloth_color, .@weapon, .@shield, .@head_top, .@head_mid, .@head_bottom
+	);
+
+	callfunc "F_PvpResetStatue", "PvP Top 1#Statue";
+	callfunc "F_PvpResetStatue", "PvP Top 2#Statue";
+	callfunc "F_PvpResetStatue", "PvP Top 3#Statue";
+
+	if (.@count >= 1 && .@class[0] >= 0)
+		callfunc "F_PvpApplyStatue", "PvP Top 1#Statue", .@class[0], .@sex[0], .@hair[0], .@hair_color[0], .@cloth_color[0], .@weapon[0], .@shield[0], .@head_top[0], .@head_mid[0], .@head_bottom[0];
+
+	if (.@count >= 2 && .@class[1] >= 0)
+		callfunc "F_PvpApplyStatue", "PvP Top 2#Statue", .@class[1], .@sex[1], .@hair[1], .@hair_color[1], .@cloth_color[1], .@weapon[1], .@shield[1], .@head_top[1], .@head_mid[1], .@head_bottom[1];
+
+	if (.@count >= 3 && .@class[2] >= 0)
+		callfunc "F_PvpApplyStatue", "PvP Top 3#Statue", .@class[2], .@sex[2], .@hair[2], .@hair_color[2], .@cloth_color[2], .@weapon[2], .@shield[2], .@head_top[2], .@head_mid[2], .@head_bottom[2];
+	end;
+}
+
+//============================================================
+// TOP 3 STATUES
+//============================================================
+valmorra,166,159,4	script	PvP Top 1#Statue	Job_Novice,{
+	mes "[Top 1 PvP Statue]";
+	.@n = query_sql(
+		"SELECT `name`,`kills`,`deaths`,`streaks` FROM `pvpladder` "
+		+"ORDER BY `kills` DESC, `streaks` DESC, `deaths` ASC, `char_id` ASC LIMIT 1",
+		.@name$, .@kills, .@deaths, .@bstreak
+	);
+	if (!.@n) {
+		mes "No ranking data yet.";
+		close;
+	}
+	mes "Rank: Top 1";
+	mes "Name: "+.@name$;
+	mes "Kills: "+.@kills;
+	mes "Deaths: "+.@deaths;
+	mes "Best Streak: "+.@bstreak;
+	close;
+}
+
+valmorra,165,155,4	script	PvP Top 2#Statue	Job_Novice,{
+	mes "[Top 2 PvP Statue]";
+	.@n = query_sql(
+		"SELECT `name`,`kills`,`deaths`,`streaks` FROM `pvpladder` "
+		+"ORDER BY `kills` DESC, `streaks` DESC, `deaths` ASC, `char_id` ASC LIMIT 1,1",
+		.@name$, .@kills, .@deaths, .@bstreak
+	);
+	if (!.@n) {
+		mes "No ranking data yet.";
+		close;
+	}
+	mes "Rank: Top 2";
+	mes "Name: "+.@name$;
+	mes "Kills: "+.@kills;
+	mes "Deaths: "+.@deaths;
+	mes "Best Streak: "+.@bstreak;
+	close;
+}
+
+valmorra,167,151,4	script	PvP Top 3#Statue	Job_Novice,{
+	mes "[Top 3 PvP Statue]";
+	.@n = query_sql(
+		"SELECT `name`,`kills`,`deaths`,`streaks` FROM `pvpladder` "
+		+"ORDER BY `kills` DESC, `streaks` DESC, `deaths` ASC, `char_id` ASC LIMIT 2,1",
+		.@name$, .@kills, .@deaths, .@bstreak
+	);
+	if (!.@n) {
+		mes "No ranking data yet.";
+		close;
+	}
+	mes "Rank: Top 3";
+	mes "Name: "+.@name$;
+	mes "Kills: "+.@kills;
+	mes "Deaths: "+.@deaths;
+	mes "Best Streak: "+.@bstreak;
+	close;
+}

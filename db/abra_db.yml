@@ -34,7 +34,7 @@ Header:
 
 Body:
   - Skill: SM_BASH
-  - Skill: SM_PROVOKE
+  # - Skill: SM_PROVOKE
   - Skill: SM_MAGNUM
   - Skill: SM_ENDURE
   - Skill: MG_SIGHT

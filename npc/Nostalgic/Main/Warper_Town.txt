@@ -1,0 +1,15 @@
+//The Warper to Mall
+1@def01,56,31,5	script	Town Warper	858,{
+shop: warp "valmorra" ,171,91;
+
+OnInit:
+	set .message$, "Maintown Warper!     ";
+	while (1) {
+		set .message$, delchar(.message$+charat(.message$,0),0);
+		delwaitingroom;
+		waitingroom .message$, 0;
+		sleep 200;
+	}
+end;
+	
+}

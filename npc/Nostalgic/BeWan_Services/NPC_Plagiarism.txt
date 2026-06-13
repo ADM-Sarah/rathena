@@ -1,0 +1,95 @@
+//===== rAthena Script =======================================
+//= Plagiarism NPC
+//===== By: ==================================================
+//= Easycore
+//===== Last Updated: ========================================
+//= 20210905
+//===== Description: ========================================= 
+//= Simple Plagiarism Skill
+//= Require 'getskillname' script command:
+//=    https://rathena.org/board/files/file/4307-script-command-getskillname/
+//============================================================
+
+prontera,171,182,4	script	Plagiarism Master	747,{
+
+mes "[ ^FF0000Plagiarism Master^000000 ]";
+if (.plag_skill && !getskilllv("RG_PLAGIARISM")) {
+	mes "You must have Plagiarism learned.";
+	close;
+}
+
+mes "Heya ^FFA500"+strcharinfo(0)+"^000000!";
+mes "Do you want to copy a skill?";
+if (.zeny)
+	mes "My service costs ^FF0000"+F_InsertComma(.zeny)+" Zeny^000000.";
+	if (select("~ Proceed","Cancel") == 2) close;
+		if (.zeny > 0 && Zeny < .zeny) {
+			message(strcharinfo(0),"Not enough Zeny.");
+			close;
+		}
+
+	.@menu$ = "";
+	.@f = getarraysize(.SkillID);
+	for(.@i = 0; .@i < .@f; .@i++)
+		.@menu$ += getskillname(.SkillID[.@i])+(.@i==.@f?"":":");
+	.@s = select(.@menu$) - 1;
+	close2;
+	if (.zeny > 0 && Zeny < .zeny)
+		end;
+	if (.zeny > 0)
+		Zeny -= .zeny;
+	npcskill .SkillID[.@s],.SkillLV[.@s],20,200;
+	sleep2 1500;
+	unitwarp getnpcid(0),.map$,.x,.y;
+	end;
+
+OnInit:
+	//Default NPC Data Values
+	setunitdata(getnpcid(0),UNPC_DEX,99);
+	setunitdata(getnpcid(0),UNPC_HIT,1000);
+
+	setunitdata(getnpcid(0),UNPC_ATKMIN,100);
+	setunitdata(getnpcid(0),UNPC_ATKMAX,1000);
+	getmapxy(.map$,.x,.y,BL_NPC);
+
+	//Configuration
+	//Zeny required? Set 0 to disable it
+	.zeny = 25000;
+	//Must Plagiarism skil be learned? (1. Yes | 0. No)
+	.plag_skill = 1;
+	//Skill ID Array
+	setarray .SkillID[0],
+	19, //Fire Bolt
+	14, //Cold Bolt
+	20, //Lightning Bolt
+	84, //Jupitel Thunder
+	85, //Lord of Vermilion
+	89, //Storm Gust
+	83, //Meteor Storm
+	421, //Flying Kick
+	542, //North Wind
+	534, //Crimson Fire Petal
+	537, //Spear of Ice
+	542, //North Wind
+	536, //Exploading Dragon
+	263; //Triple Attack
+
+	//Skill LV Array
+	setarray .SkillLV[0],
+	10, //Fire Bolt
+	10, //Cold Bolt
+	10, //Lightning Bolt
+	10, //Jupitel Thunder
+	10, //Lord of Vermilion
+	10, //Storm Gust
+	10, //Meteor Storm
+	7, //Flying Kick
+	5, //North Wind
+	10, //Crimson Fire Petal
+	10, //Spear of Ice
+	5, //North Wind
+	5, //Exploading Dragon
+	10; //Triple Attack
+	end;
+
+}

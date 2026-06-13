@@ -1,0 +1,278 @@
+// Shop NPCs -- supplying no argument displays entire menu.
+//============================================================
+valmorra,161,210,4	script	WoE Costume Exchanger	10999,{
+
+OnClick:
+	goto OnMenu;
+
+OnInit:
+	freeloop(1);
+
+	set .Announce,1;
+	set .ShowSlot,1;
+	set .ShowID,0;
+	set .ShowZeny,0;
+	set .MaxStack,1;
+	.ignore_secure_npctimeout = 1;
+
+	.DialogW = 360;
+	.DialogH = 300;
+
+	setarray .Points$[0],"#HEADGEARPOINTS","Headgear Points";
+
+	setarray .Shops$[1],"~ Damage Set","~ Reduce Set","~ Range Set","~ Magic Set";
+
+	callsub S_Add,1,51043,1,0,0,51013,10,969,10000;
+	callsub S_Add,1,51042,1,0,0,51013,10,969,10000;
+	callsub S_Add,1,51044,1,0,0,51013,10,969,10000;
+
+	callsub S_Add,2,51053,1,0,0,51013,10,969,10000;
+	callsub S_Add,2,51052,1,0,0,51013,10,969,10000;
+	callsub S_Add,2,51054,1,0,0,51013,10,969,10000;
+
+	callsub S_Add,3,51062,1,0,0,51013,10,969,10000;
+	callsub S_Add,3,51079,1,0,0,51013,10,969,10000;
+	callsub S_Add,3,50184,1,0,0,51013,10,969,10000;
+
+	callsub S_Add,4,51250,1,0,0,51013,10,969,10000;
+	callsub S_Add,4,51240,1,0,0,51013,10,969,10000;
+	callsub S_Add,4,51251,1,0,0,51013,10,969,10000;
+
+	freeloop(0);
+
+	set .menu$,"";
+	for (set .@i,1; .@i<=getarraysize(.Shops$); set .@i,.@i+1) {
+		set .menu$, .menu$ + .Shops$[.@i] + ":";
+		npcshopdelitem "woecostumenpc1"+.@i,909;
+	}
+	end;
+
+OnMenu:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 1;
+
+	setdialogsize(.DialogW,.DialogH);
+	setdialogalign(DIALOG_ALIGN_CENTER);
+
+	mes "<b>^000000[ ^FF7F00WoE Costume Exchanger^000000 ]</b>";
+	mes "^000000Welcome to the ^FF7F00WoE Costume Exchange Shop^000000.";
+	mes "^000000Select the set category you want to browse.^000000";
+	mes callsub(S_Line);
+	next;
+
+	set .@size, getarraysize(@i);
+	if (!.@size)
+		set @shop_index, select(.menu$);
+	else if (.@size == 1)
+		set @shop_index, @i[0];
+	else {
+		set .@menu$,"";
+		for (set .@j,0; .@j < .@size; set .@j,.@j+1)
+			set .@menu$, .@menu$ + .Shops$[@i[.@j]] + ":";
+		set @shop_index, @i[select(.@menu$)-1];
+	}
+
+	deletearray @i[0],getarraysize(@i);
+
+	if (.Shops$[@shop_index] == "") {
+		message strcharinfo(0),"An error has occurred.";
+		end;
+	}
+
+	dispbottom "Select one item at a time.";
+
+	close2;
+	callshop "woecostumenpc1"+@shop_index,1;
+	npcshopattach "woecostumenpc1"+@shop_index;
+	end;
+
+OnBuyItem:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 1;
+
+	setdialogsize(.DialogW,.DialogH);
+	setdialogalign(DIALOG_ALIGN_CENTER);
+
+	setarray .@q[0],@bought_nameid[0],((@bought_quantity[0] > .MaxStack) ? .MaxStack : @bought_quantity[0]);
+	copyarray .@q[3],getd(".q_"+@shop_index+"_"+.@q[0]+"[0]"),getarraysize(getd(".q_"+@shop_index+"_"+.@q[0]));
+	set .@q[2],.@q[1] * .@q[3];
+
+	if (!.@q[2] || .@q[2] > 30000) {
+		message strcharinfo(0),"You can't purchase that many "+getitemname(.@q[0])+".";
+		end;
+	}
+
+	mes "<b>^000000[ ^FF7F00WoE Costume Exchanger^000000 ]</b>";
+	mes "^000000Shop:^000000 ^FF7F00" + .Shops$[@shop_index] + "^000000";
+	mes "^000000Your Zeny:^000000 ^1E90FF" + F_InsertComma(Zeny) + "^000000";
+	mes callsub(S_Line);
+
+	mes "<b>^000000Reward:^000000</b> ^0055FF"
+		+ ((.@q[2] > 1) ? .@q[2]+"x " : "")
+		+ "^i[" + .@q[0] + "] "
+		+ callsub(S_Slot,.@q[0])
+		+ "^000000";
+
+	mes "<b>^000000Requirements:^000000</b>";
+	disable_items;
+
+	set @qe[0],0;
+
+	if (.@q[4])
+		mes "^3CB371»^000000 " + callsub(S_Chk,Zeny,.@q[4]*.@q[1]) + F_InsertComma(.@q[4]*.@q[1]) + " Zeny^000000";
+
+	if (.@q[5])
+		mes "^3CB371»^000000 "
+			+ callsub(S_Chk,getd(.Points$[0]),.@q[5]*.@q[1])
+			+ (.@q[5]*.@q[1]) + " " + .Points$[1]
+			+ " ^777777(" + getd(.Points$[0]) + "/" + (.@q[5]*.@q[1]) + ")^000000";
+
+	if (.@q[6])
+		for (set .@i,6; .@i < getarraysize(.@q); set .@i,.@i+2)
+			mes "^3CB371»^000000 "
+				+ callsub(S_Chk,countitem(.@q[.@i]),.@q[.@i+1]*.@q[1])
+				+ ((.ShowID) ? "{"+.@q[.@i]+"} " : "")
+				+ "^i[" + .@q[.@i] + "] "
+				+ "<ITEM>" + callsub(S_Slot,.@q[.@i]) + "<INFO>" + .@q[.@i] + "</INFO></ITEM> "
+				+ "^777777(" + countitem(.@q[.@i]) + "/" + (.@q[.@i+1]*.@q[1]) + ")^000000";
+
+	setdialogsize(.DialogW,.DialogH);
+	setdialogalign(DIALOG_ALIGN_CENTER);
+	next;
+
+	setarray @qe[1], getiteminfo(.@q[0],5), getiteminfo(.@q[0],11);
+	if (@qe[2] > 0 && ((@qe[1] & 1) || (@qe[1] & 256) || (@qe[1] & 512) || (@qe[1] & 1024) || (@qe[1] & 2048) || (@qe[1] & 4096) || (@qe[1] & 4) || (@qe[1] & 8192)))
+		set .@preview,1;
+
+	addtimer 1000, strnpcinfo(3)+"::OnEnd";
+
+	while (1) {
+		switch (select(
+			"^3CB371» Purchase ^0055FF"+getitemname(.@q[0])+"^000000"
+			+ ":"
+			+ ((.@preview && !@qe[7]) ? "^1E90FF» Preview Item^000000:" : "")
+			+ "^FF0000» Cancel^000000"
+		)) {
+		case 1:
+			if (@qe[0]) {
+				mes "<b>^000000[ ^FF7F00WoE Costume Exchanger^000000 ]</b>";
+				mes "^FF0000You're missing one or more quest requirements.^000000";
+				close;
+			}
+
+			if (!checkweight(.@q[0],.@q[2])) {
+				mes "<b>^000000[ ^FF7F00WoE Costume Exchanger^000000 ]</b>";
+				mes "^FF0000You need more weight capacity to complete this trade.^000000";
+				close;
+			}
+
+			if (.@q[4])
+				set Zeny, Zeny-(.@q[4]*.@q[1]);
+
+			if (.@q[5])
+				setd .Points$[0], getd(.Points$[0])-(.@q[5]*.@q[1]);
+
+			if (.@q[6])
+				for (set .@i,6; .@i < getarraysize(.@q); set .@i,.@i+2)
+					delitem .@q[.@i],.@q[.@i+1]*.@q[1];
+
+			getitem .@q[0],.@q[2];
+
+			if (.Announce)
+				announce strcharinfo(0)+" has created "+((.@q[2] > 1) ? .@q[2]+"x "+getitemname(.@q[0]) : callfunc("F_InsertArticle",getitemname(.@q[0])))+"!",0;
+
+			specialeffect2 EF_FLOWERLEAF;
+
+			mes "<b>^000000[ ^FF7F00WoE Costume Exchanger^000000 ]</b>";
+			mes "^1E90FFExchange completed successfully!^000000";
+			mes "^000000You received:^000000 ^0055FF"
+				+ ((.@q[2] > 1) ? .@q[2]+"x " : "")
+				+ "^i[" + .@q[0] + "] "
+				+ callsub(S_Slot,.@q[0])
+				+ "^000000";
+			close;
+
+		case 2:
+			if (.@preview && !@qe[7]) {
+				setarray @qe[3], getlook(LOOK_HEAD_BOTTOM), getlook(LOOK_HEAD_TOP), getlook(LOOK_HEAD_MID), getlook(LOOK_ROBE), 1;
+
+				if ((@qe[1] & 1) || (@qe[1] & 4096))
+					changelook LOOK_HEAD_BOTTOM, @qe[2];
+				else if ((@qe[1] & 256) || (@qe[1] & 1024))
+					changelook LOOK_HEAD_TOP, @qe[2];
+				else if ((@qe[1] & 512) || (@qe[1] & 2048))
+					changelook LOOK_HEAD_MID, @qe[2];
+				else if ((@qe[1] & 4) || (@qe[1] & 8192))
+					changelook LOOK_ROBE, @qe[2];
+				break;
+			}
+			close;
+
+		case 3:
+			close;
+		}
+	}
+
+OnEnd:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 0;
+
+	if (@qe[7]) {
+		changelook LOOK_HEAD_BOTTOM, @qe[3];
+		changelook LOOK_HEAD_TOP, @qe[4];
+		changelook LOOK_HEAD_MID, @qe[5];
+		changelook LOOK_ROBE, @qe[6];
+	}
+	deletearray @qe[0],8;
+	end;
+
+S_Add:
+	if (getitemname(getarg(1)) == "null") {
+		debugmes "Quest reward #"+getarg(1)+" invalid (skipped).";
+		return;
+	}
+
+	setarray .@j[0],getarg(2),getarg(3),getarg(4);
+
+	for (set .@i,5; .@i < getargcount(); set .@i,.@i+2) {
+		if (getitemname(getarg(.@i)) == "null") {
+			debugmes "Quest requirement #"+getarg(.@i)+" invalid (skipped).";
+			return;
+		} else
+			setarray .@j[.@i-2],getarg(.@i),getarg(.@i+1);
+	}
+
+	copyarray getd(".q_"+getarg(0)+"_"+getarg(1)+"[0]"),.@j[0],getarraysize(.@j);
+	npcshopadditem "woecostumenpc1"+getarg(0),getarg(1),((.ShowZeny) ? getarg(3) : 0);
+	return;
+
+S_Chk:
+	if (getarg(0) < getarg(1)) {
+		set @qe[0],1;
+		return "^FF0000";
+	}
+	return "^00BFFF";
+
+S_Slot:
+	set .@s$,getitemname(getarg(0));
+	switch (.ShowSlot) {
+		case 1:
+			if (!getitemslots(getarg(0))) return .@s$;
+		case 2:
+			if (getiteminfo(getarg(0),2) == 4 || getiteminfo(getarg(0),2) == 5)
+				return .@s$+" ["+getitemslots(getarg(0))+"]";
+		default:
+			return .@s$;
+	}
+
+S_Line:
+	return "^777777--------------------------------------------------^000000";
+}
+
+// Dummy shop data
+//============================================================
+-	shop	woecostumenpc11	-1,909:-1
+-	shop	woecostumenpc12	-1,909:-1
+-	shop	woecostumenpc13	-1,909:-1
+-	shop	woecostumenpc14	-1,909:-1
+-	shop	woecostumenpc16	-1,909:-1

@@ -1,0 +1,102 @@
+1@def01,42,58,5	script	Guard#ship::1	657,15,0,{
+//-	script	Guard#ship::1	657,15,0,{
+	if(getgmlevel() > 60){
+		switch(select("Enable Block:Disable Block")){
+			case 1:
+				message strcharinfo(0),"Block enabled";
+				.block = 1;
+				enablenpc "Goku";
+				enablenpc "Hokage";
+				enablenpc "Vegeta";
+				disablenpc "StartingPoint";
+			break;
+			case 2:
+				announce "The Gates of Nostalgic Ragnarok Online is officially opened !! Thank you all our Dear Player's for patiently waiting !", bc_all;
+				message strcharinfo(0),"Block disabled";
+				.block = 0;
+				disablenpc "Goku";
+				disablenpc "Hokage";
+				disablenpc "Vegeta";
+				enablenpc "StartingPoint";
+			break;
+		}
+	}
+	mes "[ ^aaa9adValkyrian Knights^000000 ]";
+	mes "This section is currently being used by the ^aaa9adKnights^000000";
+	mes "We are currently preparing the area beyond. Please wait while we finish the preparations.";
+	close;
+OnTouch:
+	if(.block == 1){
+	showscript "Halt! You are entering a restricted area!",getnpcid(0);
+	sleep2 750;
+	warp "1@def01",49,25;
+	}
+end;
+
+OnInit:
+	disablenpc "StartingPoint";
+	disablenpc "Goku";
+	disablenpc "Hokage";
+	disablenpc "Vegeta";
+	.block = 1;
+end;
+}
+
+1@def01,57,58,4	script	Guard#ship::2	657,{
+//-	script	Guard#ship::2	657,{
+	mes "[ ^aaa9adValkyrian Knights^000000 ]";
+	mes "This section is currently being used by the ^aaa9adKnights^000000";
+	mes "We are currently preparing the area beyond. Please wait while we finish the preparations.";
+	close;
+end;
+}
+
+
+1@def01	mapflag	nowarp
+1@def01	mapflag	nowarpto
+1@def01	mapflag	noteleport
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+1@def01,46,62,5	script	Goku	657,{
+
+mes "Yo! I'm Goku!";
+next;
+mes "I am the hope of the universe...";
+next;
+mes "I am the answer to all living things that cry out for peace...";
+next;
+mes "I am the protector of the innocent...";
+next;
+mes "I am the light in the darkness...";
+next;
+mes "I am truth. Ally to good... Nightmare to you!!!";
+close;
+
+}
+
+1@def01,49,65,5	script	Hokage	657,{
+
+mes "You're a man with a true skill... an example we should all follow.";
+next;
+mes "I can't think of a finer shinobi than you!";
+close;
+
+}
+
+
+1@def01,53,62,4	script	Vegeta	657,{
+
+mes "You can take control of my mind and my body,";
+next;
+mes "but there is one thing a Saiyan always keep… his PRIDE!";
+close;
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Starting Point Warp
+1@def01,49,77,0	warp	StartingPoint	1,1,prontera,155,217

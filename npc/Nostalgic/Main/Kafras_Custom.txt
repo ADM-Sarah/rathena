@@ -1,0 +1,253 @@
+// Main Town
+prontera,148,195,5	script	Kafra Employee::kaf_payon1070	116,{
+	cutin "kafra_05",2;
+	callfunc "F_KafSetPay";
+	mes "[Kafra Employee]";
+	mes "The Kafra Corporation";
+	mes "is always working to provide";
+	mes "you with convenient services.";
+	mes "How may I be of assistance?";
+	callfunc "F_Kafra",5,0,1,60,930;
+
+M_Save:
+	savepoint "prontera",155,211;
+	callfunc "F_KafEnd",0,1,"in the city of Payon";
+}
+
+// Lutie Town
+xmas,144,137,5	script	Kafra Employee::kaf_payon1071	116,{
+	cutin "kafra_05",2;
+	callfunc "F_KafSetPay";
+	mes "[Kafra Employee]";
+	mes "The Kafra Corporation";
+	mes "is always working to provide";
+	mes "you with convenient services.";
+	mes "How may I be of assistance?";
+	callfunc "F_Kafra",5,0,1,60,930;
+
+M_Save:
+	savepoint "xmas",148,125;
+	callfunc "F_KafEnd",0,1,"in the city of Payon";
+}
+
+// Amatsu Town
+amatsu,209,89,4	script	Kafra Employee::kaf_payon1072	116,{
+	cutin "kafra_05",2;
+	callfunc "F_KafSetPay";
+	mes "[Kafra Employee]";
+	mes "The Kafra Corporation";
+	mes "is always working to provide";
+	mes "you with convenient services.";
+	mes "How may I be of assistance?";
+	callfunc "F_Kafra",5,0,1,60,930;
+
+M_Save:
+	savepoint "amatsu",198,78;
+	callfunc "F_KafEnd",0,1,"in the city of Payon";
+}
+
+// Jawaii Town
+jawaii,248,141,5	script	Kafra Employee::kaf_payon1073	116,{
+	cutin "kafra_05",2;
+	callfunc "F_KafSetPay";
+	mes "[Kafra Employee]";
+	mes "The Kafra Corporation";
+	mes "is always working to provide";
+	mes "you with convenient services.";
+	mes "How may I be of assistance?";
+	callfunc "F_Kafra",5,0,1,60,930;
+
+M_Save:
+	savepoint "jawaii",250,132;
+	callfunc "F_KafEnd",0,1,"in the city of Payon";
+}
+
+// Hugel Town
+hugel,89,151,5	script	Kafra Employee::kaf_payon1074	116,{
+	cutin "kafra_05",2;
+	callfunc "F_KafSetPay";
+	mes "[Kafra Employee]";
+	mes "The Kafra Corporation";
+	mes "is always working to provide";
+	mes "you with convenient services.";
+	mes "How may I be of assistance?";
+	callfunc "F_Kafra",5,0,1,60,930;
+
+M_Save:
+	savepoint "hugel",96,145;
+	callfunc "F_KafEnd",0,1,"in the city of Payon";
+}
+
+// Rachel Town
+rachel,125,116,5	script	Kafra Employee::kaf_payon1075	116,{
+	cutin "kafra_05",2;
+	callfunc "F_KafSetPay";
+	mes "[Kafra Employee]";
+	mes "The Kafra Corporation";
+	mes "is always working to provide";
+	mes "you with convenient services.";
+	mes "How may I be of assistance?";
+	callfunc "F_Kafra",5,0,1,60,930;
+
+M_Save:
+	savepoint "rachel",130,110;
+	callfunc "F_KafEnd",0,1,"in the city of Payon";
+}
+
+// Veins Town
+veins,224,128,4	script	Kafra Employee::kaf_payon1076	116,{
+	cutin "kafra_05",2;
+	callfunc "F_KafSetPay";
+	mes "[Kafra Employee]";
+	mes "The Kafra Corporation";
+	mes "is always working to provide";
+	mes "you with convenient services.";
+	mes "How may I be of assistance?";
+	callfunc "F_Kafra",5,0,1,60,930;
+
+M_Save:
+	savepoint "veins",216,123;
+	callfunc "F_KafEnd",0,1,"in the city of Payon";
+}
+
+// Mid Camp Town
+mid_camp,193,245,4	script	Kafra Employee::kaf_payon1077	116,{
+	cutin "kafra_05",2;
+	callfunc "F_KafSetPay";
+	mes "[Kafra Employee]";
+	mes "The Kafra Corporation";
+	mes "is always working to provide";
+	mes "you with convenient services.";
+	mes "How may I be of assistance?";
+	callfunc "F_Kafra",5,0,1,60,930;
+
+M_Save:
+	savepoint "mid_camp",182,236;
+	callfunc "F_KafEnd",0,1,"in the city of Payon";
+}
+
+// Manuk Town
+manuk,290,148,4	script	Kafra Employee::kaf_payon1078	116,{
+	cutin "kafra_05",2;
+	callfunc "F_KafSetPay";
+	mes "[Kafra Employee]";
+	mes "The Kafra Corporation";
+	mes "is always working to provide";
+	mes "you with convenient services.";
+	mes "How may I be of assistance?";
+	callfunc "F_Kafra",5,0,1,60,930;
+
+M_Save:
+	savepoint "manuk",282,138;
+	callfunc "F_KafEnd",0,1,"in the city of Payon";
+}
+
+// Splendide Town
+splendide,193,156,5	script	Kafra Employee::kaf_payon1079	116,{
+	cutin "kafra_05",2;
+	callfunc "F_KafSetPay";
+	mes "[Kafra Employee]";
+	mes "The Kafra Corporation";
+	mes "is always working to provide";
+	mes "you with convenient services.";
+	mes "How may I be of assistance?";
+	callfunc "F_Kafra",5,0,1,60,930;
+
+M_Save:
+	savepoint "splendide",201,147;
+	callfunc "F_KafEnd",0,1,"in the city of Payon";
+}
+
+// Brasilis Town
+brasilis,185,243,4	script	Kafra Employee::kaf_payon1080	116,{
+	cutin "kafra_05",2;
+	callfunc "F_KafSetPay";
+	mes "[Kafra Employee]";
+	mes "The Kafra Corporation";
+	mes "is always working to provide";
+	mes "you with convenient services.";
+	mes "How may I be of assistance?";
+	callfunc "F_Kafra",5,0,1,60,930;
+
+M_Save:
+	savepoint "brasilis",182,239;
+	callfunc "F_KafEnd",0,1,"in the city of Payon";
+}
+
+// Dewata Town
+dewata,194,188,5	script	Kafra Employee::kaf_payon1081	116,{
+	cutin "kafra_05",2;
+	callfunc "F_KafSetPay";
+	mes "[Kafra Employee]";
+	mes "The Kafra Corporation";
+	mes "is always working to provide";
+	mes "you with convenient services.";
+	mes "How may I be of assistance?";
+	callfunc "F_Kafra",5,0,1,60,930;
+
+M_Save:
+	savepoint "dewata",200,180;
+	callfunc "F_KafEnd",0,1,"in the city of Payon";
+}
+
+// Payon Town (FIXED: unique name changed to avoid duplicate)
+payon,179,279,5	script	Kafra Employee::kaf_payon1082	116,{
+	cutin "kafra_05",2;
+	callfunc "F_KafSetPay";
+	mes "[Kafra Employee]";
+	mes "The Kafra Corporation";
+	mes "is always working to provide";
+	mes "you with convenient services.";
+	mes "How may I be of assistance?";
+	callfunc "F_Kafra",5,0,1,60,930;
+
+M_Save:
+	savepoint "valmorra",182,270;
+	callfunc "F_KafEnd",0,1,"in the city of Payon";
+}
+
+// Valmorra Town (FIXED: unique name changed to avoid duplicate)
+valmorra,163,142,3	script	Kafra Employee::kaf_payon1083	10995,{
+	cutin "kafra_05",2;
+	callfunc "F_KafSetPay";
+	mes "[Kafra Employee]";
+	mes "The Kafra Corporation";
+	mes "is always working to provide";
+	mes "you with convenient services.";
+	mes "How may I be of assistance?";
+	callfunc "F_Kafra",5,0,1,60,930;
+
+M_Save:
+	savepoint "valmorra",171,133;
+	callfunc "F_KafEnd",0,1,"in the city of Payon";
+}
+
+// Malaya Town (FIXED: unique name changed to avoid duplicate)
+malaya,290,366,4	script	Kafra Employee::kaf_payon1084	10995,{
+	cutin "kafra_05",2;
+	callfunc "F_KafSetPay";
+	mes "[Kafra Employee]";
+	mes "The Kafra Corporation";
+	mes "is always working to provide";
+	mes "you with convenient services.";
+	mes "How may I be of assistance?";
+	callfunc "F_Kafra",5,0,1,60,930;
+
+M_Save:
+	savepoint "malaya",281,357;
+	callfunc "F_KafEnd",0,1,"in the city of Payon";
+}
+
+
+
+// Function: Sets variables for Payon Kafras ---------------------------------
+function	script	F_KafSetPay	{
+	cleararray @wrpC$[0],"",getarraysize(@wrpC$);
+	setarray @wrpD$[0], "Alberta", "Prontera", "Morroc";
+	setarray @wrpP[0], 1200, 1200, 1200;
+	set @wrpC$[0], @wrpD$[0]+" -> "+@wrpP[0];
+	set @wrpC$[1], @wrpD$[1]+" -> "+@wrpP[1];
+	set @wrpC$[2], @wrpD$[2]+" -> "+@wrpP[2];
+	set @wrpC$[3], "Cancel";
+	return;
+}

@@ -1,0 +1,129 @@
+//============================================================
+// PVP Warper + Broadcast (Warp Only)
+// + Map Controller (NO mapflag lines to avoid TAB parse error)
+//============================================================
+
+//------------------------------------------------------------
+// Warper NPC
+//------------------------------------------------------------
+valmorra,165,134,5	script	PVP ROOM	843,{
+
+	mes "[PVP Warper]";
+	mes "Welcome to the PvP Warper.";
+	mes "Choose a room:";
+	next;
+
+	.@ptcnt  = getmapusers("izlude2");
+	.@dmcnt  = getmapusers("guild_vs3");
+	.@gvgcnt = getmapusers("guild_vs2");
+	.@p1cnt  = getmapusers("guild_vs5");
+
+	switch(select(
+		"Party PvP Room ["+.@ptcnt+"]",
+		"Deathmatch Room ["+.@dmcnt+"]",
+		"Guild vs Guild Room ["+.@gvgcnt+"]",
+		"1vs1 Room ["+.@p1cnt+"]",
+		"Cancel"
+	)) {
+
+	case 1:
+		if (getcharid(1) <= 0) {
+			mes "[PVP Warper]";
+			mes "You need a Party to enter the Party PvP Room.";
+			close;
+		}
+
+		getpartymember getcharid(1),0;
+		getpartymember getcharid(1),1;
+
+		if ($@partymembercount < .min_pt) {
+			mes "[PVP Warper]";
+			mes "Minimum online party members: "+.min_pt+".";
+			close;
+		}
+
+		announce "[PVP] "+strcharinfo(0)+" entered Party PvP Room.", bc_all;
+		warp "izlude2",128,197;
+		end;
+
+	case 2:
+		announce "[PVP] "+strcharinfo(0)+" entered Deathmatch Room.", bc_all;
+		warp "guild_vs3",50,50;
+		end;
+
+	case 3:
+		if (getcharid(2) <= 0) {
+			mes "[PVP Warper]";
+			mes "You need a Guild to enter the Guild vs Guild Room.";
+			close;
+		}
+		announce "[PVP] "+strcharinfo(0)+" entered Guild vs Guild Room.", bc_all;
+		warp "guild_vs2",50,50;
+		end;
+
+	case 4:
+		announce "[PVP] "+strcharinfo(0)+" entered 1vs1 Room.", bc_all;
+		warp "guild_vs5",50,50;
+		end;
+
+	default:
+		close;
+	}
+
+OnInit:
+	.min_pt = 1;
+	end;
+}
+
+//------------------------------------------------------------
+// Mapflag Controller (no mapflag lines)
+// This avoids the "missing/extra TAB" parser issue entirely.
+//------------------------------------------------------------
+-	script	PVP_MapController	-1,{
+
+OnInit:
+	setarray .maps$[0], "izlude2","guild_vs3","guild_vs2","guild_vs5";
+
+	for (.@i=0; .@i<getarraysize(.maps$); .@i++) {
+
+		// Optional: PvP maps usually already pvp ON, so we DON'T remove pvp here.
+
+		// No save (use default savepoint)
+		setmapflag .maps$[.@i], mf_nosave;
+
+		// Block teleport / fly wing
+		setmapflag .maps$[.@i], mf_noteleport;
+
+		// Block warp-to from outside (warp portal / @warp to these maps)
+		setmapflag .maps$[.@i], mf_nowarpto;
+	}
+	end;
+}
+
+izlude2	mapflag	nowarpto
+izlude2	mapflag	nowarp
+izlude2	mapflag	noreturn
+izlude2	mapflag	loadevent
+izlude2	mapflag	nosave	SavePoint
+izlude2	mapflag	noteleport
+
+guild_vs3	mapflag	nowarpto
+guild_vs3	mapflag	nowarp
+guild_vs3	mapflag	noreturn
+guild_vs3	mapflag	loadevent
+guild_vs3	mapflag	nosave	SavePoint
+guild_vs3	mapflag	noteleport
+
+guild_vs2	mapflag	nowarpto
+guild_vs2	mapflag	nowarp
+guild_vs2	mapflag	noreturn
+guild_vs2	mapflag	loadevent
+guild_vs2	mapflag	nosave	SavePoint
+guild_vs2	mapflag	noteleport
+
+guild_vs5	mapflag	nowarpto
+guild_vs5	mapflag	nowarp
+guild_vs5	mapflag	noreturn
+guild_vs5	mapflag	loadevent
+guild_vs5	mapflag	nosave	SavePoint
+guild_vs5	mapflag	noteleport

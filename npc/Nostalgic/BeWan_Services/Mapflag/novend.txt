@@ -1,0 +1,899 @@
+alb_ship	mapflag	novending
+alb2trea	mapflag	novending
+alberta	mapflag	novending
+alberta_in	mapflag	novending
+valmorra	mapflag	novending
+
+aldeba_in	mapflag	novending
+aldebaran	mapflag	novending
+
+arena_room	mapflag	novending
+c_tower1	mapflag	novending
+c_tower2	mapflag	novending
+c_tower3	mapflag	novending
+c_tower4	mapflag	novending
+//force_map1
+//force_map2
+//force_map3
+force_1-1	mapflag	novending
+force_2-1	mapflag	novending
+force_3-1	mapflag	novending
+force_4-1	mapflag	novending
+force_5-1	mapflag	novending
+force_1-2	mapflag	novending
+force_2-2	mapflag	novending
+force_3-2	mapflag	novending
+force_1-3	mapflag	novending
+force_2-3	mapflag	novending
+force_3-3	mapflag	novending
+
+gef_fild00	mapflag	novending
+gef_fild01	mapflag	novending
+gef_fild02	mapflag	novending
+gef_fild03	mapflag	novending
+gef_fild04	mapflag	novending
+gef_fild05	mapflag	novending
+gef_fild06	mapflag	novending
+gef_fild07	mapflag	novending
+gef_fild08	mapflag	novending
+gef_fild09	mapflag	novending
+gef_fild10	mapflag	novending
+gef_fild11	mapflag	novending
+gef_fild12	mapflag	novending
+gef_fild13	mapflag	novending
+gef_fild14	mapflag	novending
+gef_tower	mapflag	novending
+geffen	mapflag	novending
+geffen_in	mapflag	novending
+gl_cas01	mapflag	novending
+gl_cas02	mapflag	novending
+gl_church	mapflag	novending
+gl_chyard	mapflag	novending
+
+gl_in01	mapflag	novending
+gl_knt01	mapflag	novending
+gl_knt02	mapflag	novending
+gl_prison	mapflag	novending
+gl_prison1	mapflag	novending
+gl_sew01	mapflag	novending
+gl_sew02	mapflag	novending
+gl_sew03	mapflag	novending
+gl_sew04	mapflag	novending
+gl_step	mapflag	novending
+glast_01	mapflag	novending
+//hunter_1-1
+//hunter_2-1
+//hunter_3-1
+in_hunter	mapflag	novending
+in_moc_16	mapflag	novending
+
+
+izlude	mapflag	novending
+izlude_in	mapflag	novending
+job_thief1	mapflag	novending
+//knight_1-1
+//knight_2-1
+//knight_3-1
+
+mjolnir_01	mapflag	novending
+mjolnir_02	mapflag	novending
+mjolnir_03	mapflag	novending
+mjolnir_04	mapflag	novending
+mjolnir_05	mapflag	novending
+mjolnir_06	mapflag	novending
+mjolnir_07	mapflag	novending
+mjolnir_08	mapflag	novending
+mjolnir_09	mapflag	novending
+mjolnir_10	mapflag	novending
+mjolnir_11	mapflag	novending
+mjolnir_12	mapflag	novending
+moc_castle	mapflag	novending
+moc_fild01	mapflag	novending
+moc_fild02	mapflag	novending
+moc_fild03	mapflag	novending
+
+moc_fild07	mapflag	novending
+
+moc_fild11	mapflag	novending
+moc_fild12	mapflag	novending
+moc_fild13	mapflag	novending
+
+moc_fild16	mapflag	novending
+moc_fild17	mapflag	novending
+moc_fild18	mapflag	novending
+moc_fild19	mapflag	novending
+
+moc_ruins	mapflag	novending
+monk_in	mapflag	novending
+morocc	mapflag	novending
+morocc_in	mapflag	novending
+new_zone01	mapflag	novending
+new_zone02	mapflag	novending
+new_zone03	mapflag	novending
+new_zone04	mapflag	novending
+new_1-1	mapflag	novending
+new_1-2	mapflag	novending
+new_1-3	mapflag	novending
+new_1-4	mapflag	novending
+new_2-1	mapflag	novending
+new_2-2	mapflag	novending
+new_2-3	mapflag	novending
+new_2-4	mapflag	novending
+new_3-1	mapflag	novending
+new_3-2	mapflag	novending
+new_3-3	mapflag	novending
+new_3-4	mapflag	novending
+new_4-1	mapflag	novending
+new_4-2	mapflag	novending
+new_4-3	mapflag	novending
+new_4-4	mapflag	novending
+new_5-1	mapflag	novending
+new_5-2	mapflag	novending
+new_5-3	mapflag	novending
+new_5-4	mapflag	novending
+
+ordeal_1-1	mapflag	novending
+ordeal_1-2	mapflag	novending
+
+ordeal_2-1	mapflag	novending
+ordeal_2-2	mapflag	novending
+
+//ordeal_3-1	mapflag	novending
+ordeal_3-2	mapflag	novending
+
+pay_arche	mapflag	novending
+
+pay_fild01	mapflag	novending
+pay_fild02	mapflag	novending
+pay_fild03	mapflag	novending
+pay_fild04	mapflag	novending
+pay_fild05	mapflag	novending
+pay_fild06	mapflag	novending
+pay_fild07	mapflag	novending
+pay_fild08	mapflag	novending
+pay_fild09	mapflag	novending
+pay_fild10	mapflag	novending
+pay_fild11	mapflag	novending
+
+//prontera	mapflag	novending
+prt_are_in	mapflag	novending
+prt_are01	mapflag	novending
+prt_castle	mapflag	novending
+prt_church	mapflag	novending
+prt_fild00	mapflag	novending
+prt_fild01	mapflag	novending
+prt_fild02	mapflag	novending
+prt_fild03	mapflag	novending
+prt_fild04	mapflag	novending
+prt_fild05	mapflag	novending
+prt_fild06	mapflag	novending
+prt_fild07	mapflag	novending
+prt_fild08	mapflag	novending
+prt_fild09	mapflag	novending
+prt_fild10	mapflag	novending
+prt_fild11	mapflag	novending
+prt_in	mapflag	novending
+prt_maze01	mapflag	novending
+prt_maze02	mapflag	novending
+prt_maze03	mapflag	novending
+prt_monk	mapflag	novending
+prt_sewb1	mapflag	novending
+prt_sewb2	mapflag	novending
+prt_sewb3	mapflag	novending
+prt_sewb4	mapflag	novending
+pvp_room	mapflag	novending
+pvp_2vs2	mapflag	novending
+pvp_c_room	mapflag	novending
+pvp_n_1-1	mapflag	novending
+pvp_n_1-2	mapflag	novending
+pvp_n_1-3	mapflag	novending
+pvp_n_1-4	mapflag	novending
+pvp_n_1-5	mapflag	novending
+pvp_n_2-1	mapflag	novending
+pvp_n_2-2	mapflag	novending
+pvp_n_2-3	mapflag	novending
+pvp_n_2-4	mapflag	novending
+pvp_n_2-5	mapflag	novending
+pvp_n_3-1	mapflag	novending
+pvp_n_3-2	mapflag	novending
+pvp_n_3-3	mapflag	novending
+pvp_n_3-4	mapflag	novending
+pvp_n_3-5	mapflag	novending
+pvp_n_4-1	mapflag	novending
+pvp_n_4-2	mapflag	novending
+pvp_n_4-3	mapflag	novending
+pvp_n_4-4	mapflag	novending
+pvp_n_4-5	mapflag	novending
+pvp_n_5-1	mapflag	novending
+pvp_n_5-2	mapflag	novending
+pvp_n_5-3	mapflag	novending
+pvp_n_5-4	mapflag	novending
+pvp_n_5-5	mapflag	novending
+pvp_n_6-1	mapflag	novending
+pvp_n_6-2	mapflag	novending
+pvp_n_6-3	mapflag	novending
+pvp_n_6-4	mapflag	novending
+pvp_n_6-5	mapflag	novending
+pvp_n_7-1	mapflag	novending
+pvp_n_7-2	mapflag	novending
+pvp_n_7-3	mapflag	novending
+pvp_n_7-4	mapflag	novending
+pvp_n_7-5	mapflag	novending
+pvp_n_8-1	mapflag	novending
+pvp_n_8-2	mapflag	novending
+pvp_n_8-3	mapflag	novending
+pvp_n_8-4	mapflag	novending
+pvp_n_8-5	mapflag	novending
+pvp_n_room	mapflag	novending
+pvp_y_1-1	mapflag	novending
+pvp_y_1-2	mapflag	novending
+pvp_y_1-3	mapflag	novending
+pvp_y_1-4	mapflag	novending
+pvp_y_1-5	mapflag	novending
+pvp_y_2-1	mapflag	novending
+pvp_y_2-2	mapflag	novending
+pvp_y_2-3	mapflag	novending
+pvp_y_2-4	mapflag	novending
+pvp_y_2-5	mapflag	novending
+pvp_y_3-1	mapflag	novending
+pvp_y_3-2	mapflag	novending
+pvp_y_3-3	mapflag	novending
+pvp_y_3-4	mapflag	novending
+pvp_y_3-5	mapflag	novending
+pvp_y_4-1	mapflag	novending
+pvp_y_4-2	mapflag	novending
+pvp_y_4-3	mapflag	novending
+pvp_y_4-4	mapflag	novending
+pvp_y_4-5	mapflag	novending
+pvp_y_5-1	mapflag	novending
+pvp_y_5-2	mapflag	novending
+pvp_y_5-3	mapflag	novending
+pvp_y_5-4	mapflag	novending
+pvp_y_5-5	mapflag	novending
+pvp_y_6-1	mapflag	novending
+pvp_y_6-2	mapflag	novending
+pvp_y_6-3	mapflag	novending
+pvp_y_6-4	mapflag	novending
+pvp_y_6-5	mapflag	novending
+pvp_y_7-1	mapflag	novending
+pvp_y_7-2	mapflag	novending
+pvp_y_7-3	mapflag	novending
+pvp_y_7-4	mapflag	novending
+pvp_y_7-5	mapflag	novending
+pvp_y_8-1	mapflag	novending
+pvp_y_8-2	mapflag	novending
+pvp_y_8-3	mapflag	novending
+pvp_y_8-4	mapflag	novending
+pvp_y_8-5	mapflag	novending
+pvp_y_room	mapflag	novending
+
+treasure01	mapflag	novending
+treasure02	mapflag	novending
+
+xmas	mapflag	novending
+
+xmas_fild01	mapflag	novending
+xmas_in	mapflag	novending
+
+//---Ep3.0 Comodo ---
+
+cmd_fild01	mapflag	novending
+cmd_fild02	mapflag	novending
+cmd_fild03	mapflag	novending
+cmd_fild04	mapflag	novending
+cmd_fild05	mapflag	novending
+cmd_fild06	mapflag	novending
+cmd_fild07	mapflag	novending
+cmd_fild08	mapflag	novending
+cmd_fild09	mapflag	novending
+cmd_in01	mapflag	novending
+cmd_in02	mapflag	novending
+comodo	mapflag	novending
+
+//---EP3.1 Quiz Revolution ---
+
+quiz_00	mapflag	novending
+quiz_01	mapflag	novending
+g_room1-1	mapflag	novending
+g_room1-2	mapflag	novending
+g_room1-3	mapflag	novending
+g_room2	mapflag	novending
+
+//--- Ep4.1 The War of Emperium ---
+
+alde_gld	mapflag	novending
+aldeg_cas01	mapflag	novending
+aldeg_cas02	mapflag	novending
+aldeg_cas03	mapflag	novending
+aldeg_cas04	mapflag	novending
+aldeg_cas05	mapflag	novending
+gefg_cas01	mapflag	novending
+gefg_cas02	mapflag	novending
+gefg_cas03	mapflag	novending
+gefg_cas04	mapflag	novending
+gefg_cas05	mapflag	novending
+
+guild_room	mapflag	novending
+guild_vs1	mapflag	novending
+guild_vs2	mapflag	novending
+guild_vs3	mapflag	novending
+guild_vs4	mapflag	novending
+guild_vs5	mapflag	novending
+guild_vs1-1	mapflag	novending
+guild_vs1-2	mapflag	novending
+guild_vs1-3	mapflag	novending
+guild_vs1-4	mapflag	novending
+guild_vs2-1	mapflag	novending
+guild_vs2-2	mapflag	novending
+
+job_hunte	mapflag	novending
+
+job_knt	mapflag	novending
+
+job_prist	mapflag	novending
+job_sword1	mapflag	novending
+
+job_wiz	mapflag	novending
+pay_gld	mapflag	novending
+payg_cas01	mapflag	novending
+payg_cas02	mapflag	novending
+payg_cas03	mapflag	novending
+payg_cas04	mapflag	novending
+payg_cas05	mapflag	novending
+prt_gld	mapflag	novending
+prtg_cas01	mapflag	novending
+prtg_cas02	mapflag	novending
+prtg_cas03	mapflag	novending
+prtg_cas04	mapflag	novending
+prtg_cas05	mapflag	novending
+
+
+//--- Ep5.0 Yuno ---
+
+alde_alche	mapflag	novending
+in_rogue	mapflag	novending
+job_cru	mapflag	novending
+job_duncer	mapflag	novending
+job_monk	mapflag	novending
+job_sage	mapflag	novending
+
+monk_test	mapflag	novending
+quiz_test	mapflag	novending
+yuno	mapflag	novending
+yuno_fild01	mapflag	novending
+yuno_fild02	mapflag	novending
+yuno_fild03	mapflag	novending
+yuno_fild04	mapflag	novending
+yuno_in01	mapflag	novending
+yuno_in02	mapflag	novending
+yuno_in03	mapflag	novending
+yuno_in04	mapflag	novending
+yuno_in05	mapflag	novending
+
+//--- Ep6.0 - Amatsu  ---
+// Requires: kRO 08-10-03 or newer
+// or kRO Sakray 09-09-03 or newer
+
+ama_fild01	mapflag	novending
+ama_in01	mapflag	novending
+ama_in02	mapflag	novending
+ama_test	mapflag	novending
+amatsu	mapflag	novending
+
+//--- Ep6.1 - Gon Ryun ---
+
+gon_fild01	mapflag	novending
+gon_in	mapflag	novending
+gon_test	mapflag	novending
+gonryun	mapflag	novending
+sec_in01	mapflag	novending
+sec_in02	mapflag	novending
+sec_pri	mapflag	novending
+
+//--- Ep6.2 - Umbala ---
+// Requires: kRO 01-27-04 or newer
+// or kRO Sakray 12-02-03 or newer
+// or Akaru's SuperGRF 1.22 or newer
+umbala	mapflag	novending
+
+um_fild01	mapflag	novending
+um_fild02	mapflag	novending
+um_fild03	mapflag	novending
+um_fild04	mapflag	novending
+um_in	mapflag	novending
+
+//--- Ep6.3 - Niflheim ---
+// Requires: kRO 02-23-04 or newer
+// or kRO Sakray 01-09-04 or newer
+// or Akaru's SuperGRF 1.32 or newer
+niflheim	mapflag	novending
+nif_fild01	mapflag	novending
+nif_fild02	mapflag	novending
+nif_in	mapflag	novending
+yggdrasil01	mapflag	novending
+
+//--- Ep6.4 - Valkyrie ---
+// Requires: kRO ??-??-04 or newer
+// or kRO Sakray 02-03-04 or newer
+// or Akaru's SuperGRF 1.34 or newer
+valkyrie	mapflag	novending
+himinn	mapflag	novending
+
+//--- Ep6.5 - Castle of Dragon (LouYang) ---
+// Requires kRO Sakray 03-30 or newer
+//(Akaru's SuperGRF required version: 1.52)
+lou_in01	mapflag	novending
+lou_in02	mapflag	novending
+lou_fild01	mapflag	novending
+louyang	mapflag	novending
+
+//--- Ep6.6 - Novice Guild Siege ---
+//Requires kRO Sakray 04-07 or newer
+//(Akaru's SuperGRF required version: 1.53)
+//siege_test
+n_castle	mapflag	novending
+nguild_gef	mapflag	novending
+nguild_prt	mapflag	novending
+nguild_pay	mapflag	novending
+nguild_alde	mapflag	novending
+
+//--- Ep6.7 - Jawaii ---
+//Requires kRO Sakray 06-22 or newer
+//(Akaru's SuperGRF required version: 1.63)
+jawaii	mapflag	novending
+jawaii_in	mapflag	novending
+
+// --- Ep6.8 - Geffenia ---
+// Requires kRO Sakray 07-13 or newer
+// (Akaru's SuperGRF required version: 1.64)
+
+// --- Ep6.9 - New Payon ---
+// Requires kRO Sakray 09-03
+// -- dunno --
+payon	mapflag	novending
+payon_in01	mapflag	novending
+payon_in02	mapflag	novending
+payon_in03	mapflag	novending
+//same names as old maps except that payon_in03 got added
+
+// --- Ep? - Ayothaya ---
+// Requires kRO Sakray 09-21
+// -- 2004-10-19sdata_k.gpf --
+ayothaya	mapflag	novending
+ayo_in01	mapflag	novending
+ayo_in02	mapflag	novending
+ayo_fild01	mapflag	novending
+ayo_fild02	mapflag	novending
+
+// --- God item quests maps ---
+// -- 2004-10-12sdata_k3.gpf --
+que_god01	mapflag	novending
+que_god02	mapflag	novending
+
+// --- Ep? - Schwarzwald Republic ---
+// -- 2004-12-28sdata_k.gpf --
+yuno_fild05	mapflag	novending
+yuno_fild07	mapflag	novending
+yuno_fild08	mapflag	novending
+yuno_fild09	mapflag	novending
+yuno_fild11	mapflag	novending
+yuno_fild12	mapflag	novending
+
+// --- Turbo Track Arena ---
+// -- 2005-03-08sdata_k.gpf --
+alde_tt02	mapflag	novending
+turbo_n_1	mapflag	novending
+turbo_n_4	mapflag	novending
+turbo_n_8	mapflag	novending
+turbo_n_16	mapflag	novending
+turbo_e_4	mapflag	novending
+turbo_e_8	mapflag	novending
+turbo_e_16	mapflag	novending
+//turbo_room	mapflag	novending
+
+// --- Einbroch/Einbech ---
+// -- 2005-03-15sdata_k.gpf --
+airplane	mapflag	novending
+airport	mapflag	novending
+einbech	mapflag	novending
+einbroch	mapflag	novending
+ein_dun01	mapflag	novending
+ein_dun02	mapflag	novending
+ein_fild06	mapflag	novending
+ein_fild07	mapflag	novending
+ein_fild08	mapflag	novending
+ein_fild09	mapflag	novending
+ein_fild10	mapflag	novending
+ein_in01	mapflag	novending
+que_sign01	mapflag	novending
+que_sign02	mapflag	novending
+
+// --- Einbroch and Lightalzen ---
+// -- 2005-05-10sdata_k.gpf --
+ein_fild03	mapflag	novending
+ein_fild04	mapflag	novending
+lhz_fild02	mapflag	novending
+lhz_fild03	mapflag	novending
+
+// --- Lighthalzen and Juperos Dungeon ---
+// -- 2005-06-14sdata_k.gpf --
+yuno_pre	mapflag	novending
+lhz_fild01	mapflag	novending
+lighthalzen	mapflag	novending
+lhz_in01	mapflag	novending
+lhz_in02	mapflag	novending
+lhz_in03	mapflag	novending
+lhz_que01	mapflag	novending
+
+lhz_cube	mapflag	novending
+juperos_01	mapflag	novending
+juperos_02	mapflag	novending
+jupe_area1	mapflag	novending
+jupe_area2	mapflag	novending
+jupe_core	mapflag	novending
+jupe_ele	mapflag	novending
+jupe_ele_r	mapflag	novending
+jupe_gate	mapflag	novending
+
+// --- Lighthalzen & Juno Airport ---
+// -- resnametable clones of airport and airplane --
+y_airport	mapflag	novending
+lhz_airport	mapflag	novending
+airplane_01	mapflag	novending
+
+// --- Juperos Dungeon ---
+// -- 2005-06-28sdata_k.gpf --
+//jupe_cave	mapflag	novending
+
+// --- Quiz Revolution ---
+// -- 2005-08-02sdata_k.gpf --
+quiz_02	mapflag	novending
+
+// --- Hugel Field ---
+// -- 2005-08-23sdata_k.gpf --
+hu_fild07	mapflag	novending
+hu_fild05	mapflag	novending
+hu_fild04	mapflag	novending
+hu_fild01	mapflag	novending
+yuno_fild06	mapflag	novending
+
+// --- Star Knight And Soul Linker Job Change Maps ---
+// -- 2005-08-23sdata_k.gpf --
+job_soul	mapflag	novending
+job_star	mapflag	novending
+
+// --- Abyss Lake, Thanatos Tower --
+// -- 2005-09-13sdata_k.gpf - 2005-09-13sdata_k6.gpf --
+que_job01	mapflag	novending
+que_job02	mapflag	novending
+que_job03	mapflag	novending
+abyss_01	mapflag	novending
+abyss_02	mapflag	novending
+abyss_03	mapflag	novending
+thana_step	mapflag	novending
+thana_boss	mapflag	novending
+tha_scene01	mapflag	novending
+tha_t01	mapflag	novending
+tha_t02	mapflag	novending
+tha_t03	mapflag	novending
+tha_t04	mapflag	novending
+tha_t07	mapflag	novending
+tha_t05	mapflag	novending
+tha_t06	mapflag	novending
+tha_t08	mapflag	novending
+
+// --- Thanatos Tower ---
+// -- 2005-09-21sdata_k.gpf -- 
+tha_t09	mapflag	novending
+tha_t10	mapflag	novending
+tha_t11	mapflag	novending
+tha_t12	mapflag	novending
+
+// --- Auction Market ---
+// -- 2005-11-29sdata_k.gpf -- 
+auction_01	mapflag	novending
+auction_02	mapflag	novending
+
+// --- Garden City Hugel / Kiehl ---
+// -- 2005-12-20sdata_k.gpf -- 
+hugel	mapflag	novending
+hu_in01	mapflag	novending
+que_bingo	mapflag	novending
+que_hugel	mapflag	novending
+p_track01	mapflag	novending
+p_track02	mapflag	novending
+odin_tem01	mapflag	novending
+odin_tem02	mapflag	novending
+odin_tem03	mapflag	novending
+hu_fild02	mapflag	novending
+hu_fild03	mapflag	novending
+hu_fild06	mapflag	novending
+ein_fild01	mapflag	novending
+ein_fild02	mapflag	novending
+ein_fild05	mapflag	novending
+yuno_fild10	mapflag	novending
+kh_kiehl02	mapflag	novending
+kh_kiehl01	mapflag	novending
+kh_dun02	mapflag	novending
+kh_dun01	mapflag	novending
+kh_mansion	mapflag	novending
+kh_rossi	mapflag	novending
+kh_school	mapflag	novending
+kh_vila	mapflag	novending
+
+// --- Poring Arena (?) & Gunslinger/Ninja Job Map ---
+// -- 2006-03-28sdata_k.gpf --
+poring_c01	mapflag	novending
+poring_c02	mapflag	novending
+que_ng	mapflag	novending
+
+// --- Arunafeltz & Ice Dungeon ---
+// -- 2006-05-30sdata_k.gpf --
+rachel	mapflag	novending
+ra_in01	mapflag	novending
+ra_fild01	mapflag	novending
+ra_fild02	mapflag	novending
+ra_fild03	mapflag	novending
+ra_fild04	mapflag	novending
+ra_fild05	mapflag	novending
+ra_fild06	mapflag	novending
+ra_fild07	mapflag	novending
+ra_fild08	mapflag	novending
+ra_fild09	mapflag	novending
+ra_fild10	mapflag	novending
+ra_fild11	mapflag	novending
+ra_fild12	mapflag	novending
+ra_fild13	mapflag	novending
+ra_san01	mapflag	novending
+ra_san02	mapflag	novending
+ra_san03	mapflag	novending
+ra_san04	mapflag	novending
+ra_san05	mapflag	novending
+ra_temin	mapflag	novending
+ra_temple	mapflag	novending
+ra_temsky	mapflag	novending
+que_rachel	mapflag	novending
+que_san04	mapflag	novending
+
+//ice_dun04	mapflag	novending
+
+// --- Veins & Thor Dungeon ---
+// -- 2006-12-19sdata_k.gpf --
+que_thor	mapflag	novending
+thor_camp	mapflag	novending
+thor_v01	mapflag	novending
+thor_v02	mapflag	novending
+thor_v03	mapflag	novending
+veins	mapflag	novending
+ve_in	mapflag	novending
+ve_in02	mapflag	novending
+ve_fild01	mapflag	novending
+ve_fild02	mapflag	novending
+ve_fild03	mapflag	novending
+ve_fild04	mapflag	novending
+ve_fild05	mapflag	novending
+ve_fild06	mapflag	novending
+ve_fild07	mapflag	novending
+
+// --- Nameless Island & Abbey Dungeon ---
+// -- 2007-04-03sdata_k.gpf
+nameless_i	mapflag	novending
+nameless_n	mapflag	novending
+nameless_in	mapflag	novending
+abbey01	mapflag	novending
+abbey02	mapflag	novending
+abbey03	mapflag	novending
+poring_w01	mapflag	novending
+poring_w02	mapflag	novending
+
+// --- ??? ---
+// -- 2007-??-??
+06guild_r	mapflag	novending
+06guild_01	mapflag	novending
+06guild_02	mapflag	novending
+06guild_03	mapflag	novending
+06guild_04	mapflag	novending
+06guild_05	mapflag	novending
+06guild_06	mapflag	novending
+06guild_07	mapflag	novending
+06guild_08	mapflag	novending
+z_agit	mapflag	novending
+que_temsky	mapflag	novending
+itemmall	mapflag	novending
+bossnia_01	mapflag	novending
+bossnia_02	mapflag	novending
+bossnia_03	mapflag	novending
+bossnia_04	mapflag	novending
+
+// --- Moscovia ---
+// -- 2007-06-???
+moscovia	mapflag	novending
+mosk_in	mapflag	novending
+mosk_ship	mapflag	novending
+mosk_fild01	mapflag	novending
+mosk_fild02	mapflag	novending
+
+mosk_que	mapflag	novending
+
+// --- Episode 12: Satan Morroc & Schwaltzvalt Seige ---
+// -- 2007-09-19sdata_k.gpf
+schg_cas01	mapflag	novending
+schg_cas02	mapflag	novending
+schg_cas03	mapflag	novending
+schg_cas04	mapflag	novending
+schg_cas05	mapflag	novending
+sch_gld	mapflag	novending
+cave	mapflag	novending
+moc_fild20	mapflag	novending
+moc_fild21	mapflag	novending
+moc_fild22	mapflag	novending
+que_ba	mapflag	novending
+que_moc_16	mapflag	novending
+que_moon	mapflag	novending
+
+// Arunafeltz Seige
+// -- 2007-10-24sdata_k.gpf
+arug_cas01	mapflag	novending
+arug_cas02	mapflag	novending
+arug_cas03	mapflag	novending
+arug_cas04	mapflag	novending
+arug_cas05	mapflag	novending
+aru_gld	mapflag	novending
+
+// PVP Battle Fields: Tierra Valley, and Frebeus
+// -- 2007-11-14sdata_k.gpf
+bat_room	mapflag	novending
+bat_a01	mapflag	novending
+bat_a02	mapflag	novending
+bat_b01	mapflag	novending
+bat_b02	mapflag	novending
+que_qsch01	mapflag	novending
+que_qsch02	mapflag	novending
+que_qsch03	mapflag	novending
+que_qsch04	mapflag	novending
+que_qsch05	mapflag	novending
+que_qaru01	mapflag	novending
+que_qaru02	mapflag	novending
+que_qaru03	mapflag	novending
+que_qaru04	mapflag	novending
+que_qaru05	mapflag	novending
+
+// Memorial Dungeon
+// -- 2007-11-28sdata_k.gpf
+1@cata	mapflag	novending
+2@cata	mapflag	novending
+e_tower	mapflag	novending
+1@tower	mapflag	novending
+2@tower	mapflag	novending
+3@tower	mapflag	novending
+4@tower	mapflag	novending
+5@tower	mapflag	novending
+6@tower	mapflag	novending
+
+// 13.1 Another World
+// -- 2008-05-28sdata_k.gpf
+mid_camp	mapflag	novending
+mid_campin	mapflag	novending
+man_fild01	mapflag	novending
+man_fild03	mapflag	novending
+spl_fild02	mapflag	novending
+spl_fild03	mapflag	novending
+moc_fild22b	mapflag	novending
+que_dan01	mapflag	novending
+que_dan02	mapflag	novending
+schg_que01	mapflag	novending
+schg_dun01	mapflag	novending
+arug_que01	mapflag	novending
+arug_dun01	mapflag	novending
+1@orcs	mapflag	novending
+2@orcs	mapflag	novending
+
+// Additional Battleground.
+// -- 2008-??-???
+bat_c01	mapflag	novending
+bat_c02	mapflag	novending
+bat_c03	mapflag	novending
+
+// 13.2 Another World
+// -- 2008-11-26
+1@nyd	mapflag	novending
+2@nyd	mapflag	novending
+nyd_dun01	mapflag	novending
+nyd_dun02	mapflag	novending
+manuk	mapflag	novending
+man_fild02	mapflag	novending
+man_in01	mapflag	novending
+splendide	mapflag	novending
+spl_fild01	mapflag	novending
+spl_in01	mapflag	novending
+spl_in02	mapflag	novending
+
+// 3rd Job Maps
+// -- 2009-01-29rdata_k2.gpf
+job3_arch01	mapflag	novending
+job3_arch02	mapflag	novending
+job3_arch03	mapflag	novending
+job3_guil01	mapflag	novending
+job3_guil02	mapflag	novending
+job3_guil03	mapflag	novending
+job3_rang01	mapflag	novending
+job3_rang02	mapflag	novending
+job3_rune01	mapflag	novending
+job3_rune02	mapflag	novending
+job3_rune03	mapflag	novending
+job3_war01	mapflag	novending
+job3_war02	mapflag	novending
+jupe_core2	mapflag	novending
+
+// ???
+// -- 2009-05-27rdata_k.gpf
+moc_para01	mapflag	novending
+
+// Brasilis Maps
+// -- 2009-08-05rdata_k.gpf
+brasilis	mapflag	novending
+bra_in01	mapflag	novending
+bra_fild01	mapflag	novending
+
+
+// ???
+// -- 2009-09-30rdata_k.gpf
+s_atelier	mapflag	novending
+
+// 13.3 El Discastes
+// -- 2009-12-09rdata_k.gpf
+dicastes01	mapflag	novending
+dicastes02	mapflag	novending
+dic_in01	mapflag	novending
+dic_fild01	mapflag	novending
+dic_fild02	mapflag	novending
+
+job3_gen01	mapflag	novending
+job3_sha01	mapflag	novending
+
+// Localized Event Maps
+//evt_zombie
+//evt_coke
+
+// Unknown Maps
+//ac_sl_area
+//ac_cl_hall
+//ac_cl_room
+//jp_s_dun11
+
+// 14.1 Bifrost
+// -- 2010-06-09rdata_x.gpf
+mora	mapflag	novending
+bif_fild01	mapflag	novending
+bif_fild02	mapflag	novending
+1@mist	mapflag	novending
+
+// Dewata Maps
+// -- 2010-09-15rdata_x.gpf
+dewata	mapflag	novending
+dew_in01	mapflag	novending
+dew_fild01	mapflag	novending
+dew_dun01	mapflag	novending
+dew_dun02	mapflag	novending
+
+// ???
+// -- 2010-10-06rdata_x.gpf
+que_house_s	mapflag	novending
+
+// Malangdo Maps
+// -- 2010-11-03rdata_x.gpf
+malangdo	mapflag	novending
+mal_in01	mapflag	novending
+mal_in02	mapflag	novending
+
+1@pump	mapflag	novending
+2@pump	mapflag	novending
+1@cash	mapflag	novending
+
+// Undersea Tunnel Expansion
+// -- 2010-11-10rdata_x.gpf
+iz_dun05	mapflag	novending
+
+// ???
+// -- 2010-12-01data_x.gpf
+evt_mobroom	mapflag	novending

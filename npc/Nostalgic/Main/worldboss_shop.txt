@@ -1,0 +1,299 @@
+//============================================================
+// WorldBoss Shop - Fixed & Updated
+// Location: que_temsky 99 148
+// Requirement: WorldBoss Coin (55703)
+//============================================================
+
+que_temsky,99,148,4	script	WorldBoss Shop	10999,{
+
+OnClick:
+	goto OnMenu;
+
+OnInit:
+	freeloop(1);
+
+	// -----------------------------------------------------------
+	// Basic shop settings.
+	// -----------------------------------------------------------
+	set .Announce,1;
+	set .ShowSlot,1;
+	set .ShowID,0;
+	set .ShowZeny,0;
+	set .MaxStack,1;
+	.ignore_secure_npctimeout = 1;
+
+	// -----------------------------------------------------------
+	// Dialog visual settings.
+	// -----------------------------------------------------------
+	.DialogW = 360;
+	.DialogH = 300;
+
+	// -----------------------------------------------------------
+	// Shop IDs / Categories
+	// -----------------------------------------------------------
+	setarray .Shops$[1],
+		"^9400D3Fusion Set [Special Set]^000000",
+		"^4B0082Baryon Set [Special Set]^000000",
+		"^FF0000Red Luffy Set [Damage Set]^000000",
+		"^000000Black Luffy Set [Tanky Set]^000000",
+		"^FFA500Orange Luffy Set [Magic Set]^000000",
+		"^00CC00Green Luffy Set [Range Set]^000000";
+
+	// -----------------------------------------------------------
+	// Requirement Item
+	// Format: S_Add,ShopID,RewardItem,Amount,Zeny,Points,ReqItem,ReqAmount
+	// -----------------------------------------------------------
+
+	// Shop 1 - Fusion Set: 51098, 51097, 51099 (50 Coins each)
+	callsub S_Add,1,51098,1,0,0,55703,50;
+	callsub S_Add,1,51097,1,0,0,55703,50;
+	callsub S_Add,1,51099,1,0,0,55703,50;
+
+	// Shop 2 - Baryon Set: 51028, 51027, 51029 (50 Coins each)
+	callsub S_Add,2,51028,1,0,0,55703,50;
+	callsub S_Add,2,51027,1,0,0,55703,50;
+	callsub S_Add,2,51029,1,0,0,55703,50;
+
+	// Shop 3 - Red Luffy Set: 55307, 55298, 55725 (15 Coins each)
+	callsub S_Add,3,55307,1,0,0,55703,15;
+	callsub S_Add,3,55298,1,0,0,55703,15;
+	callsub S_Add,3,55725,1,0,0,55703,15;
+
+	// Shop 4 - Black Luffy Set: 55301, 55291, 55727 (15 Coins each)
+	callsub S_Add,4,55301,1,0,0,55703,15;
+	callsub S_Add,4,55291,1,0,0,55703,15;
+	callsub S_Add,4,55727,1,0,0,55703,15;
+
+	// Shop 5 - Orange Luffy Set: 55305, 55295, 55721 (15 Coins each)
+	callsub S_Add,5,55305,1,0,0,55703,15;
+	callsub S_Add,5,55295,1,0,0,55703,15;
+	callsub S_Add,5,55721,1,0,0,55703,15;
+
+	// Shop 6 - Green Luffy Set: 55304, 55294, 55722 (15 Coins each)
+	callsub S_Add,6,55304,1,0,0,55703,15;
+	callsub S_Add,6,55294,1,0,0,55703,15;
+	callsub S_Add,6,55722,1,0,0,55703,15;
+
+	freeloop(0);
+
+	set .menu$,"";
+	for (set .@i,1; .@i<=getarraysize(.Shops$); set .@i,.@i+1) {
+		if (.Shops$[.@i] != "")
+			set .menu$, .menu$ + .Shops$[.@i] + ":";
+		npcshopdelitem "worldbossshop"+.@i,909;
+	}
+
+	waitingroom "WorldBoss Shop",0;
+	end;
+
+OnMenu:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 1;
+
+	setdialogsize(.DialogW,.DialogH);
+	setdialogalign(DIALOG_ALIGN_CENTER);
+
+	mes "<b>^000000[ ^00BFFFWorldBoss Shop^000000 ]</b>";
+	mes "^000000Welcome to the ^00BFFFWorldBoss Equipment Shop^000000.";
+	mes "^000000Exchange your ^FF69B4WorldBoss Coins^000000 for special custom equipment.^000000";
+	mes callsub(S_Line);
+	mes "^3CB371Requirement:^000000";
+	mes "^3CB371»^000000 ^i[55703] WorldBoss Coin";
+	mes "^3CB371»^000000 Please check individual item costs in the menu.";
+	mes callsub(S_Line);
+	next;
+
+	set .@size, getarraysize(@i);
+	if (!.@size)
+		set @shop_index, select(.menu$);
+	else if (.@size == 1)
+		set @shop_index, @i[0];
+	else {
+		set .@menu$,"";
+		for (set .@j,0; .@j < .@size; set .@j,.@j+1)
+			set .@menu$, .@menu$ + .Shops$[@i[.@j]] + ":";
+		set @shop_index, @i[select(.@menu$)-1];
+	}
+
+	deletearray @i[0],getarraysize(@i);
+	if (.Shops$[@shop_index] == "") {
+		message strcharinfo(0),"An error has occurred.";
+		end;
+	}
+
+	dispbottom "Select one item at a time.";
+
+	close2;
+	callshop "worldbossshop"+@shop_index,1;
+	npcshopattach "worldbossshop"+@shop_index;
+	end;
+
+OnBuyItem:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 1;
+
+	setdialogsize(.DialogW,.DialogH);
+	setdialogalign(DIALOG_ALIGN_CENTER);
+
+	setarray .@q[0],@bought_nameid[0],((@bought_quantity[0] > .MaxStack) ? .MaxStack : @bought_quantity[0]);
+	copyarray .@q[3],getd(".q_"+@shop_index+"_"+.@q[0]+"[0]"),getarraysize(getd(".q_"+@shop_index+"_"+.@q[0]));
+	set .@q[2],.@q[1] * .@q[3];
+
+	if (!.@q[2] || .@q[2] > 30000) {
+		message strcharinfo(0),"You can't purchase that many "+getitemname(.@q[0])+".";
+		end;
+	}
+
+	mes "<b>^000000[ ^00BFFFWorldBoss Shop^000000 ]</b>";
+	mes "^000000Shop:^000000 " + .Shops$[@shop_index];
+	mes callsub(S_Line);
+	mes "<b>^000000Reward:^000000</b> ^0055FF"
+		+ ((.@q[2] > 1) ? .@q[2]+"x " : "")
+		+ "^i[" + .@q[0] + "] "
+		+ callsub(S_Slot,.@q[0])
+		+ "^000000";
+	mes "<b>^000000Requirements:^000000</b>";
+	disable_items;
+
+	set @qe[0],0;
+
+	if (.@q[4])
+		mes "^3CB371»^000000 " + callsub(S_Chk,Zeny,.@q[4]*.@q[1]) + F_InsertComma(.@q[4]*.@q[1]) + " Zeny^000000";
+	if (.@q[6])
+		for (set .@i,6; .@i < getarraysize(.@q); set .@i,.@i+2)
+			mes "^3CB371»^000000 "
+				+ callsub(S_Chk,countitem(.@q[.@i]),.@q[.@i+1]*.@q[1])
+				+ ((.ShowID) ? "{"+.@q[.@i]+"} " : "")
+				+ "^i[" + .@q[.@i] + "] "
+				+ "<ITEM>" + callsub(S_Slot,.@q[.@i]) + "<INFO>" + .@q[.@i] + "</INFO></ITEM> "
+				+ "^777777(" + countitem(.@q[.@i]) + "/" + (.@q[.@i+1]*.@q[1]) + ")^000000";
+	setdialogsize(.DialogW,.DialogH);
+	setdialogalign(DIALOG_ALIGN_CENTER);
+	next;
+
+	setarray @qe[1], getiteminfo(.@q[0],5), getiteminfo(.@q[0],11);
+	if (@qe[2] > 0 && ((@qe[1] & 1) || (@qe[1] & 256) || (@qe[1] & 512) || (@qe[1] & 1024) || (@qe[1] & 2048) || (@qe[1] & 4096) || (@qe[1] & 4) || (@qe[1] & 8192)))
+		set .@preview,1;
+	addtimer 1000, strnpcinfo(3)+"::OnEnd";
+
+	while (1) {
+		switch (select(
+			"^3CB371» Exchange ^0055FF"+getitemname(.@q[0])+"^000000"
+			+ ":"
+			+ ((.@preview && !@qe[7]) ? "^00BFFF» Preview Item^000000:" : "")
+			+ "^FF0000» Cancel^000000"
+		)) {
+		case 1:
+			if (@qe[0]) {
+				mes "<b>^000000[ ^00BFFFWorldBoss Shop^000000 ]</b>";
+				mes "^FF0000You're missing one or more requirements.^000000";
+				close;
+			}
+			if (!checkweight(.@q[0],.@q[2])) {
+				mes "<b>^000000[ ^00BFFFWorldBoss Shop^000000 ]</b>";
+				mes "^FF0000You need more weight capacity to complete this exchange.^000000";
+				close;
+			}
+			if (.@q[4]) set Zeny, Zeny-(.@q[4]*.@q[1]);
+			if (.@q[6]) for (set .@i,6; .@i < getarraysize(.@q); set .@i,.@i+2)
+				delitem .@q[.@i],.@q[.@i+1]*.@q[1];
+
+			getitem .@q[0],.@q[2];
+			if (.Announce)
+				announce strcharinfo(0)+" has exchanged WorldBoss Coins for "+((.@q[2] > 1) ? .@q[2]+"x "+getitemname(.@q[0]) : callfunc("F_InsertArticle",getitemname(.@q[0])))+"!",0;
+
+			specialeffect2 EF_FLOWERLEAF;
+			mes "<b>^000000[ ^00BFFFWorldBoss Shop^000000 ]</b>";
+			mes "^00BFFFExchange completed successfully!^000000";
+			mes "^000000You received:^000000 ^0055FF"
+				+ ((.@q[2] > 1) ? .@q[2]+"x " : "")
+				+ "^i[" + .@q[0] + "] "
+				+ callsub(S_Slot,.@q[0])
+				+ "^000000";
+			close;
+
+		case 2:
+			if (.@preview && !@qe[7]) {
+				setarray @qe[3], getlook(LOOK_HEAD_BOTTOM), getlook(LOOK_HEAD_TOP), getlook(LOOK_HEAD_MID), getlook(LOOK_ROBE), 1;
+				if ((@qe[1] & 1) || (@qe[1] & 4096))
+					changelook LOOK_HEAD_BOTTOM, @qe[2];
+				else if ((@qe[1] & 256) || (@qe[1] & 1024))
+					changelook LOOK_HEAD_TOP, @qe[2];
+				else if ((@qe[1] & 512) || (@qe[1] & 2048))
+					changelook LOOK_HEAD_MID, @qe[2];
+				else if ((@qe[1] & 4) || (@qe[1] & 8192))
+					changelook LOOK_ROBE, @qe[2];
+				break;
+			}
+			close;
+
+		case 3:
+			close;
+		}
+	}
+
+OnEnd:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 0;
+	if (@qe[7]) {
+		changelook LOOK_HEAD_BOTTOM, @qe[3];
+		changelook LOOK_HEAD_TOP, @qe[4];
+		changelook LOOK_HEAD_MID, @qe[5];
+		changelook LOOK_ROBE, @qe[6];
+	}
+	deletearray @qe[0],8;
+	end;
+
+// -----------------------------------------------------------
+// Subroutines
+// -----------------------------------------------------------
+S_Add:
+	if (getitemname(getarg(1)) == "null") {
+		debugmes "Quest reward #"+getarg(1)+" invalid (skipped).";
+		return;
+	}
+
+	setarray .@j[0],getarg(2),getarg(3),getarg(4);
+	for (set .@i,5; .@i < getargcount(); set .@i,.@i+2) {
+		if (getitemname(getarg(.@i)) == "null") {
+			debugmes "Quest requirement #"+getarg(.@i)+" invalid (skipped).";
+			return;
+		} else
+			setarray .@j[.@i-2],getarg(.@i),getarg(.@i+1);
+	}
+
+	copyarray getd(".q_"+getarg(0)+"_"+getarg(1)+"[0]"),.@j[0],getarraysize(.@j);
+	npcshopadditem "worldbossshop"+getarg(0),getarg(1),((.ShowZeny) ? getarg(3) : 0);
+	return;
+
+S_Chk:
+	if (getarg(0) < getarg(1)) {
+		set @qe[0],1;
+		return "^FF0000";
+	}
+	return "^00BFFF";
+
+S_Slot:
+	set .@s$,getitemname(getarg(0));
+	switch (.ShowSlot) {
+		case 1:
+			if (!getitemslots(getarg(0))) return .@s$;
+		case 2:
+			if (getiteminfo(getarg(0),2) == 4 || getiteminfo(getarg(0),2) == 5)
+				return .@s$+" ["+getitemslots(getarg(0))+"]";
+		default:
+			return .@s$;
+	}
+
+S_Line:
+	return "^777777--------------------------------------------------^000000";
+}
+
+// Dummy shop data
+//============================================================
+-	shop	worldbossshop1	-1,909:-1
+-	shop	worldbossshop2	-1,909:-1
+-	shop	worldbossshop3	-1,909:-1
+-	shop	worldbossshop4	-1,909:-1
+-	shop	worldbossshop5	-1,909:-1
+-	shop	worldbossshop6	-1,909:-1

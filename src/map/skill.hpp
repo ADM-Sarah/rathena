@@ -347,6 +347,23 @@ public:
 
 extern SkillDatabase skill_db;
 
+struct s_skill_adjustment_db {
+	uint16 skill_id;
+	int32 rate;
+};
+
+class SkillAdjustmentDatabase : public TypesafeYamlDatabase<uint16, s_skill_adjustment_db> {
+public:
+	SkillAdjustmentDatabase() : TypesafeYamlDatabase("SKILL_ADJUSTMENT_DB", 1) {
+	}
+
+	const std::string getDefaultLocation() override;
+	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+};
+
+extern SkillAdjustmentDatabase skill_adjustment_yaml_db;
+extern std::unordered_map<uint16, int32> skill_adjustment_db;
+
 #define MAX_SQUARE_LAYOUT		7	// 15*15 unit placement maximum
 #define MAX_SKILL_UNIT_LAYOUT	(48+MAX_SQUARE_LAYOUT)	// 47 special ones + the square ones
 #define MAX_SKILL_UNIT_LAYOUT2	17
@@ -1556,6 +1573,7 @@ enum e_skill {
 	NPC_RESET_EFST,
 	NPC_CORRUPTUNDEAD,
 	NPC_SLOWSKILL,
+	NV_AUTOATTACK = 800,
 
 	KN_CHARGEATK = 1001,
 	CR_SHRINK,
@@ -2905,6 +2923,8 @@ int32 skill_get_time3(struct map_data *mapdata, uint16 skill_id, uint16 skill_lv
 
 bool skill_mirage_cast( block_list& src, block_list* bl, uint16 skill_id, uint16 skill_lv, int16 x, int16 y, t_tick tick, int32 flag );
 int32 skill_shimiru_check_cell( block_list* target, va_list ap );
+
+int skill_vending(struct map_session_data *sd, t_itemid nameid);
 
 /// Variable name of copied skill by Plagiarism
 #define SKILL_VAR_PLAGIARISM "CLONE_SKILL"

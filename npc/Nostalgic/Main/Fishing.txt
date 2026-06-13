@@ -1,0 +1,296 @@
+//============================================================
+// Nostalgia Fishing System
+// Rare announce ONLY, without rate text:
+// 55557 Scroll Buff = 1.00%
+// 33019 Gold Credit = 0.20%
+// 51004 Nostalgic Event Ticket = 0.20%
+// 12103 Bloody Branch = 0.12%
+// Unlimited auto fishing time
+// Progress bar = 5 seconds
+//============================================================
+
+function	script	F_NFish_StopAuto	{
+	.@msg$ = getarg(0);
+
+	@NFish_Auto = 0;
+	@NFish_Map$ = "";
+	@NFish_X = 0;
+	@NFish_Y = 0;
+
+	if (.@msg$ != "")
+		dispbottom .@msg$;
+
+	return;
+}
+
+function	script	F_NFish_AnnounceRare	{
+	.@item_id = getarg(0);
+	announce "[Fishing] " + strcharinfo(0) + " got " + getitemname(.@item_id) + " from fishing!", bc_all;
+	return;
+}
+
+function	script	F_NFish_SafeGetItem	{
+	.@item_id = getarg(0);
+	.@amount = getarg(1);
+
+	if (!checkweight(.@item_id, .@amount)) {
+		dispbottom "[Fishing] Reward cancelled because your inventory is full or overweight.";
+		return 0;
+	}
+
+	getitem .@item_id, .@amount;
+	return 1;
+}
+
+function	script	F_NFish_GiveReward	{
+
+	.@roll = rand(10000); // 100.00%
+
+	if (.@roll < 100) { // 1.00%
+		if (callfunc("F_NFish_SafeGetItem", 55557, 1))
+			callfunc "F_NFish_AnnounceRare", 55557;
+	}
+	else if (.@roll < 120) { // 0.20%
+		if (callfunc("F_NFish_SafeGetItem", 33019, 1))
+			callfunc "F_NFish_AnnounceRare", 33019;
+	}
+	else if (.@roll < 140) { // 0.20%
+		if (callfunc("F_NFish_SafeGetItem", 51004, 1))
+			callfunc "F_NFish_AnnounceRare", 51004;
+	}
+	else if (.@roll < 152) { // 0.12%
+		if (callfunc("F_NFish_SafeGetItem", 12103, 1))
+			callfunc "F_NFish_AnnounceRare", 12103;
+	}
+
+	// MID ITEMS
+	else if (.@roll < 958) {
+		callfunc "F_NFish_SafeGetItem", 33017, 1; // Credit
+	}
+	else if (.@roll < 1458) {
+		callfunc "F_NFish_SafeGetItem", 12030, 1; // Box of Resentment
+	}
+
+	// COMMON CONSUMABLES
+	else if (.@roll < 3458) {
+		callfunc "F_NFish_SafeGetItem", 607, 10; // Yggdrasil Berry
+	}
+	else if (.@roll < 5458) {
+		callfunc "F_NFish_SafeGetItem", 608, 10; // Yggdrasil Seed
+	}
+	else if (.@roll < 7458) {
+		callfunc "F_NFish_SafeGetItem", 969, 10; // Gold
+	}
+
+	// UTILITY
+	else if (.@roll < 7858) {
+		callfunc "F_NFish_SafeGetItem", 604, 1; // Dead Branch
+	}
+
+	// ELEMENTAL POTIONS
+	else if (.@roll < 8358) {
+		callfunc "F_NFish_SafeGetItem", 12119, 1;
+	}
+	else if (.@roll < 8858) {
+		callfunc "F_NFish_SafeGetItem", 12120, 1;
+	}
+	else if (.@roll < 9358) {
+		callfunc "F_NFish_SafeGetItem", 12118, 1;
+	}
+	else if (.@roll < 9858) {
+		callfunc "F_NFish_SafeGetItem", 12121, 1;
+	}
+	else {
+		callfunc "F_NFish_SafeGetItem", 969, 10;
+	}
+
+	return;
+}
+
+//------------------------------------------------------------
+// Main Fishing NPC
+//------------------------------------------------------------
+valmorra,92,56,0	script	NostalgiaFishingSpot	723,{
+
+	mes "[Nostalgia Fishing]";
+	mes "Welcome to the fishing spot!";
+	next;
+
+	if (countitem(2775) < 1) {
+		mes "You need a fishing lure in your inventory.";
+		close;
+	}
+
+	if (@NFish_Auto) {
+		.@s = select("Manual Cast Once:Stop Auto Fishing:Cancel");
+		if (.@s == 1) goto L_Manual;
+		if (.@s == 2) goto L_Stop;
+		close;
+	}
+	else {
+		.@s = select("Manual Cast Once:Start Auto Fishing:Cancel");
+		if (.@s == 1) goto L_Manual;
+		if (.@s == 2) goto L_Auto;
+		close;
+	}
+
+L_Manual:
+	if (Weight >= MaxWeight * 90 / 100) {
+		mes "You are overweight.";
+		mes "Please reduce weight first.";
+		close;
+	}
+
+	if (!checkweight(969,10)) {
+		mes "Your inventory is full or overweight.";
+		mes "Please free up some space first.";
+		close;
+	}
+
+	mes "Casting...";
+	close2;
+	specialeffect2 EF_BUBBLE;
+	progressbar "ffffff", 5;
+
+	if (countitem(2775) < 1)
+		end;
+
+	if (Weight >= MaxWeight * 90 / 100)
+		end;
+
+	if (!checkweight(969,10))
+		end;
+
+	delitem 2775, 1;
+	callfunc "F_NFish_GiveReward";
+	end;
+
+L_Auto:
+	if (@NFish_Auto) {
+		mes "Auto Fishing is already active.";
+		close;
+	}
+
+	if (Weight >= MaxWeight * 90 / 100) {
+		mes "You are overweight.";
+		mes "Please reduce weight first.";
+		close;
+	}
+
+	if (!checkweight(969,10)) {
+		mes "Your inventory is full or overweight.";
+		mes "Please free up some space first.";
+		close;
+	}
+
+	@NFish_Auto = 1;
+	getmapxy(.@map$, .@x, .@y, BL_PC);
+	@NFish_Map$ = .@map$;
+	@NFish_X = .@x;
+	@NFish_Y = .@y;
+
+	mes "Auto Fishing started.";
+	close2;
+
+	addtimer 2000, "NFishTimer::OnAutoFish";
+	end;
+
+L_Stop:
+	callfunc "F_NFish_StopAuto", "[Fishing] Auto Fishing stopped.";
+	mes "Auto Fishing stopped.";
+	close;
+}
+
+//------------------------------------------------------------
+// Login reset controller
+//------------------------------------------------------------
+-	script	NostalgiaFishingCore	-1,{
+
+OnPCLoginEvent:
+	@NFish_Auto = 0;
+	@NFish_Map$ = "";
+	@NFish_X = 0;
+	@NFish_Y = 0;
+	end;
+}
+
+//------------------------------------------------------------
+// Auto Fishing handler
+//------------------------------------------------------------
+-	script	NFishTimer	-1,{
+
+OnAutoFish:
+	if (!@NFish_Auto)
+		end;
+
+	getmapxy(.@map$, .@x, .@y, BL_PC);
+
+	if (.@map$ != @NFish_Map$ || .@x > @NFish_X + 1 || .@x < @NFish_X - 1 || .@y > @NFish_Y + 1 || .@y < @NFish_Y - 1) {
+		callfunc "F_NFish_StopAuto", "[Fishing] Auto Fishing stopped because you moved away.";
+		end;
+	}
+
+	if (countitem(2775) < 1) {
+		callfunc "F_NFish_StopAuto", "[Fishing] Auto Fishing stopped because you are out of lures.";
+		end;
+	}
+
+	if (Weight >= MaxWeight * 90 / 100) {
+		callfunc "F_NFish_StopAuto", "[Fishing] Auto Fishing stopped because you are overweight.";
+		end;
+	}
+
+	if (!checkweight(969,10)) {
+		callfunc "F_NFish_StopAuto", "[Fishing] Auto Fishing stopped because your inventory is full or overweight.";
+		end;
+	}
+
+	specialeffect2 EF_BUBBLE;
+	progressbar "ffffff", 2;
+
+	if (!@NFish_Auto)
+		end;
+
+	getmapxy(.@map$, .@x, .@y, BL_PC);
+
+	if (.@map$ != @NFish_Map$ || .@x > @NFish_X + 1 || .@x < @NFish_X - 1 || .@y > @NFish_Y + 1 || .@y < @NFish_Y - 1) {
+		callfunc "F_NFish_StopAuto", "[Fishing] Auto Fishing stopped because you moved away.";
+		end;
+	}
+
+	if (countitem(2775) < 1) {
+		callfunc "F_NFish_StopAuto", "[Fishing] Auto Fishing stopped because you are out of lures.";
+		end;
+	}
+
+	if (Weight >= MaxWeight * 90 / 100) {
+		callfunc "F_NFish_StopAuto", "[Fishing] Auto Fishing stopped because you are overweight.";
+		end;
+	}
+
+	if (!checkweight(969,10)) {
+		callfunc "F_NFish_StopAuto", "[Fishing] Auto Fishing stopped because your inventory is full or overweight.";
+		end;
+	}
+
+	delitem 2775, 1;
+	callfunc "F_NFish_GiveReward";
+
+	if (@NFish_Auto)
+		addtimer 2000, "NFishTimer::OnAutoFish";
+	end;
+}
+
+//------------------------------------------------------------
+// Fishing spots
+//------------------------------------------------------------
+valmorra,84,65,0	duplicate(NostalgiaFishingSpot)	NostalgiaFishingSpot#1	723
+valmorra,105,55,0	duplicate(NostalgiaFishingSpot)	NostalgiaFishingSpot#2	723
+valmorra,86,60,0	duplicate(NostalgiaFishingSpot)	NostalgiaFishingSpot#3	723
+valmorra,82,70,0	duplicate(NostalgiaFishingSpot)	NostalgiaFishingSpot#4	723
+valmorra,99,55,0	duplicate(NostalgiaFishingSpot)	NostalgiaFishingSpot#5	723
+
+//------------------------------------------------------------
+// Fishing Gear Shop
+//------------------------------------------------------------
+valmorra,104,70,5	shop	Fishing Gear Seller	10974,2764:5000000,2775:500000

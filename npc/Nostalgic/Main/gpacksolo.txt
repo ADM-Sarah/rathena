@@ -1,0 +1,86 @@
+//===== rAthena Script =======================================
+//= SoloPack NPC with Gepard Function Supported
+//= 1 claim per Gepard Unique ID + 1 claim per Account
+//============================================================
+
+valmorra,238,47,4	script	SoloPack NPC	10191,{
+
+	.@unique_id$ = get_unique_id();
+
+	if ( .@unique_id$ == "" ) {
+		mes "[ Nostalgic Staff ]";
+		mes "Gepard Unique ID not detected.";
+		mes "Please relog and try again.";
+		close;
+	}
+
+	mes "[ Nostalgic Staff ]";
+	mes "Good day!";
+	mes "Do you want to claim your Solo Pack?";
+	mes " ";
+	mes "Take note:";
+	mes "- 1 claim per account only.";
+	mes "- 1 claim per device only.";
+	mes "- NostalgicRO Staff are not responsible for any lost items.";
+	next;
+
+	if ( select("Yes Please:Nope") == 2 ) {
+		mes "[ Nostalgic Staff ]";
+		mes "Well okay.";
+		close;
+	}
+
+	getinventorylist;
+	.@weight = 100 * Weight / MaxWeight;
+
+	if ( @inventorylist_count > 30 ) {
+		mes "[ Nostalgic Staff ]";
+		mes "You have 30 different items in your inventory.";
+		close;
+	}
+	else if ( .@weight > 50 ) {
+		mes "[ Nostalgic Staff ]";
+		mes "^FF0000You must have at least 50 percent extra weight to receive Solo Pack.^000000";
+		mes " ";
+		mes "You are currently at " + .@weight + " percent of your maximum weight.";
+		close;
+	}
+	else if ( getd("$SoloPackID_" + .@unique_id$) > 0 || #SoloPackReward > 0 ) {
+		mes "[ Nostalgic Staff ]";
+		mes "You have already claimed your Solo Pack.";
+		close;
+	}
+
+	mes "[ Nostalgic Staff ]";
+	mes "Here is your Solo Pack.";
+	mes "Have a nice day!";
+	next;
+
+	setd "$SoloPackID_" + .@unique_id$, 1;
+	#SoloPackReward = 1;
+
+	// Solo Pack Reward
+	getitembound 33061,1,Bound_Account;
+	getitembound 55741,1,Bound_Account;
+	getitembound 55742,1,Bound_Account;
+	getitembound 55743,1,Bound_Account;
+	getitembound 55744,1,Bound_Account;
+	getitembound 55745,1,Bound_Account;
+	getitem 51001,20;
+	getitem 33020,1;
+	getitembound 4302,1,Bound_Account;
+	getitembound 4441,1,Bound_Account;
+	getitembound 4143,2,Bound_Account;
+	getitembound 4305,3,Bound_Account;
+	getitembound 4174,1,Bound_Account;
+	getitembound 4128,1,Bound_Account;
+	getitembound 4142,1,Bound_Account;
+	getitembound 4318,2,Bound_Account;
+	getitembound 55806,1,Bound_Account;
+
+	close;
+
+OnInit:
+	//waitingroom "Solo Pack!",0;
+	end;
+}

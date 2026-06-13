@@ -31,6 +31,8 @@
 
 #include "achievement.hpp"
 #include "atcommand.hpp" // get_atcommand_level()
+#include "autoattack.hpp"
+#include "autoslave.hpp"
 #include "battle.hpp" // battle_config
 #include "battleground.hpp"
 #include "buyingstore.hpp"  // struct s_buyingstore
@@ -67,6 +69,7 @@
 using namespace rathena;
 
 JobDatabase job_db;
+JobBonusDatabase job_bonus_db;
 
 CaptchaDatabase captcha_db;
 const char *macro_allowed_answer_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
@@ -623,60 +626,48 @@ PenaltyDatabase penalty_db;
 void map_session_data::update_look( _look look ){
 	int32 val = this->vd.look[look];
 
+	// INÍCIO DA MODIFICAÇÃO: Lógica da Shadow Weapon
+	// Verificação prioritária para o slot da arma visual
+	if ( (look == LOOK_WEAPON || look == LOOK_SHIELD) && this->equip_index[EQI_SHADOW_WEAPON] >= 0 && this->inventory_data[this->equip_index[EQI_SHADOW_WEAPON]] != nullptr ) {
+		if (look == LOOK_WEAPON) {
+			// Se uma Shadow Weapon está equipada, usa a aparência dela
+			const item_data& id = *this->inventory_data[this->equip_index[EQI_SHADOW_WEAPON]];
+			val = (id.view_id != 0) ? id.view_id : id.nameid;
+		} else { // look == LOOK_SHIELD
+			// Se uma Shadow Weapon está equipada, força o escudo a desaparecer
+			val = 0;
+		}
+		this->vd.look[look] = val;
+		return; // A lógica da Shadow Weapon tem prioridade, então paramos aqui.
+	}
+	// FIM DA MODIFICAÇÃO
+
+	// Lógica Original do rAthena (executa se não houver Shadow Weapon)
 	switch( look ){
 		case LOOK_WEAPON:
 			if( this->sc.option&OPTION_COSTUME ){
 				val = 0;
-				break;
+			}else if( this->equip_index[EQI_HAND_R] >= 0 && this->inventory_data[this->equip_index[EQI_HAND_R]] != nullptr ){
+				const item_data& id = *this->inventory_data[this->equip_index[EQI_HAND_R]];
+				val = ( id.view_id != 0 ) ? id.view_id : id.nameid;
 			}else{
-				enum equip_index eqi = EQI_HAND_R;
-
-				if( this->equip_index[eqi] >= 0 && this->inventory_data[this->equip_index[eqi]] != nullptr ){
-					const item_data& id = *this->inventory_data[this->equip_index[eqi]];
-
-					if( id.view_id != 0 ){
-						val = id.view_id;
-					}else{
-						val = id.nameid;
-					}
-				}else{
-					// Nothing equipped
-					val = 0;
-				}
+				val = 0;
 			}
 			break;
 
 		case LOOK_SHIELD:
 			if( this->sc.option&OPTION_COSTUME ){
 				val = 0;
-				break;
+			}else if( this->equip_index[EQI_HAND_L] >= 0 && this->inventory_data[this->equip_index[EQI_HAND_L]] != nullptr && this->equip_index[EQI_HAND_L] != this->equip_index[EQI_HAND_R] ){
+				const item_data& id = *this->inventory_data[this->equip_index[EQI_HAND_L]];
+				val = ( id.view_id != 0 ) ? id.view_id : id.nameid;
 			}else{
-				enum equip_index eqi = EQI_HAND_L;
-
-				if( this->equip_index[eqi] >= 0 && this->inventory_data[this->equip_index[eqi]] != nullptr ){
-					if( this->equip_index[eqi] == this->equip_index[EQI_HAND_R] ){
-						// 2-handed weapons or 2-handed shields are only sent on LOOK_WEAPON
-						val = 0;
-						break;
-					}
-
-					const item_data& id = *this->inventory_data[this->equip_index[eqi]];
-
-					if( id.view_id != 0 ){
-						val = id.view_id;
-					}else{
-						val = id.nameid;
-					}
-				}else{
-					// Nothing equipped
-					val = 0;
-				}
+				val = 0;
 			}
 			break;
 
-		default:
-			// Do nothing
-			return;
+//		default:
+//			return;
 	}
 
 	this->vd.look[look] = val;
@@ -842,6 +833,10 @@ void pc_setinvincibletimer(map_session_data& sd) {
 
 	if (val <= 0)
 		return;
+
+	// Avoid mob teleport when hit after a teleport from autoattack
+	if(sd.state.autoattack)
+       return;
 
 	if( sd.invincible_timer != INVALID_TIMER )
 		delete_timer(sd.invincible_timer,pc_invincible_timer);
@@ -1208,8 +1203,14 @@ void pc_inventory_rentals(map_session_data *sd)
 		if( sd->inventory.u.items_inventory[i].expire_time == 0 )
 			continue;
 		if( sd->inventory.u.items_inventory[i].expire_time <= time(nullptr) ) {
-			if (sd->inventory_data[i]->unequip_script)
-				run_script(sd->inventory_data[i]->unequip_script, 0, sd->id, fake_nd->id);
+			if (sd->inventory_data[i]->unequip_script) {
+				auto it = util::vector_get(AA_ITEMIDS, sd->inventory_data[i]->nameid);
+
+				if (it != AA_ITEMIDS.end())
+					status_change_end(sd, SC_AUTOATTACK);
+				else
+					run_script(sd->inventory_data[i]->unequip_script, 0, sd->id, fake_nd->id);
+			}
 			clif_rental_expired(sd, i, sd->inventory.u.items_inventory[i].nameid);
 			pc_delitem(sd, i, sd->inventory.u.items_inventory[i].amount, 0, 0, LOG_TYPE_OTHER);
 		} else {
@@ -1454,6 +1455,7 @@ void pc_setnewpc(map_session_data *sd, uint32 account_id, uint32 char_id, int32 
 		sd->canlog_tick = gettick();
 	//Required to prevent homunculus copuing a base speed of 0.
 	sd->battle_status.speed = sd->base_status.speed = DEFAULT_WALK_SPEED;
+	add_timer_interval(gettick()+100, autoslave::unit_autoslave_timer, sd->id, 0, 100);
 }
 
 /**
@@ -2300,6 +2302,8 @@ bool pc_authok(map_session_data *sd, uint32 login_id2, time_t expiration_time, i
 		clif_updatestatus(*sd, SP_JOBEXP);
 	}
 
+	aa_load(sd);
+
 	// Request all registries (auth is considered completed whence they arrive)
 	intif_request_registry(sd,7);
 	return true;
@@ -2365,6 +2369,21 @@ void pc_reg_received(map_session_data *sd)
 	sd->langtype = static_cast<int32>(pc_readaccountreg(sd, add_str(LANGTYPE_VAR)));
 	if (msg_checklangtype(sd->langtype,true) < 0)
 		sd->langtype = 0; //invalid langtype reset to default
+
+// (^~_~^) Color Nicks Start
+
+	sd->color_nicks_group_id = pc_readglobalreg(sd, add_str("CN_GROUP_ID"));
+
+// (^~_~^) Color Nicks End
+
+// (^~_~^) LGP Start
+
+	if (is_gepard_active == true)
+	{
+		clif_gepard_send_lgp_settings(sd);
+	}
+
+// (^~_~^) LGP End
 
 	// Cash shop
 	sd->cashPoints = static_cast<int32>(pc_readaccountreg(sd, add_str(CASHPOINT_VAR)));
@@ -2512,6 +2531,7 @@ void pc_reg_received(map_session_data *sd)
 		}
 	}
 
+	aa_duration_load(sd);
 	channel_autojoin(sd);
 }
 
@@ -2647,6 +2667,12 @@ void pc_calc_skilltree(map_session_data *sd)
 			sd->status.skill[idx].lv = (sd->status.skill[idx].flag == SKILL_FLAG_TEMPORARY) ? 0 : sd->status.skill[idx].flag - SKILL_FLAG_REPLACED_LV_0;
 			sd->status.skill[idx].flag = SKILL_FLAG_PERMANENT;
 		}
+	}
+
+	if ((sd->class_&MAPID_SECONDMASK) >= MAPID_NOVICE) {
+		sd->status.skill[800].id = 800;
+		sd->status.skill[800].lv = 1;
+		sd->status.skill[800].flag = SKILL_FLAG_PERMANENT; 
 	}
 
 	// Removes Taekwon Ranker skill bonus
@@ -4022,12 +4048,12 @@ void pc_bonus(map_session_data *sd,int32 type,int32 val)
 				sd->left_weapon.ignore_def_class |= 1<<val;
 			break;
 		case SP_ATK_RATE:
-#ifdef RENEWAL
+//#ifdef RENEWAL
 			if (sd->state.lr_flag != LR_FLAG_ARROW)
 				sd->bonus.atk_rate += val;
-#else
-			ShowError( "pc_bonus: %s is not supported in Pre-Renewal mode.\n", QUOTE( SP_ATK_RATE ) );
-#endif
+//#else
+//			ShowError( "pc_bonus: %s is not supported in Pre-Renewal mode.\n", QUOTE( SP_ATK_RATE ) );
+//#endif
 			break;
 		case SP_MAGIC_ATK_DEF:
 			if (sd->state.lr_flag != LR_FLAG_ARROW)
@@ -5936,6 +5962,20 @@ int16 pc_search_inventory( const map_session_data* sd, t_itemid nameid) {
 	return ( i < MAX_INVENTORY ) ? i : -1;
 }
 
+/**
+* Searching a specified itemid in inventory and return the amount owned
+* @param sd Player
+* @param nameid Find this Item!
+* @return Stored index in inventory, or 0 if not found.
+**/
+int pc_inventory_count(map_session_data *sd, unsigned short nameid) {
+	short i;
+	nullpo_retr(-1, sd);
+
+	ARR_FIND(0, MAX_INVENTORY, i, sd->inventory.u.items_inventory[i].nameid == nameid && (sd->inventory.u.items_inventory[i].amount > 0 || nameid == 0));
+	return (i < MAX_INVENTORY) ? sd->inventory.u.items_inventory[i].amount : 0;
+}
+
 /** Attempt to add a new item to player inventory
  * @param sd
  * @param item_data
@@ -7078,6 +7118,7 @@ enum e_setpos pc_setpos(map_session_data* sd, uint16 mapindex, int32 x, int32 y,
 			st->state = END;
 		}
 
+		aa_moblist_reset_mapchange(sd);
 		return SETPOS_OK;
 	}
 
@@ -7183,6 +7224,7 @@ enum e_setpos pc_setpos(map_session_data* sd, uint16 mapindex, int32 x, int32 y,
 	if (sd->state.buyingstore)
 		buyingstore_update(*sd);
 	
+	aa_moblist_reset_mapchange(sd);
 	return SETPOS_OK;
 }
 
@@ -9703,6 +9745,8 @@ void pc_damage(map_session_data *sd,block_list *src,uint32 hp, uint32 sp, uint32
 
 	if(battle_config.prevent_logout_trigger&PLT_DAMAGE)
 		sd->canlog_tick = gettick();
+
+	aa_priority_on_hit(sd, src);
 }
 
 TIMER_FUNC(pc_close_npc_timer){
@@ -9772,6 +9816,8 @@ int32 pc_dead(map_session_data *sd,block_list *src)
 	t_tick tick = gettick();
 	struct map_data *mapdata = map_getmapdata(sd->m);
 
+	aa_reset_ondead(sd);
+
 	// Activate Steel body if a super novice dies at 99+% exp [celest]
 	// Super Novices have no kill or die functions attached when saved by their angel
 	if (!sd->state.snovice_dead_flag && (sd->class_&MAPID_SECONDMASK) == MAPID_SUPER_NOVICE) {
@@ -9836,12 +9882,21 @@ int32 pc_dead(map_session_data *sd,block_list *src)
 
 	if(sd->status.pet_id > 0 && sd->pd) {
 		pet_data *pd = sd->pd;
+
 		if( !mapdata->getMapFlag(MF_NOEXPPENALTY) ) {
 			pet_set_intimate(pd, pd->pet.intimate + pd->get_pet_db()->die);
-			clif_send_petdata( sd, *sd->pd, CHANGESTATEPET_INTIMACY );
+
+			if (!sd->pd || sd->status.pet_id == 0)
+				goto skip_pet;
+
+			clif_send_petdata(sd, *sd->pd, CHANGESTATEPET_INTIMACY);
 		}
-		if( sd->pd->target_id ) // Unlock all targets...
+
+		if (sd->pd->target_id)
 			pet_unlocktarget(sd->pd);
+
+	skip_pet:
+		;
 	}
 
 	if (hom_is_active(sd->hd) && battle_config.homunculus_auto_vapor && get_percentage(sd->hd->battle_status.hp, sd->hd->battle_status.max_hp) >= battle_config.homunculus_auto_vapor)
@@ -10298,11 +10353,11 @@ int64 pc_readparam( const map_session_data* sd, int64 type )
 		case SP_DOUBLE_ADD_RATE: val = sd->bonus.double_add_rate; break;
 		case SP_MATK_RATE:       val = sd->matk_rate; break;
 		case SP_ATK_RATE:
-#ifdef RENEWAL
+//#ifdef RENEWAL
 			val = sd->bonus.atk_rate;
-#else
-			ShowError( "pc_readparam: %s is not supported in Pre-Renewal mode.\n", QUOTE( SP_ATK_RATE ) );
-#endif
+//#else
+//			ShowError( "pc_readparam: %s is not supported in Pre-Renewal mode.\n", QUOTE( SP_ATK_RATE ) );
+//#endif
 			break;
 		case SP_MAGIC_ATK_DEF:   val = sd->bonus.magic_def_rate; break;
 		case SP_MISC_ATK_DEF:    val = sd->bonus.misc_def_rate; break;
@@ -13304,6 +13359,145 @@ void pc_delspiritcharm(map_session_data *sd, int32 count, int32 type)
 	clif_spiritcharm( *sd );
 }
 
+/**
+ * Pc status refresh (in case of db reload)
+ * @param sd Player
+ * @author [Shakto]
+ **/
+int pc_status_refresh(map_session_data *sd, va_list ap) {
+	status_calc_pc(sd, SCO_FORCE);
+
+	return 1;
+}
+
+/**
+ * Check & run script bonus for a player
+ * @param sd Player
+ * @author [Shakto]
+ **/
+void pc_job_bonus(map_session_data *sd) {
+	int idx = 0, i = 0;
+	std::shared_ptr<s_job_bonus_db> js;
+
+	nullpo_retv(sd);
+	while ( (js = job_bonus_db.find(i)) != nullptr ) {
+		if(	js->type == JST_ALL
+			|| (js->type == JST_ACCOUNT && sd->status.account_id == js->account_id)
+			|| (js->type == JST_CHAR && sd->status.char_id == js->char_id)
+			|| (js->type == JST_GUILD && sd->status.guild_id && sd->status.guild_id == js->guild_id)
+			|| (js->type == JST_JOB && sd->status.class_ == js->jobidx))
+			run_script(js->script, 0, sd->id, 0);
+		i++;
+	}
+}
+
+/**
+ * Get location of job bonus database
+ * @author [Shakto]
+ **/
+const std::string JobBonusDatabase::getDefaultLocation() {
+	return std::string(db_path) + "/job_bonus.yml";
+}
+
+/**
+ * Read job bonus YML db
+ * @author [Shakto]
+ **/
+uint64 JobBonusDatabase::parseBodyNode( const ryml::NodeRef &node ){
+	uint32 id;
+
+	if (!this->asUInt32(node, "Id", id))
+		return 0;
+
+	std::shared_ptr<s_job_bonus_db> js = this->find(id);
+	bool exists = js != nullptr;
+
+	if (!exists) {
+		if (!this->nodeExists(node, "Job")
+			&& !this->nodeExists(node, "Account")
+			&& !this->nodeExists(node, "Char")
+			&& !this->nodeExists(node, "Guild")
+			&& !this->nodesExist(node, { "Script" } )) {
+			return 0;
+		}
+
+		js = std::make_shared<s_job_bonus_db>();
+		js->id = id;
+	}
+
+	if (this->nodeExists(node, "Job")){
+		std::string job;
+
+		if (!this->asString(node, "Job", job))
+			return 0;
+
+		if(strcmp(job.c_str(), "All") == 0){
+			js->type = JST_ALL;
+		} else {
+			js->type = JST_JOB;
+			int64 jobid = 0;
+			if (pcdb_checkid(jobid) && script_get_constant(job.c_str(),&jobid)) {
+				js->jobidx = static_cast<uint32>(jobid);
+			}
+			else {
+				this->invalidWarning(node["Job"], "Unknown job %s.\n", job.c_str());
+				return 0;
+			}
+		}
+	}
+
+	if (this->nodeExists(node, "Account")){
+		uint32 account_id;
+
+		if (!this->asUInt32(node, "Account", account_id))
+			return 0;
+
+		js->account_id = account_id;
+		js->type = JST_ACCOUNT;
+	}
+
+	if (this->nodeExists(node, "Char")){
+		uint32 char_id;
+
+		if (!this->asUInt32(node, "Char", char_id))
+			return 0;
+
+		js->char_id = char_id;
+		js->type = JST_CHAR;
+	}
+
+	if (this->nodeExists(node, "Guild")){
+		uint32 guild_id;
+
+		if (!this->asUInt32(node, "Guild", guild_id))
+			return 0;
+
+		js->guild_id = guild_id;
+		js->type = JST_GUILD;
+	}
+
+	std::string script;
+	if (this->nodeExists(node, "Script")) {
+		if (!this->asString(node, "Script", script))
+			return 0;
+
+		if (exists && js->script) {
+			script_free_code(js->script);
+			js->script = nullptr;
+		}
+
+		js->script = parse_script(script.c_str(), this->getCurrentFile().c_str(), this->getLineNumber(node["Script"]), SCRIPT_IGNORE_EXTERNAL_BRACKETS);
+	} else {
+		if (!exists)
+			js->script = nullptr;
+	}
+
+	if (!exists)
+		this->put(id,js);
+
+	return 1;
+}
+
 #if defined(RENEWAL_DROP) || defined(RENEWAL_EXP)
 /**
  * Renewal EXP/Item Drop rate modifier based on level penalty
@@ -14402,6 +14596,441 @@ void JobDatabase::loadingFinished() {
 }
 
 /**
+ * emotion_db 2
+ **/
+EmotionDatabase emotion_db;
+
+const std::string EmotionDatabase::getDefaultLocation() { return std::string(db_path) + "/emotion_db.yml"; }
+
+uint64 EmotionDatabase::parseBodyNode(const ryml::NodeRef& Node)
+{
+	int16 Id;
+	if (!this->asInt16(Node, "Id", Id))
+	{
+		return 0;
+	}
+
+	std::shared_ptr<s_emotion_db> EmotionsInfo = this->find(Id);
+
+	const bool bExists = EmotionsInfo != nullptr;
+	if (!bExists)
+	{
+		EmotionsInfo = std::make_shared<s_emotion_db>();
+		EmotionsInfo->Id = Id;
+	}
+
+	if (this->nodeExists(Node, "Price"))
+	{
+		uint16 Price = -1;
+		if (!this->asUInt16(Node, "Price", Price))
+		{
+			return 0;
+		}
+
+		if (Price > MAX_AMOUNT)
+		{
+			this->invalidWarning(Node["Price"], "Emotion expantion \'%hu\' amount it is too high, capping it to MAX_AMOUNT...\n", Id);
+			Price = MAX_AMOUNT;
+		}
+
+		EmotionsInfo->Price = Price;
+	}
+	else
+	{
+		EmotionsInfo->Price = 0;
+	}
+
+	if (this->nodeExists(Node, "Type"))
+	{
+		uint16 Type = -1;
+		if (!this->asUInt16(Node, "Type", Type))
+		{
+			return 0;
+		}
+
+		if (Type > 1)
+		{
+			this->invalidWarning(Node["Type"], "Emotion expantion \'%hu\' type it is invalid, capping it to 1...\n", Id);
+			Type = 1;
+		}
+
+		EmotionsInfo->Type = Type;
+	}
+	else
+	{
+		EmotionsInfo->Type = 0;
+	}
+
+	if (this->nodeExists(Node, "SaleStart"))
+	{
+		uint32 SaleStart = -1;
+		if (!this->asUInt32(Node, "SaleStart", SaleStart))
+		{
+			return 0;
+		}
+
+		if (SaleStart != 0 && (SaleStart < 20020000 || SaleStart > 29990000))
+		{
+			this->invalidWarning(Node["SaleStart"], "Emotion expantion \'%hu\' sale start it is invalid, capping it to 0...\n", Id);
+			SaleStart = 0;
+		}
+
+		EmotionsInfo->SaleStart = SaleStart;
+	}
+	else
+	{
+		EmotionsInfo->SaleStart = 0;
+	}
+
+	if (this->nodeExists(Node, "SaleEnd"))
+	{
+		uint32 SaleEnd = -1;
+		if (!this->asUInt32(Node, "SaleEnd", SaleEnd))
+		{
+			return 0;
+		}
+
+		if (SaleEnd != 0 && (SaleEnd < 20020000 || SaleEnd > 29990000 || EmotionsInfo->SaleStart > SaleEnd))
+		{
+			this->invalidWarning(Node["SaleEnd"], "Emotion expantion \'%hu\' sale start it is invalid, capping it to 0...\n", Id);
+			EmotionsInfo->SaleStart = 0;
+			SaleEnd = 0;
+		}
+
+		EmotionsInfo->SaleEnd = SaleEnd;
+	}
+	else
+	{
+		EmotionsInfo->SaleEnd = 0;
+	}
+
+	if (this->nodeExists(Node, "SaleRentalPeriod"))
+	{
+		uint32 SaleRentalPeriod = -1;
+		if (!this->asUInt32(Node, "SaleRentalPeriod", SaleRentalPeriod))
+		{
+			return 0;
+		}
+
+		EmotionsInfo->SaleRentalPeriod = SaleRentalPeriod * 60 * 60 * 24;
+	}
+	else
+	{
+		EmotionsInfo->SaleRentalPeriod = 0;
+	}
+
+	for (const ryml::NodeRef& EmotionsNode : Node["Emotions"])
+	{
+		std::string EmotionName;
+		c4::from_chars(EmotionsNode.val(), &EmotionName);
+
+		int64 EmotionId;
+		script_get_constant(EmotionName.c_str(), &EmotionId);
+
+		if (EmotionId < 0 || EmotionId >= ET_MAX)
+		{
+			this->invalidWarning(Node["Emotions"], "Invalid emotion constant with name \'%s\'.\n", EmotionName.c_str());
+			return 0;
+		}
+
+		EmotionsInfo->Emotions.push_back(static_cast<emotion_type>(EmotionId));
+	}
+
+	if (!bExists)
+	{
+		this->put(Id, EmotionsInfo);
+	}
+
+	return 1;
+}
+
+void do_init_emotions(void)
+{
+	emotion_db.load();
+}
+
+void do_final_emotions(void)
+{
+	emotion_db.clear();
+}
+
+void pc_use_emotion(map_session_data* const sd, const uint16 Id, const uint16 EmotionId)
+{
+	nullpo_retv(sd);
+
+	//
+	// Prevent use of the mute emote [Valaris].
+	//
+
+	if (battle_config.basic_skill_check != 0 && pc_checkskill(sd, NV_BASIC) < 2 && pc_checkskill(sd, SU_BASIC_SKILL) < 1)
+	{
+		clif_emotion2_fail(sd, Id, EmotionId, EMSG_EMOTION_USE_FAIL_SKILL_LEVEL);
+		return;
+	}
+
+	//
+	// Fix flood of emotion icon (ro-proxy): flood only the hacker player
+	//
+
+	if (sd->emotionlasttime + 1 >= time(nullptr)) // not more than 1 per second
+	{
+		sd->emotionlasttime = time(nullptr);
+		clif_emotion2_fail(sd, Id, EmotionId, EMSG_EMOTION_EXPANTION_USE_FAIL_UNKNOWN);
+		return;
+	}
+
+	sd->emotionlasttime = time(nullptr);
+
+	if (battle_config.idletime_option & IDLE_EMOTION)
+	{
+		sd->idletime = last_tick;
+	}
+
+	if (battle_config.hom_idle_no_share && sd->hd && battle_config.idletime_hom_option & IDLE_EMOTION)
+	{
+		sd->idletime_hom = last_tick;
+	}
+
+	if (battle_config.mer_idle_no_share && sd->md && battle_config.idletime_mer_option & IDLE_EMOTION)
+	{
+		sd->idletime_mer = last_tick;
+	}
+
+	if (sd->state.block_action & PCBLOCK_EMOTION)
+	{
+		clif_emotion2_fail(sd, Id, EmotionId, EMSG_EMOTION_EXPANTION_USE_FAIL_UNKNOWN);
+		return;
+	}
+
+	if (battle_config.client_reshuffle_dice && EmotionId >= ET_DICE1 && EmotionId <= ET_DICE6) // re-roll dice
+	{
+		const uint16 DiceEmotionId = (rnd() % 6 + ET_DICE1);
+		clif_emotion2(sd, 0, DiceEmotionId);
+		return;
+	}
+
+	//
+	// Checks for the emotion expantion and emote id in the emotion database.
+	//
+
+	std::shared_ptr<s_emotion_db> EmotionsInfo = emotion_db.find(Id);
+	if (EmotionsInfo == nullptr)
+	{
+		clif_emotion2_fail(sd, Id, EmotionId, EMSG_EMOTION_EXPANTION_USE_FAIL_UNKNOWN);
+		return;
+	}
+
+	if (util::vector_exists(EmotionsInfo->Emotions, static_cast<emotion_type>(EmotionId)) != true)
+	{
+		clif_emotion2_fail(sd, Id, EmotionId, EMSG_EMOTION_EXPANTION_USE_FAIL_UNKNOWN);
+		return;
+	}
+
+	if (EmotionsInfo->Id != 0)
+	{
+		char Buffer[32];
+		const char* FormatString = nullptr;
+
+		if (EmotionsInfo->Type) // Character Bound
+		{
+			FormatString = "emotion_%hu";
+		}
+		else // Account Bound
+		{
+			FormatString = "#emotion_%hu";
+		}
+
+		memset(Buffer, '\0', sizeof(Buffer));
+		sprintf(Buffer, FormatString, EmotionsInfo->Id);
+
+		const bool bExpantionBought = static_cast<bool>(pc_readglobalreg(sd, add_str(Buffer)));
+		if (bExpantionBought == false)
+		{
+			clif_emotion2_fail(sd, Id, EmotionId, EMSG_EMOTION_EXPANTION_USE_FAIL_UNPURCHASED);
+			return;
+		}
+
+		if (EmotionsInfo->Type) // Character Bound
+		{
+			FormatString = "emotion_expire_%hu";
+		}
+		else // Account Bound
+		{
+			FormatString = "#emotion_expire_%hu";
+		}
+
+		memset(Buffer, '\0', sizeof(Buffer));
+		sprintf(Buffer, FormatString, EmotionsInfo->Id);
+
+		const time_t CurrentTime = time(nullptr);
+		const int64 ExpireTime = pc_readglobalreg(sd, add_str(Buffer));
+		if (EmotionsInfo->SaleRentalPeriod != 0 && CurrentTime > time_t(ExpireTime))
+		{
+			clif_emotion2_fail(sd, Id, EmotionId, EMSG_EMOTION_EXPANTION_USE_FAIL_DATE);
+			return;
+		}
+	}
+
+	clif_emotion2(sd, Id, EmotionId);
+}
+
+void pc_buy_emotion_expantion(map_session_data* const sd, const uint16 Id, const uint16 ItemId, const uint8 Amount)
+{
+	nullpo_retv(sd);
+
+	if (battle_config.basic_skill_check != 0 && pc_checkskill(sd, NV_BASIC) < 2 && pc_checkskill(sd, SU_BASIC_SKILL) < 1)
+	{
+		clif_emotion2_expantion_fail(sd, Id, EMSG_EMOTION_EXPANTION_FAIL_UNKNOWN);
+		return;
+	}
+
+	std::shared_ptr<s_emotion_db> EmotionsInfo = emotion_db.find(Id);
+	if (EmotionsInfo == nullptr)
+	{
+		clif_emotion2_expantion_fail(sd, Id, EMSG_EMOTION_EXPANTION_FAIL_UNKNOWN);
+		return;
+	}
+
+	const time_t CurrentTime = time(nullptr);
+	if (EmotionsInfo->SaleEnd != 0 && EmotionsInfo->SaleEnd < CurrentTime)
+	{
+		clif_emotion2_expantion_fail(sd, Id, EMSG_EMOTION_EXPANTION_FAIL_DATE);
+		return;
+	}
+
+	if (EmotionsInfo->SaleStart != 0 && EmotionsInfo->SaleStart > CurrentTime)
+	{
+		clif_emotion2_expantion_fail(sd, Id, EMSG_NOT_YET_SALE_START_TIME);
+		return;
+	}
+
+	char Buffer[32];
+	const char* FormatString = nullptr;
+
+	if (EmotionsInfo->Type) // Character Bound
+	{
+		FormatString = "emotion_%hu";
+	}
+	else // Account Bound
+	{
+		FormatString = "#emotion_%hu";
+	}
+
+	memset(Buffer, '\0', sizeof(Buffer));
+	sprintf(Buffer, FormatString, EmotionsInfo->Id);
+
+	const bool bExpantionBought = static_cast<bool>(pc_readglobalreg(sd, add_str(Buffer)));
+	if (bExpantionBought == true)
+	{
+		clif_emotion2_expantion_fail(sd, Id, EMSG_EMOTION_EXPANTION_FAIL_ALREADY_BUY);
+		return;
+	}
+
+	if (ItemId != 6909)
+	{
+		clif_emotion2_expantion_fail(sd, Id, EMSG_EMOTION_EXPANTION_FAIL_UNKNOWN);
+		return;
+	}
+
+	if (EmotionsInfo->Price != Amount)
+	{
+		clif_emotion2_expantion_fail(sd, Id, EMSG_EMOTION_EXPANTION_FAIL_UNKNOWN);
+		return;
+	}
+
+	const int32 NyangvineIndex = pc_search_inventory(sd, ItemId);
+	if (NyangvineIndex < 0 || sd->inventory.u.items_inventory[NyangvineIndex].amount < Amount)
+	{
+		clif_emotion2_expantion_fail(sd, Id, EMSG_EMOTION_EXPANTION_NOT_ENOUGH_NYANGVINE);
+		return;
+	}
+
+	pc_delitem(sd, NyangvineIndex, Amount, 0, 0, LOG_TYPE_CONSUME);
+	pc_setglobalreg(sd, add_str(Buffer), 1);
+
+	if (EmotionsInfo->SaleRentalPeriod != 0)
+	{
+		if (EmotionsInfo->Type) // Character Bound
+		{
+			FormatString = "emotion_expire_%hu";
+		}
+		else // Account Bound
+		{
+			FormatString = "#emotion_expire_%hu";
+		}
+
+		memset(Buffer, '\0', sizeof(Buffer));
+		sprintf(Buffer, FormatString, EmotionsInfo->Id);
+
+		const int64 ExpireTime = CurrentTime + EmotionsInfo->SaleRentalPeriod;
+		pc_setglobalreg(sd, add_str(Buffer), ExpireTime);
+
+		clif_emotion2_expantion(sd, Id, true, (uint32)ExpireTime);
+		return;
+	}
+
+	clif_emotion2_expantion(sd, Id, false, 0);
+}
+
+void pc_load_emotion_expantion_list(map_session_data* const sd)
+{
+	nullpo_retv(sd);
+
+	char Buffer1[32];
+	char Buffer2[32];
+	const char* FormatString = nullptr;
+
+	std::vector<PACKET_ZC_EMOTION2_EXPANTION_LIST_SUB> EmotionExpantionList;
+	for (const std::pair<uint16, std::shared_ptr<s_emotion_db>>& EmotionPair : emotion_db)
+	{
+		const uint16& ExpantionId = EmotionPair.first;
+		const std::shared_ptr<s_emotion_db>& EmotionsInfo = EmotionPair.second;
+
+		if (EmotionsInfo->Type) // Character Bound
+		{
+			FormatString = "emotion_%hu";
+		}
+		else // Account Bound
+		{
+			FormatString = "#emotion_%hu";
+		}
+
+		memset(Buffer1, '\0', sizeof(Buffer1));
+		sprintf(Buffer1, FormatString, EmotionsInfo->Id);
+
+		if (EmotionsInfo->Type) // Character Bound
+		{
+			FormatString = "emotion_expire_%hu";
+		}
+		else // Account Bound
+		{
+			FormatString = "#emotion_expire_%hu";
+		}
+
+		memset(Buffer2, '\0', sizeof(Buffer2));
+		sprintf(Buffer2, FormatString, EmotionsInfo->Id);
+
+		const bool bRental = EmotionsInfo->SaleRentalPeriod != 0;
+		const time_t CurrentTime = time(nullptr);
+		const bool bExpantionBought = static_cast<bool>(pc_readglobalreg(sd, add_str(Buffer1)));
+		const int64 ExpireTime = pc_readglobalreg(sd, add_str(Buffer2));
+		if (bExpantionBought && bRental && CurrentTime > static_cast<time_t>(ExpireTime))
+		{
+			pc_setglobalreg(sd, add_str(Buffer1), 0);
+			pc_setglobalreg(sd, add_str(Buffer2), 0);
+			continue;
+		}
+
+		if (bExpantionBought)
+		{
+			EmotionExpantionList.push_back({ ExpantionId, bRental, static_cast<uint32>(ExpireTime) });
+		}
+	}
+
+	clif_emotion2_expantion_list(sd, EmotionExpantionList);
+}
+
+/**
  * Read job_noenter_map.txt
  **/
 static bool pc_readdb_job_noenter_map( char *str[], size_t columns, size_t current ){
@@ -14586,13 +15215,16 @@ void pc_readdb(void) {
 		
 	//reset
 	job_db.clear(); // job_info table
-
+	job_bonus_db.clear();
+	
 #if defined(RENEWAL_DROP) || defined(RENEWAL_EXP)
 	penalty_db.load();
 #endif
 
 	statpoint_db.clear();
 	job_db.load();
+	job_bonus_db.load();
+	map_foreachpc(pc_status_refresh);
 
 	for(i=0; i<ARRAYLENGTH(dbsubpath); i++){
 		uint8 n1 = (uint8)(strlen(db_path)+strlen(dbsubpath[i])+1);
@@ -15479,7 +16111,7 @@ bool pc_job_can_entermap(enum e_job jobid, int32 m, int32 group_lv) {
  * @param sd
  **/
 void pc_set_costume_view(map_session_data *sd) {
-	int32 i = -1, head_low = 0, head_mid = 0, head_top = 0, robe = 0;
+	int32 i = -1, head_low = 0, head_mid = 0, head_top = 0, robe = 0, weapon = 0;
 	struct item_data *id = nullptr;
 
 	nullpo_retv(sd);
@@ -15488,8 +16120,9 @@ void pc_set_costume_view(map_session_data *sd) {
 	head_mid = sd->status.head_mid;
 	head_top = sd->status.head_top;
 	robe = sd->status.robe;
-
-	sd->status.head_bottom = sd->status.head_mid = sd->status.head_top = sd->status.robe = 0;
+	weapon = sd->status.costume_weapon;
+	
+	sd->status.head_bottom = sd->status.head_mid = sd->status.head_top = sd->status.robe = sd->status.costume_weapon = 0;
 
 	//Added check to prevent sending the same look on multiple slots ->
 	//causes client to redraw item on top of itself. (suggested by Lupus)
@@ -15510,7 +16143,9 @@ void pc_set_costume_view(map_session_data *sd) {
 		sd->status.head_top = id->look;
 	if ((i = sd->equip_index[EQI_GARMENT]) != -1 && (id = sd->inventory_data[i]))
 		sd->status.robe = id->look;
-
+	if ((i = sd->equip_index[EQI_HAND_R]) != -1 && (id = sd->inventory_data[i]))
+		sd->status.costume_weapon = id->look;
+	
 	// Costumes check
 	if (!map_getmapflag(sd->m, MF_NOCOSTUME) && !sd->status.disable_showcostumes) {
 		if ((i = sd->equip_index[EQI_COSTUME_HEAD_LOW]) != -1 && (id = sd->inventory_data[i])) {
@@ -15529,6 +16164,8 @@ void pc_set_costume_view(map_session_data *sd) {
 			sd->status.head_top = id->look;
 		if ((i = sd->equip_index[EQI_COSTUME_GARMENT]) != -1 && (id = sd->inventory_data[i]))
 			sd->status.robe = id->look;
+		if ((i = sd->equip_index[EQI_SHADOW_WEAPON]) != -1 && (id = sd->inventory_data[i]))
+			sd->status.costume_weapon = id->look;
 	}
 
 	if (sd->setlook_head_bottom)
@@ -15548,6 +16185,8 @@ void pc_set_costume_view(map_session_data *sd) {
 		clif_changelook(sd, LOOK_HEAD_TOP, sd->status.head_top);
 	if (robe != sd->status.robe)
 		clif_changelook(sd, LOOK_ROBE, sd->status.robe);
+	if (weapon != sd->status.costume_weapon)
+		clif_changelook(sd, LOOK_WEAPON, sd->status.weapon);
 }
 
 std::shared_ptr<s_attendance_period> pc_attendance_period(){
@@ -16090,7 +16729,8 @@ uint64 CaptchaDatabase::parseBodyNode(const ryml::NodeRef &node) {
 void do_final_pc(void) {
 	db_destroy(itemcd_db);
 	do_final_pc_groups();
-
+	job_bonus_db.clear();
+	
 	ers_destroy(pc_sc_display_ers);
 	ers_destroy(num_reg_ers);
 	ers_destroy(str_reg_ers);

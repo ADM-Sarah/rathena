@@ -19,6 +19,7 @@
 #include <common/utilities.hpp>
 #include <common/utils.hpp>
 
+#include "autoattack.hpp"
 #include "battle.hpp"
 #include "battleground.hpp"
 #include "clif.hpp"
@@ -35,6 +36,7 @@
 #include "pc_groups.hpp"
 #include "pet.hpp"
 #include "script.hpp"
+#include "mod_soullink.hpp"
 
 using namespace rathena;
 
@@ -1784,6 +1786,7 @@ int32 status_damage(block_list *src,block_list *target,int64 dhp, int64 dsp, int
 		}
 
 		npc_script_event( *sd, NPCE_DIE );
+		aa_token_respawn(sd, flag);
 	}
 
 	return (int32)(hp+sp+ap);
@@ -4185,6 +4188,15 @@ int32 status_calc_pc_sub(map_session_data* sd, uint8 opt)
 	}
 
 	if (!sc->empty()){
+
+		if (status_change_entry* spirit = sc->getSCE(SC_SPIRIT); spirit != nullptr) {
+			std::shared_ptr<mods::soul_link_data> sld =
+				mods::soul_link_db.find(spirit->val2);
+
+			if (sld != nullptr && sld->script != nullptr)
+				run_script(sld->script, 0, sd->id, 0);
+		}
+
 		if( status_change_entry* sce = sc->getSCE(SC_ITEMSCRIPT); sce != nullptr ){
 			std::shared_ptr<item_data> data = item_db.find(sc->getSCE(SC_ITEMSCRIPT)->val1);
 
@@ -4200,7 +4212,8 @@ int32 status_calc_pc_sub(map_session_data* sd, uint8 opt)
 	}
 
 	pc_bonus_script(sd);
-
+	pc_job_bonus(sd);
+	
 	if( sd->pd ) { // Pet Bonus
 		pet_data *pd = sd->pd;
 		std::shared_ptr<s_pet_db> pet_db_ptr = pd->get_pet_db();
@@ -10225,9 +10238,11 @@ bool status_change_start(block_list* src, block_list* bl, sc_type type, int32 ra
 
 	// Adjust tick according to status resistances
 	if( !(flag&(SCSTART_NOAVOID|SCSTART_LOADED)) ) {
-		duration = status_get_sc_def(src, bl, type, rate, duration, flag);
-		if( !duration )
-			return false;
+		if (type != SC_SPIRIT) {
+			duration = status_get_sc_def(src, bl, type, rate, duration, flag);
+			if( !duration )
+				return false;
+		}
 	}
 
 	int32 tick = (int32)duration;
@@ -10635,6 +10650,13 @@ static bool status_change_start_post_delay(block_list* src, block_list* bl, sc_t
 						// Set these to pass the check below.
 						mask = sd->class_;
 						target_class = sd->class_;
+						break;
+					
+					case SL_NINJA:
+						target_class = MAPID_NINJA;
+						break;
+					case SL_GUNNER:
+						target_class = MAPID_GUNSLINGER;
 						break;
 					default:
 						ShowError( "Unknown skill id %d for SC_SPIRIT.\n", val2 );
@@ -12345,6 +12367,16 @@ static bool status_change_start_post_delay(block_list* src, block_list* bl, sc_t
 			tick_time = 1000;
 			val4 = tick / tick_time;
 			break;
+		case SC_AUTOATTACK:
+			tick_time = battle_config.autobattle_timer;
+			val4 = tick / tick_time;
+
+			if (sd) {
+				sd->last_battery_notify = 0;
+				if (!aa_changestate_autoattack(sd, 1))
+					return 0;
+			}
+			break;
 		case SC_ZANGETSU:
 			if( status_get_hp(bl) % 2 == 0 )
 				val2 = (status_get_lv(bl) / 3) + (20 * val1); //+Watk
@@ -12496,6 +12528,10 @@ static bool status_change_start_post_delay(block_list* src, block_list* bl, sc_t
 				val1 = MOBID_PORING; // Default poring
 			break;
 #ifndef RENEWAL
+		case SC_WHISTLE:
+			val2 = 20 + 2 * val1;
+			val3 = ((val1 + 1) / 2) * 10;
+			break;
 		case SC_APPLEIDUN:
 		{
 			map_session_data * s_sd = BL_CAST(BL_PC, src);
@@ -12505,7 +12541,7 @@ static bool status_change_start_post_delay(block_list* src, block_list* bl, sc_t
 				val2 += pc_checkskill(s_sd, BA_MUSICALLESSON) / 2;
 		}
 		[[fallthrough]];
-		case SC_WHISTLE:
+		//case SC_WHISTLE:
 		case SC_ASSNCROS:
 		case SC_POEMBRAGI:
 		case SC_HUMMING:
@@ -13520,6 +13556,9 @@ int32 status_change_end( block_list* bl, enum sc_type type, int32 tid ){
 	status_data* status = status_get_status_data(*bl);
 
 	switch(type) {
+		case SC_AUTOATTACK:
+			aa_changestate_autoattack(sd, 2);
+			break;
 		case SC_KEEPING:
 		case SC_BARRIER:
 			if (unit_data* ud = unit_bl2ud(bl); ud != nullptr) {
@@ -14171,6 +14210,11 @@ TIMER_FUNC(status_change_timer){
 	FreeBlockLock freeLock(false);
 
 	switch(type) {
+	case SC_AUTOATTACK:
+		if (aa_status(sd))
+			sce->timer = add_timer(battle_config.autobattle_timer + tick, status_change_timer, bl->id, data);
+		return 0;
+		break;
 	case SC_MAXIMIZEPOWER:
 	case SC_CLOAKING:
 		if(!status_damage(nullptr, bl, 0, 1, 0, 3, 0))
@@ -16437,6 +16481,9 @@ void StatusDatabase::loadingFinished(){
 }
 
 StatusDatabase status_db;
+namespace mods {
+SoulLinkDabatase soul_link_db;
+}
 
 /**
  * Sets defaults in tables and starts read db functions
@@ -16484,11 +16531,13 @@ void status_readdb( bool reload ){
 		refine_db.reload();
 		status_db.reload();
 		enchantgrade_db.reload();
+		mods::soul_link_db.reload();
 	}else{
 		size_fix_db.load();
 		refine_db.load();
 		status_db.load();
 		enchantgrade_db.load();
+		mods::soul_link_db.load();
 	}
 	elemental_attribute_db.load();
 }
@@ -16517,5 +16566,6 @@ void do_final_status(void) {
 	refine_db.clear();
 	status_db.clear();
 	elemental_attribute_db.clear();
+	mods::soul_link_db.clear();
 	delay_status.clear();
 }

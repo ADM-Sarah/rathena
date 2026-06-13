@@ -1,0 +1,613 @@
+orcsdun01	mapflag	pvp_noguild
+orcsdun02	mapflag	pvp_noguild
+
+ama_dun01	mapflag	pvp_noguild
+ama_dun02	mapflag	pvp_noguild
+ama_dun03	mapflag	pvp_noguild
+
+anthell01	mapflag	pvp_noguild
+anthell02	mapflag	pvp_noguild
+
+um_dun01	mapflag	pvp_noguild
+um_dun02	mapflag	pvp_noguild
+
+tur_dun01	mapflag	pvp_noguild
+tur_dun02	mapflag	pvp_noguild
+tur_dun03	mapflag	pvp_noguild
+tur_dun04	mapflag	pvp_noguild
+tur_dun05	mapflag	pvp_noguild
+tur_dun06	mapflag	pvp_noguild
+
+xmas_dun01	mapflag	pvp_noguild
+xmas_dun02	mapflag	pvp_noguild
+
+in_sphinx1	mapflag	pvp_noguild
+in_sphinx2	mapflag	pvp_noguild
+in_sphinx3	mapflag	pvp_noguild
+in_sphinx4	mapflag	pvp_noguild
+in_sphinx5	mapflag	pvp_noguild
+
+moc_pryd01	mapflag	pvp_noguild
+moc_pryd02	mapflag	pvp_noguild
+moc_pryd03	mapflag	pvp_noguild
+moc_pryd04	mapflag	pvp_noguild
+moc_pryd05	mapflag	pvp_noguild
+moc_pryd06	mapflag	pvp_noguild
+moc_prydn1	mapflag	pvp_noguild
+moc_prydn2	mapflag	pvp_noguild
+
+mag_dun01	mapflag	pvp_noguild
+mag_dun02	mapflag	pvp_noguild
+
+mosk_dun01	mapflag	pvp_noguild
+mosk_dun02	mapflag	pvp_noguild
+mosk_dun03	mapflag	pvp_noguild
+
+lou_dun01	mapflag	pvp_noguild
+lou_dun02	mapflag	pvp_noguild
+lou_dun03	mapflag	pvp_noguild
+
+gon_dun01	mapflag	pvp_noguild
+gon_dun02	mapflag	pvp_noguild
+gon_dun03	mapflag	pvp_noguild
+
+gl_dun01	mapflag	pvp_noguild
+gl_dun02	mapflag	pvp_noguild
+
+ayo_dun01	mapflag	pvp_noguild
+ayo_dun02	mapflag	pvp_noguild
+
+beach_dun	mapflag	pvp_noguild
+beach_dun2	mapflag	pvp_noguild
+beach_dun3	mapflag	pvp_noguild
+
+lhz_dun01	mapflag	pvp_noguild
+lhz_dun02	mapflag	pvp_noguild
+lhz_dun03	mapflag	pvp_noguild
+lhz_dun04	mapflag	pvp_noguild
+
+alde_dun01	mapflag	pvp_noguild
+alde_dun02	mapflag	pvp_noguild
+alde_dun03	mapflag	pvp_noguild
+alde_dun04	mapflag	pvp_noguild
+
+gefenia01	mapflag	pvp_noguild
+gefenia02	mapflag	pvp_noguild
+gefenia03	mapflag	pvp_noguild
+gefenia04	mapflag	pvp_noguild
+
+gef_dun01	mapflag	pvp_noguild
+gef_dun02	mapflag	pvp_noguild
+gef_dun03	mapflag	pvp_noguild
+
+c_tower1	mapflag	pvp_noguild
+c_tower2	mapflag	pvp_noguild
+c_tower3	mapflag	pvp_noguild
+c_tower4	mapflag	pvp_noguild
+
+force_1-1	mapflag	pvp_noguild
+force_2-1	mapflag	pvp_noguild
+force_3-1	mapflag	pvp_noguild
+force_4-1	mapflag	pvp_noguild
+force_5-1	mapflag	pvp_noguild
+force_1-2	mapflag	pvp_noguild
+force_2-2	mapflag	pvp_noguild
+force_3-2	mapflag	pvp_noguild
+force_1-3	mapflag	pvp_noguild
+force_2-3	mapflag	pvp_noguild
+force_3-3	mapflag	pvp_noguild
+
+gef_fild00	mapflag	pvp_noguild
+gef_fild01	mapflag	pvp_noguild
+gef_fild02	mapflag	pvp_noguild
+gef_fild03	mapflag	pvp_noguild
+gef_fild04	mapflag	pvp_noguild
+gef_fild05	mapflag	pvp_noguild
+gef_fild06	mapflag	pvp_noguild
+gef_fild07	mapflag	pvp_noguild
+gef_fild08	mapflag	pvp_noguild
+gef_fild09	mapflag	pvp_noguild
+gef_fild10	mapflag	pvp_noguild
+gef_fild11	mapflag	pvp_noguild
+gef_fild12	mapflag	pvp_noguild
+gef_fild13	mapflag	pvp_noguild
+gef_fild14	mapflag	pvp_noguild
+
+gl_cas01	mapflag	pvp_noguild
+gl_cas02	mapflag	pvp_noguild
+gl_church	mapflag	pvp_noguild
+gl_chyard	mapflag	pvp_noguild
+
+gl_in01	mapflag	pvp_noguild
+gl_knt01	mapflag	pvp_noguild
+gl_knt02	mapflag	pvp_noguild
+gl_prison	mapflag	pvp_noguild
+gl_prison1	mapflag	pvp_noguild
+gl_sew01	mapflag	pvp_noguild
+gl_sew02	mapflag	pvp_noguild
+gl_sew03	mapflag	pvp_noguild
+gl_sew04	mapflag	pvp_noguild
+gl_step	mapflag	pvp_noguild
+glast_01	mapflag	pvp_noguild
+
+mjolnir_01	mapflag	pvp_noguild
+mjolnir_02	mapflag	pvp_noguild
+mjolnir_03	mapflag	pvp_noguild
+mjolnir_04	mapflag	pvp_noguild
+mjolnir_05	mapflag	pvp_noguild
+mjolnir_06	mapflag	pvp_noguild
+mjolnir_07	mapflag	pvp_noguild
+mjolnir_08	mapflag	pvp_noguild
+mjolnir_09	mapflag	pvp_noguild
+mjolnir_10	mapflag	pvp_noguild
+mjolnir_11	mapflag	pvp_noguild
+mjolnir_12	mapflag	pvp_noguild
+moc_fild01	mapflag	pvp_noguild
+moc_fild02	mapflag	pvp_noguild
+moc_fild03	mapflag	pvp_noguild
+moc_fild04	mapflag	pvp_noguild
+moc_fild05	mapflag	pvp_noguild
+moc_fild06	mapflag	pvp_noguild
+
+moc_fild07	mapflag	pvp_noguild
+moc_fild08	mapflag	pvp_noguild
+moc_fild09	mapflag	pvp_noguild
+moc_fild10	mapflag	pvp_noguild
+
+moc_fild11	mapflag	pvp_noguild
+moc_fild12	mapflag	pvp_noguild
+moc_fild13	mapflag	pvp_noguild
+moc_fild14	mapflag	pvp_noguild
+moc_fild15	mapflag	pvp_noguild
+
+moc_fild16	mapflag	pvp_noguild
+moc_fild17	mapflag	pvp_noguild
+moc_fild18	mapflag	pvp_noguild
+moc_fild19	mapflag	pvp_noguild
+
+ordeal_1-1	mapflag	pvp_noguild
+//ordeal_1-2	mapflag	pvp_noguild
+
+ordeal_2-1	mapflag	pvp_noguild
+ordeal_2-2	mapflag	pvp_noguild
+
+//ordeal_3-1	mapflag	pvp_noguild
+ordeal_3-2	mapflag	pvp_noguild
+
+pay_dun01	mapflag	pvp_noguild
+pay_dun02	mapflag	pvp_noguild
+pay_dun03	mapflag	pvp_noguild
+pay_dun04	mapflag	pvp_noguild
+
+pay_fild01	mapflag	pvp_noguild
+pay_fild02	mapflag	pvp_noguild
+pay_fild03	mapflag	pvp_noguild
+pay_fild04	mapflag	pvp_noguild
+pay_fild05	mapflag	pvp_noguild
+pay_fild06	mapflag	pvp_noguild
+pay_fild07	mapflag	pvp_noguild
+pay_fild08	mapflag	pvp_noguild
+pay_fild09	mapflag	pvp_noguild
+pay_fild10	mapflag	pvp_noguild
+pay_fild11	mapflag	pvp_noguild
+
+prt_fild00	mapflag	pvp_noguild
+prt_fild01	mapflag	pvp_noguild
+prt_fild02	mapflag	pvp_noguild
+prt_fild03	mapflag	pvp_noguild
+prt_fild04	mapflag	pvp_noguild
+prt_fild05	mapflag	pvp_noguild
+prt_fild06	mapflag	pvp_noguild
+prt_fild07	mapflag	pvp_noguild
+prt_fild08	mapflag	pvp_noguild
+prt_fild09	mapflag	pvp_noguild
+prt_fild10	mapflag	pvp_noguild
+prt_fild11	mapflag	pvp_noguild
+prt_maze01	mapflag	pvp_noguild
+prt_maze02	mapflag	pvp_noguild
+prt_maze03	mapflag	pvp_noguild
+prt_monk	mapflag	pvp_noguild
+prt_sewb1	mapflag	pvp_noguild
+prt_sewb2	mapflag	pvp_noguild
+prt_sewb3	mapflag	pvp_noguild
+prt_sewb4	mapflag	pvp_noguild
+
+treasure01	mapflag	pvp_noguild
+treasure02	mapflag	pvp_noguild
+
+xmas_fild01	mapflag	pvp_noguild
+
+//---Ep3.0 Comodo ---
+cmd_fild01	mapflag	pvp_noguild
+cmd_fild02	mapflag	pvp_noguild
+cmd_fild03	mapflag	pvp_noguild
+cmd_fild04	mapflag	pvp_noguild
+cmd_fild05	mapflag	pvp_noguild
+cmd_fild06	mapflag	pvp_noguild
+cmd_fild07	mapflag	pvp_noguild
+cmd_fild08	mapflag	pvp_noguild
+cmd_fild09	mapflag	pvp_noguild
+
+//--- Ep5.0 Yuno ---
+
+yuno_fild01	mapflag	pvp_noguild
+yuno_fild02	mapflag	pvp_noguild
+yuno_fild03	mapflag	pvp_noguild
+yuno_fild04	mapflag	pvp_noguild
+
+//--- Ep6.0 - Amatsu  ---
+// Requires: kRO 08-10-03 or newer
+// or kRO Sakray 09-09-03 or newer
+
+ama_fild01	mapflag	pvp_noguild
+
+//--- Ep6.1 - Gon Ryun ---
+
+gon_fild01	mapflag	pvp_noguild
+
+//--- Ep6.2 - Umbala ---
+// Requires: kRO 01-27-04 or newer
+// or kRO Sakray 12-02-03 or newer
+// or Akaru's SuperGRF 1.22 or newer
+
+um_fild01	mapflag	pvp_noguild
+um_fild02	mapflag	pvp_noguild
+um_fild03	mapflag	pvp_noguild
+um_fild04	mapflag	pvp_noguild
+
+//--- Ep6.3 - Niflheim ---
+// Requires: kRO 02-23-04 or newer
+// or kRO Sakray 01-09-04 or newer
+// or Akaru's SuperGRF 1.32 or newer
+niflheim	mapflag	pvp_noguild
+nif_fild01	mapflag	pvp_noguild
+nif_fild02	mapflag	pvp_noguild
+yggdrasil01	mapflag	pvp_noguild
+
+//--- Ep6.4 - Valkyrie ---
+// Requires: kRO ??-??-04 or newer
+// or kRO Sakray 02-03-04 or newer
+// or Akaru's SuperGRF 1.34 or newer
+valkyrie	mapflag	pvp_noguild
+himinn	mapflag	pvp_noguild
+
+//--- Ep6.5 - Castle of Dragon (LouYang) ---
+// Requires kRO Sakray 03-30 or newer
+//(Akaru's SuperGRF required version: 1.52)
+lou_fild01	mapflag	pvp_noguild
+
+//--- Ep6.7 - Jawaii ---
+//Requires kRO Sakray 06-22 or newer
+//(Akaru's SuperGRF required version: 1.63)
+jawaii	mapflag	pvp_noguild
+jawaii_in	mapflag	pvp_noguild
+
+
+// --- Ep? - Ayothaya ---
+// Requires kRO Sakray 09-21
+// -- 2004-10-19sdata_k.gpf --
+ayo_fild01	mapflag	pvp_noguild
+ayo_fild02	mapflag	pvp_noguild
+
+// --- God item quests maps ---
+// -- 2004-10-12sdata_k3.gpf --
+que_god01	mapflag	pvp_noguild
+que_god02	mapflag	pvp_noguild
+
+// --- Ep? - Schwarzwald Republic ---
+// -- 2004-12-28sdata_k.gpf --
+yuno_fild05	mapflag	pvp_noguild
+yuno_fild07	mapflag	pvp_noguild
+yuno_fild08	mapflag	pvp_noguild
+yuno_fild09	mapflag	pvp_noguild
+yuno_fild11	mapflag	pvp_noguild
+yuno_fild12	mapflag	pvp_noguild
+
+// --- Einbroch/Einbech ---
+// -- 2005-03-15sdata_k.gpf --
+ein_dun01	mapflag	pvp_noguild
+ein_dun02	mapflag	pvp_noguild
+ein_fild06	mapflag	pvp_noguild
+ein_fild07	mapflag	pvp_noguild
+ein_fild08	mapflag	pvp_noguild
+ein_fild09	mapflag	pvp_noguild
+ein_fild10	mapflag	pvp_noguild
+que_sign01	mapflag	pvp_noguild
+que_sign02	mapflag	pvp_noguild
+
+// --- Einbroch and Lightalzen ---
+// -- 2005-05-10sdata_k.gpf --
+ein_fild03	mapflag	pvp_noguild
+ein_fild04	mapflag	pvp_noguild
+lhz_fild02	mapflag	pvp_noguild
+lhz_fild03	mapflag	pvp_noguild
+
+// --- Lighthalzen and Juperos Dungeon ---
+// -- 2005-06-14sdata_k.gpf --
+lhz_fild01	mapflag	pvp_noguild
+lhz_que01	mapflag	pvp_noguild
+
+lhz_cube	mapflag	pvp_noguild
+juperos_01	mapflag	pvp_noguild
+juperos_02	mapflag	pvp_noguild
+jupe_area1	mapflag	pvp_noguild
+jupe_area2	mapflag	pvp_noguild
+jupe_core	mapflag	pvp_noguild
+jupe_ele	mapflag	pvp_noguild
+jupe_ele_r	mapflag	pvp_noguild
+jupe_gate	mapflag	pvp_noguild
+
+// --- Juperos Dungeon ---
+// -- 2005-06-28sdata_k.gpf --
+jupe_cave	mapflag	pvp_noguild
+
+// --- Quiz Revolution ---
+// -- 2005-08-02sdata_k.gpf --
+quiz_02	mapflag	pvp_noguild
+
+// --- Hugel Field ---
+// -- 2005-08-23sdata_k.gpf --
+hu_fild07	mapflag	pvp_noguild
+hu_fild05	mapflag	pvp_noguild
+hu_fild04	mapflag	pvp_noguild
+hu_fild01	mapflag	pvp_noguild
+yuno_fild06	mapflag	pvp_noguild
+
+// --- Star Knight And Soul Linker Job Change Maps ---
+// -- 2005-08-23sdata_k.gpf --
+job_soul	mapflag	pvp_noguild
+job_star	mapflag	pvp_noguild
+
+// --- Abyss Lake, Thanatos Tower --
+// -- 2005-09-13sdata_k.gpf - 2005-09-13sdata_k6.gpf --
+que_job01	mapflag	pvp_noguild
+que_job02	mapflag	pvp_noguild
+que_job03	mapflag	pvp_noguild
+abyss_01	mapflag	pvp_noguild
+abyss_02	mapflag	pvp_noguild
+abyss_03	mapflag	pvp_noguild
+thana_step	mapflag	pvp_noguild
+thana_boss	mapflag	pvp_noguild
+tha_scene01	mapflag	pvp_noguild
+tha_t01	mapflag	pvp_noguild
+tha_t02	mapflag	pvp_noguild
+tha_t03	mapflag	pvp_noguild
+tha_t04	mapflag	pvp_noguild
+tha_t07	mapflag	pvp_noguild
+tha_t05	mapflag	pvp_noguild
+tha_t06	mapflag	pvp_noguild
+tha_t08	mapflag	pvp_noguild
+
+// --- Thanatos Tower ---
+// -- 2005-09-21sdata_k.gpf -- 
+tha_t09	mapflag	pvp_noguild
+tha_t10	mapflag	pvp_noguild
+tha_t11	mapflag	pvp_noguild
+tha_t12	mapflag	pvp_noguild
+
+// --- Auction Market ---
+// -- 2005-11-29sdata_k.gpf -- 
+auction_01	mapflag	pvp_noguild
+auction_02	mapflag	pvp_noguild
+
+// --- Garden City Hugel / Kiehl ---
+// -- 2005-12-20sdata_k.gpf -- 
+odin_tem01	mapflag	pvp_noguild
+odin_tem02	mapflag	pvp_noguild
+odin_tem03	mapflag	pvp_noguild
+hu_fild02	mapflag	pvp_noguild
+hu_fild03	mapflag	pvp_noguild
+hu_fild06	mapflag	pvp_noguild
+ein_fild01	mapflag	pvp_noguild
+ein_fild02	mapflag	pvp_noguild
+ein_fild05	mapflag	pvp_noguild
+yuno_fild10	mapflag	pvp_noguild
+kh_kiehl02	mapflag	pvp_noguild
+kh_kiehl01	mapflag	pvp_noguild
+kh_dun02	mapflag	pvp_noguild
+kh_dun01	mapflag	pvp_noguild
+kh_mansion	mapflag	pvp_noguild
+kh_rossi	mapflag	pvp_noguild
+kh_school	mapflag	pvp_noguild
+kh_vila	mapflag	pvp_noguild
+
+// --- Poring Arena (?) & Gunslinger/Ninja Job Map ---
+// -- 2006-03-28sdata_k.gpf --
+poring_c01	mapflag	pvp_noguild
+poring_c02	mapflag	pvp_noguild
+que_ng	mapflag	pvp_noguild
+
+// --- Arunafeltz & Ice Dungeon ---
+// -- 2006-05-30sdata_k.gpf --
+ra_fild01	mapflag	pvp_noguild
+ra_fild02	mapflag	pvp_noguild
+ra_fild03	mapflag	pvp_noguild
+ra_fild04	mapflag	pvp_noguild
+ra_fild05	mapflag	pvp_noguild
+ra_fild06	mapflag	pvp_noguild
+ra_fild07	mapflag	pvp_noguild
+ra_fild08	mapflag	pvp_noguild
+ra_fild09	mapflag	pvp_noguild
+ra_fild10	mapflag	pvp_noguild
+ra_fild11	mapflag	pvp_noguild
+ra_fild12	mapflag	pvp_noguild
+ra_fild13	mapflag	pvp_noguild
+ra_san01	mapflag	pvp_noguild
+ra_san02	mapflag	pvp_noguild
+ra_san03	mapflag	pvp_noguild
+ra_san04	mapflag	pvp_noguild
+ra_san05	mapflag	pvp_noguild
+que_san04	mapflag	pvp_noguild
+
+ice_dun01	mapflag	pvp_noguild
+ice_dun02	mapflag	pvp_noguild
+ice_dun03	mapflag	pvp_noguild
+ice_dun04	mapflag	pvp_noguild
+
+// --- Veins & Thor Dungeon ---
+// -- 2006-12-19sdata_k.gpf --
+que_thor	mapflag	pvp_noguild
+thor_camp	mapflag	pvp_noguild
+thor_v01	mapflag	pvp_noguild
+thor_v02	mapflag	pvp_noguild
+thor_v03	mapflag	pvp_noguild
+ve_fild01	mapflag	pvp_noguild
+ve_fild02	mapflag	pvp_noguild
+ve_fild03	mapflag	pvp_noguild
+ve_fild04	mapflag	pvp_noguild
+ve_fild05	mapflag	pvp_noguild
+ve_fild06	mapflag	pvp_noguild
+ve_fild07	mapflag	pvp_noguild
+
+// --- Nameless Island & Abbey Dungeon ---
+// -- 2007-04-03sdata_k.gpf
+nameless_i	mapflag	pvp_noguild
+nameless_n	mapflag	pvp_noguild
+nameless_in	mapflag	pvp_noguild
+abbey01	mapflag	pvp_noguild
+abbey02	mapflag	pvp_noguild
+abbey03	mapflag	pvp_noguild
+poring_w01	mapflag	pvp_noguild
+poring_w02	mapflag	pvp_noguild
+
+// --- ??? ---
+// -- 2007-??-??
+06guild_r	mapflag	pvp_noguild
+06guild_01	mapflag	pvp_noguild
+06guild_02	mapflag	pvp_noguild
+06guild_03	mapflag	pvp_noguild
+06guild_04	mapflag	pvp_noguild
+06guild_05	mapflag	pvp_noguild
+06guild_06	mapflag	pvp_noguild
+06guild_07	mapflag	pvp_noguild
+06guild_08	mapflag	pvp_noguild
+z_agit	mapflag	pvp_noguild
+que_temsky	mapflag	pvp_noguild
+itemmall	mapflag	pvp_noguild
+bossnia_01	mapflag	pvp_noguild
+bossnia_02	mapflag	pvp_noguild
+bossnia_03	mapflag	pvp_noguild
+bossnia_04	mapflag	pvp_noguild
+
+// --- Moscovia ---
+// -- 2007-06-???
+mosk_ship	mapflag	pvp_noguild
+mosk_fild01	mapflag	pvp_noguild
+mosk_fild02	mapflag	pvp_noguild
+
+mosk_que	mapflag	pvp_noguild
+
+// --- Episode 12: Satan Morroc & Schwaltzvalt Seige ---
+// -- 2007-09-19sdata_k.gpf
+sch_gld	mapflag	pvp_noguild
+moc_fild20	mapflag	pvp_noguild
+moc_fild21	mapflag	pvp_noguild
+moc_fild22	mapflag	pvp_noguild
+que_ba	mapflag	pvp_noguild
+que_moc_16	mapflag	pvp_noguild
+que_moon	mapflag	pvp_noguild
+
+// Arunafeltz Seige
+// -- 2007-10-24sdata_k.gpf
+aru_gld	mapflag	pvp_noguild
+
+// 13.1 Another World
+// -- 2008-05-28sdata_k.gpf
+man_fild03	mapflag	pvp_noguild
+spl_fild02	mapflag	pvp_noguild
+spl_fild03	mapflag	pvp_noguild
+
+// 13.2 Another World
+// -- 2008-11-26
+nyd_dun01	mapflag	pvp_noguild
+nyd_dun02	mapflag	pvp_noguild
+man_fild02	mapflag	pvp_noguild
+spl_fild01	mapflag	pvp_noguild
+
+// 3rd Job Maps
+// -- 2009-01-29rdata_k2.gpf
+job3_arch01	mapflag	pvp_noguild
+job3_arch02	mapflag	pvp_noguild
+job3_arch03	mapflag	pvp_noguild
+job3_guil01	mapflag	pvp_noguild
+job3_guil02	mapflag	pvp_noguild
+job3_guil03	mapflag	pvp_noguild
+job3_rang01	mapflag	pvp_noguild
+job3_rang02	mapflag	pvp_noguild
+job3_rune01	mapflag	pvp_noguild
+job3_rune02	mapflag	pvp_noguild
+job3_rune03	mapflag	pvp_noguild
+job3_war01	mapflag	pvp_noguild
+job3_war02	mapflag	pvp_noguild
+jupe_core2	mapflag	pvp_noguild
+
+// ???
+// -- 2009-05-27rdata_k.gpf
+moc_para01	mapflag	pvp_noguild
+
+// Brasilis Maps
+// -- 2009-08-05rdata_k.gpf
+bra_fild01	mapflag	pvp_noguild
+
+
+// ???
+// -- 2009-09-30rdata_k.gpf
+s_atelier	mapflag	pvp_noguild
+
+// 13.3 El Discastes
+// -- 2009-12-09rdata_k.gpf
+dicastes01	mapflag	pvp_noguild
+dicastes02	mapflag	pvp_noguild
+dic_in01	mapflag	pvp_noguild
+dic_fild01	mapflag	pvp_noguild
+dic_fild02	mapflag	pvp_noguild
+
+job3_gen01	mapflag	pvp_noguild
+job3_sha01	mapflag	pvp_noguild
+
+// Localized Event Maps
+//evt_zombie
+//evt_coke
+
+// Unknown Maps
+//ac_sl_area
+//ac_cl_hall
+//ac_cl_room
+//jp_s_dun11
+
+// 14.1 Bifrost
+// -- 2010-06-09rdata_x.gpf
+mora	mapflag	pvp_noguild
+bif_fild01	mapflag	pvp_noguild
+bif_fild02	mapflag	pvp_noguild
+1@mist	mapflag	pvp_noguild
+
+// Dewata Maps
+// -- 2010-09-15rdata_x.gpf
+dewata	mapflag	pvp_noguild
+dew_in01	mapflag	pvp_noguild
+dew_fild01	mapflag	pvp_noguild
+dew_dun01	mapflag	pvp_noguild
+dew_dun02	mapflag	pvp_noguild
+
+// ???
+// -- 2010-10-06rdata_x.gpf
+que_house_s	mapflag	pvp_noguild
+
+// Malangdo Maps
+// -- 2010-11-03rdata_x.gpf
+malangdo	mapflag	pvp_noguild
+mal_in01	mapflag	pvp_noguild
+mal_in02	mapflag	pvp_noguild
+
+1@pump	mapflag	pvp_noguild
+2@pump	mapflag	pvp_noguild
+1@cash	mapflag	pvp_noguild
+
+// Undersea Tunnel Expansion
+// -- 2010-11-10rdata_x.gpf
+iz_dun05	mapflag	pvp_noguild
+
+// ???
+// -- 2010-12-01data_x.gpf
+evt_mobroom	mapflag	pvp_noguild

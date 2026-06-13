@@ -1,0 +1,33 @@
+// NPC Name: Event Guide
+// Location: prontera,150,150,4
+// Sprite ID: 46 (Kafra)
+
+valmorra,143,169,4	script	Nostalgia Peak	46,{
+
+    mes "[Comming Soon]";
+    mes "Greetings! How can I assist you today?";
+    next;
+
+    // Main Selection Menu
+    menu "3rd Job Suit Quest", L_Quest,
+         "Elemental Accessories", L_ComingSoon;
+
+// Option 1: Ob Suit Quest
+L_Quest:
+    mes "[Comming Soon]";
+    mes "Ah, the legendary Ob Suit! You look ready for the challenge.";
+	mes "This is comming soon!.";
+    // Add your quest logic here
+    // Example: if (countitem(ITEM_ID) >= 1) { ... }
+    close;
+
+// Option 2: Elemental Accessories
+L_ComingSoon:
+    mes "[Comming Soon]";
+    mes "I am currently gathering materials for the Elemental Accessories.";
+    mes "^FF0000Coming Soon!^000000";
+    next;
+    mes "Please check back later.";
+    close;
+
+}

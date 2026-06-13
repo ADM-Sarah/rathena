@@ -1,0 +1,156 @@
+//=========================== KafraShop.net ===============================
+//= Mini-Games : Last Man Standing
+//=========================================================================
+
+-	script	MG_LastManStanding	FAKE_NPC,{
+	end;
+
+OnInit:
+	.evtName$ = "Last Man Standing";
+	end;
+
+OnStart:
+	$EVT_LMS = 2;
+
+	// Fixed coordinate order: x1, y1, x2, y2
+	.@users = getareausers("lms_wait", 42, 30, 57, 45);
+
+	if (.@users < 2) {
+		announce("["+.evtName$+"] We do not have enough participants for the event. The event has been cancelled.", bc_npc|bc_blue);
+		donpcevent(strnpcinfo(0)+"::OnStop");
+		end;
+	}
+
+	announce("["+.evtName$+"] This is how the event works.", bc_npc|bc_blue);
+	sleep(2000);
+	announce("["+.evtName$+"] Kill the participants and be the Last Man Standing!", bc_npc|bc_blue);
+	sleep(2000);
+	announce("["+.evtName$+"] The event will run for 15 minutes.", bc_npc|bc_blue);
+	sleep(2000);
+	announce("["+.evtName$+"] Make sure you are the sole survivor in the arena, or you will not receive any rewards!", bc_npc|bc_blue);
+	sleep(2000);
+	announce("["+.evtName$+"] Prepare yourselves!", bc_npc|bc_blue);
+	sleep(2000);
+	announce("["+.evtName$+"] You will be warped to the Last Man Standing arena.", bc_npc|bc_blue);
+	sleep(2000);
+
+	.@i = getmapunits(BL_PC, "lms_wait", .@unit[0]);
+	for (.@j = 0; .@j < .@i; .@j++) {
+		if (attachrid(.@unit[.@j]))
+			warp("lms_ev", 0, 0);
+	}
+
+	setnpctimer(300000);
+	startnpctimer();
+	end;
+
+OnPCDieEvent:
+	if (strcharinfo(3) == "lms_ev") {
+		if ($EVT_LMS_CONSO_POINT) {
+			F_PointGain(1, $EVT_LMS_CONSO_POINT, .evtName$);
+			F_ShowCurrency("#EVENTPOINT", "Event", $EVT_LMS_CONSO_POINT);
+			EVENTWINS += $EVT_LMS_CONSO_POINT;
+			EVENTWINS_LMS += $EVT_LMS_CONSO_POINT;
+		}
+
+		if (killerrid)
+			mapannounce("lms_ev", "["+.evtName$+"] "+rid2name(killerrid)+" killed "+strcharinfo(0)+".", bc_npc|bc_blue);
+
+		sleep2(500);
+		warp("prontera", 149, 156);
+		sleep2(200);
+
+		mapannounce("lms_ev", "["+.evtName$+"] "+F_CommaPlural(getmapusers("lms_ev"), "player", "%s %s left."), bc_npc|bc_blue);
+
+		recovery(0);
+
+		if (getmapusers("lms_ev") == 1)
+			donpcevent(strnpcinfo(0)+"::OnReward");
+	}
+	end;
+
+OnTimer360000:
+	stopnpctimer();
+	.LMS_MIN++;
+
+	if (.LMS_MIN < 15) {
+		mapannounce("lms_ev", "["+.evtName$+"] "+F_CommaPlural((15 - .LMS_MIN), "minute", "%s %s left."), bc_npc|bc_blue);
+		sleep(2000);
+		mapannounce("lms_ev", "["+.evtName$+"] There are still "+F_CommaPlural(getmapusers("lms_ev"), "player", "%s %s left."), bc_npc|bc_blue);
+	}
+
+	if (getmapusers("lms_ev") <= 0 || (.LMS_MIN == 15 && getmapusers("lms_ev") != 1)) {
+		announce("["+.evtName$+"] No winner for this event. Better luck next time.", bc_all|bc_blue);
+		donpcevent(strnpcinfo(0)+"::OnStop");
+		end;
+	}
+	else if (getmapusers("lms_ev") == 1) {
+		donpcevent(strnpcinfo(0)+"::OnReward");
+		end;
+	}
+
+	setnpctimer(300000);
+	startnpctimer();
+	end;
+
+OnReward:
+	.@count = getmapunits(BL_PC, "lms_ev", .@unit[0]);
+
+	if (.@count > 0 && attachrid(.@unit[0])) {
+		$EVT_LMS_WINNER$ = strcharinfo(0);
+
+		announce("["+.evtName$+"] "+strcharinfo(0)+" has won the event!", bc_all|bc_blue);
+
+		if (getarraysize($EVT_LMS_ITEM) > 1) {
+			for (.@i = 0; .@i < getarraysize($EVT_LMS_ITEM); .@i += 2)
+				getitem($EVT_LMS_ITEM[.@i], $EVT_LMS_ITEM[.@i+1]);
+		}
+
+		if ($EVT_LMS_POINT > 0) {
+			F_PointGain(0, $EVT_LMS_POINT, .evtName$);
+			F_ShowCurrency("#EVENTPOINT", "Event", $EVT_LMS_POINT);
+			EVENTWINS += $EVT_LMS_POINT;
+			EVENTWINS_LMS += $EVT_LMS_POINT;
+		}
+
+		sleep(500);
+	}
+
+	detachrid();
+	donpcevent(strnpcinfo(0)+"::OnStop");
+	end;
+
+OnStop:
+	$EVT_LMS = 0;
+	.LMS_MIN = 0;
+	stopnpctimer();
+	mapwarp("lms_wait", "prontera", 149, 156);
+	mapwarp("lms_ev", "prontera", 149, 156);
+	end;
+}
+
+//lms_wait	mapflag	macprotect
+lms_wait	mapflag	nobranch
+//lms_wait	mapflag	noconsume
+lms_wait	mapflag	nodrop
+lms_wait	mapflag	noicewall
+lms_wait	mapflag	nomemo
+lms_wait	mapflag	nosave	SavePoint
+lms_wait	mapflag	noskill
+lms_wait	mapflag	noteleport
+lms_wait	mapflag	nowarp
+lms_wait	mapflag	nowarpto
+lms_wait	mapflag	pvp	off
+
+lms_ev	mapflag	pvp
+lms_ev	mapflag	pvp_noguild
+lms_ev	mapflag	pvp_noparty
+lms_ev	mapflag	nomemo
+lms_ev	mapflag	nowarpto
+lms_ev	mapflag	noteleport
+lms_ev	mapflag	noloot
+lms_ev	mapflag	nobranch
+//lms_ev	mapflag	norevive
+lms_ev	mapflag	nosave	SavePoint
+lms_ev	mapflag	restricted	9
+lms_ev	mapflag	nocommand	10

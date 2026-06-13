@@ -1,0 +1,90 @@
+###########################################################################
+# Skill Adjustment Database
+###########################################################################
+#
+# This database allows you to globally modify the damage of specific skills.
+#
+# Structure of Database:
+#  - Skill                   Skill Name on skill_db.yml
+#    Rate                    Damage modifier in percentage.
+#
+# Description:
+#  Applies a global damage multiplier to the specified skill.
+#  This modifier is applied AFTER all standard damage calculations.
+#
+# Rate:
+#   0     = No change
+#   100   = +100% damage (double damage)
+#   -50   = -50% damage (half damage)
+#   200   = +200% damage (triple damage)
+#
+# Notes:
+#  - Affects ALL targets (Players, Monsters, Bosses)
+#  - Affects ALL maps (PvP, WoE, PvE, Battlegrounds)
+#  - Stacks with item bonuses, cards, and other modifiers
+#  - Invalid skills will be ignored and show a warning
+#
+# Example:
+#  - Skill: AS_SONICBLOW
+#    Rate: 100
+#
+#  - Skill: MC_MAMMONITE
+#    Rate: -50
+#
+###########################################################################
+
+Header:
+  Type: SKILL_ADJUSTMENT_DB
+  Version: 1
+
+Body:
+  - Skill: AS_SONICBLOW
+    Rate: -20
+  - Skill: MC_MAMMONITE
+    Rate: -50
+  - Skill: MG_FIREBOLT
+    Rate: -10
+  - Skill: MG_COLDBOLT
+    Rate: -10
+  - Skill: MG_LIGHTNINGBOLT
+    Rate: -10
+  - Skill: CG_ARROWVULCAN
+    Rate: 180
+  - Skill: GS_RAPIDSHOWER
+    Rate: 35
+  - Skill: GS_DESPERADO
+    Rate: 75
+  - Skill: KN_BOWLINGBASH
+    Rate: 235
+  - Skill: LK_SPIRALPIERCE
+    Rate: 230
+  - Skill: SN_SHARPSHOOTING
+    Rate: 170
+  - Skill: AC_DOUBLE
+    Rate: 240
+  - Skill: MO_EXTREMITYFIST
+    Rate: -50
+  - Skill: NJ_ISSEN
+    Rate: 35
+  - Skill: NJ_BAKUENRYU
+    Rate: 110
+  - Skill: NJ_HYOUSENSOU
+    Rate: 210
+  - Skill: NJ_KAENSIN
+    Rate: 80
+  - Skill: NJ_KAMAITACHI
+    Rate: 90
+  - Skill: ASC_BREAKER
+    Rate: 210
+  - Skill: CR_ACIDDEMONSTRATION
+    Rate: 80
+  - Skill: AL_HOLYLIGHT
+    Rate: 45
+  - Skill: TK_JUMPKICK
+    Rate: -40
+  - Skill: WZ_JUPITEL
+    Rate: 80
+  - Skill: WZ_METEOR
+    Rate: 100
+  - Skill: SL_SMA
+    Rate: 70

@@ -1,0 +1,193 @@
+//============================================================
+// Instant Job Changer (FULL FIXED)
+// - Pre-renewal friendly
+// - Transcendent + Expanded only (NO 3rd jobs, NO baby)
+// - One-time use (account or character based)
+// - Waitingroom title: "Instant Job Changer"
+//============================================================
+
+payon,176,280,4	script	Instant Job Changer	512,{
+
+	// --------------------------------------------
+	// One-time usage check (FIXED)
+	// --------------------------------------------
+	if ((.Based == 0 && #ClassHelper == 1) || (.Based == 1 && ClassHelper == 1)) {
+		mes .npcname$;
+		mes "You have already used this NPC.";
+		close;
+	}
+
+Main_Menu:
+	mes .npcname$;
+	mes "I can instantly change your job.";
+	mes "Choose a category.";
+	next;
+
+	switch(select(
+		"First Job Classes",
+		"Second Job Classes",
+		"Transcendent Job Classes",
+		"Expanded Job Classes",
+		"Cancel"
+	)) {
+		case 1: goto FirstJob;
+		case 2: goto SecondJob;
+		case 3: goto TransJob;
+		case 4: goto ExpandedJob;
+		default: close;
+	}
+
+FirstJob:
+	mes .npcname$;
+	mes "Choose your First Job class.";
+	next;
+	switch(select(
+		"Swordman",
+		"Magician",
+		"Archer",
+		"Acolyte",
+		"Merchant",
+		"Thief",
+		"Back"
+	)) {
+		case 1: callsub Job_Changing, 1,99,50,60,"All";
+		case 2: callsub Job_Changing, 2,99,50,60,"All";
+		case 3: callsub Job_Changing, 3,99,50,60,"All";
+		case 4: callsub Job_Changing, 4,99,50,60,"All";
+		case 5: callsub Job_Changing, 5,99,50,60,"All";
+		case 6: callsub Job_Changing, 6,99,50,60,"All";
+		default: goto Main_Menu;
+	}
+
+SecondJob:
+	mes .npcname$;
+	mes "Choose your Second Job class.";
+	next;
+	switch(select(
+		"Knight",
+		"Priest",
+		"Wizard",
+		"Blacksmith",
+		"Hunter",
+		"Assassin",
+		"Crusader",
+		"Monk",
+		"Sage",
+		"Rogue",
+		"Alchemist",
+		"Back"
+	)) {
+		case 1: callsub Job_Changing, 7,99,50,110,"All";
+		case 2: callsub Job_Changing, 8,99,50,110,"All";
+		case 3: callsub Job_Changing, 9,99,50,110,"All";
+		case 4: callsub Job_Changing,10,99,50,110,"All";
+		case 5: callsub Job_Changing,11,99,50,110,"All";
+		case 6: callsub Job_Changing,12,99,50,110,"All";
+		case 7: callsub Job_Changing,14,99,50,110,"All";
+		case 8: callsub Job_Changing,15,99,50,110,"All";
+		case 9: callsub Job_Changing,16,99,50,110,"All";
+		case 10: callsub Job_Changing,17,99,50,110,"All";
+		case 11: callsub Job_Changing,18,99,50,110,"All";
+		default: goto Main_Menu;
+	}
+
+TransJob:
+	mes .npcname$;
+	mes "Choose your Transcendent class.";
+	next;
+	switch(select(
+		"Lord Knight",
+		"High Priest",
+		"High Wizard",
+		"Whitesmith",
+		"Sniper",
+		"Assassin Cross",
+		"Paladin",
+		"Champion",
+		"Professor",
+		"Stalker",
+		"Creator",
+		"Back"
+	)) {
+		case 1: callsub Job_Changing,4008,255,120,130,"All";
+		case 2: callsub Job_Changing,4009,255,120,130,"All";
+		case 3: callsub Job_Changing,4010,255,120,130,"All";
+		case 4: callsub Job_Changing,4011,255,120,130,"All";
+		case 5: callsub Job_Changing,4012,255,120,130,"All";
+		case 6: callsub Job_Changing,4013,255,120,130,"All";
+		case 7: callsub Job_Changing,4015,255,120,130,"All";
+		case 8: callsub Job_Changing,4016,255,120,130,"All";
+		case 9: callsub Job_Changing,4017,255,120,130,"All";
+		case 10: callsub Job_Changing,4018,255,120,130,"All";
+		case 11: callsub Job_Changing,4019,255,120,130,"All";
+		default: goto Main_Menu;
+	}
+
+ExpandedJob:
+	mes .npcname$;
+	mes "Choose your Expanded class.";
+	next;
+	switch(select(
+		"Super Novice",
+		"Taekwon Kid",
+		"Star Gladiator",
+		"Soul Linker",
+		"Ninja",
+		"Gunslinger",
+		"Back"
+	)) {
+		case 1: callsub Job_Changing,23,255,120,200,"All";    // Super Novice
+		case 2: callsub Job_Changing,4046,255,120,110,"All";  // Taekwon Kid
+		case 3: callsub Job_Changing,4047,255,120,110,"All";  // Star Gladiator
+		case 4: callsub Job_Changing,4049,255,120,110,"All";  // Soul Linker
+		case 5: callsub Job_Changing,25,255,120,60,"All";     // Ninja
+		case 6: callsub Job_Changing,24,255,120,600,"All";    // Gunslinger
+		default: goto Main_Menu;
+	}
+
+	// ---------------------------------------------------------
+	// Job Change Core (mostly original behavior)
+	// callsub Job_Changing,<JOB>,<BaseLv>,<JobLv>,<SkillPoint>,<Announce>;
+	// ---------------------------------------------------------
+Job_Changing:
+	mes .npcname$;
+	mes "You are now a part of ^FF0000"+jobname(getarg(0))+"^000000.";
+
+	// Announce options (kept)
+	if (compare(getarg(4),"All"))  announce "[ "+strcharinfo(0)+" ] has changed to [ "+jobname(getarg(0))+" ].",bc_all,0x76EE00;
+	if (compare(getarg(4),"Map"))  announce "[ "+strcharinfo(0)+" ] has changed to [ "+jobname(getarg(0))+" ].",bc_map,0x76EE00;
+	if (compare(getarg(4),"Area")) announce "[ "+strcharinfo(0)+" ] has changed to [ "+jobname(getarg(0))+" ].",bc_area,0x76EE00;
+	if (compare(getarg(4),"Self")) announce "[ "+strcharinfo(0)+" ] has changed to [ "+jobname(getarg(0))+" ].",bc_self,0x76EE00;
+
+	jobchange getarg(0);
+	set BaseLevel, getarg(1);
+	set JobLevel,  getarg(2);
+
+	ResetSkill;
+	ResetStatus;
+
+	set SkillPoint, getarg(3);
+
+	if (.Allskills == 1) {
+		atcommand "@allskills";
+		set SkillPoint,0;
+	}
+
+	percentheal 100,100;
+
+	// Mark as used (FIXED)
+	if (.Based == 0) set #ClassHelper,1;
+	else            set ClassHelper,1;
+
+	close;
+
+OnInit:
+	// Config (moved here so it won't reset per click)
+	set .npcname$,"[ ^0000FF Class Helper ^000000 ]";
+	set .Allskills,1;     // 1 = give all skills
+	set .Based,1;         // 0 = account based (#ClassHelper), 1 = character based (ClassHelper)
+
+	// Waitingroom title above NPC
+	waitingroom "Instant Job Changer",0;
+	end;
+}

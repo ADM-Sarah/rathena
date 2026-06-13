@@ -1,0 +1,13 @@
+-	script	custom_warp_commands	-1,{
+OnInit:
+	bindatcmd "mall",strnpcinfo(3)+"::OnGoMall";
+    bindatcmd "vending",strnpcinfo(3)+"::OnGoVending";
+	end;
+OnGoMall:
+	warp "valmorra",148,97;
+	end;
+
+OnGoVending:
+	warp "turbo_room",100,100;
+	end;
+}

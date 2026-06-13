@@ -70,12 +70,12 @@ void map_msg_reload(void);
 #define LOOTITEM_SIZE 10
 #define MAX_MOBSKILL 50		//Max 128, see mob skill_idx type if need this higher
 #define MAX_MOB_LIST_PER_MAP 128
-#define MAX_EVENTQUEUE 2
+#define MAX_EVENTQUEUE 1000
 #define MAX_EVENTTIMER 32
 #define NATURAL_HEAL_INTERVAL 500
 #define MIN_FLOORITEM 2
 #define MAX_FLOORITEM START_ACCOUNT_NUM
-#define MAX_LEVEL 275
+#define MAX_LEVEL 255
 #define MAX_DROP_PER_MAP 48
 #define MAX_IGNORE_LIST 20 	// official is 14
 #define MAX_VENDING 12
@@ -695,6 +695,9 @@ enum e_mapflag : int16 {
 	MF_SPECIALPOPUP,
 	MF_NOMACROCHECKER,
 	MF_INVINCIBLE_TIME,
+	MF_KINGOFEMP,
+	MF_MOBITEMGLOBALDROP,
+	MF_NOAUTOATTACK,
 	MF_MAX
 };
 
@@ -733,6 +736,18 @@ struct s_drop_list {
 	int32 drop_id;
 	int32 drop_per;
 	enum e_nightmare_drop_type drop_type;
+};
+
+/// Struct for MF_MOBITEMGLOBALDROP_sub
+struct s_mobitemglobaldrop_sub_list {
+	int mob_id;
+	int drop_id;
+	int drop_per;
+};
+
+/// Struct for MF_MOBITEMGLOBALDROP
+struct s_mobitemglobaldrop_list {
+	std::vector<s_mobitemglobaldrop_sub_list> mobitemglobaldrop_sub_list;
 };
 
 /// Union for mapflag values
@@ -835,6 +850,7 @@ struct map_data {
 
 	struct point save;
 	std::vector<s_drop_list> drop_list;
+	std::vector<s_mobitemglobaldrop_list> mobitemglobaldrop_list;
 	uint32 zone; // zone number (for item/skill restrictions)
 	struct s_skill_damage damage_adjust; // Used for overall skill damage adjustment
 	std::unordered_map<uint16, s_skill_damage> skill_damage; // Used for single skill damage adjustment
@@ -1205,6 +1221,7 @@ bool map_blid_exists( int32 id );
 const char* map_mapid2mapname(int32 m);
 int16 map_mapindex2mapid(uint16 mapindex);
 int16 map_mapname2mapid(const char* name);
+void map_mapadditemglobaldrop(int16 m, char* w4);
 int32 map_mapname2ipport(uint16 name, uint32* ip, uint16* port);
 int32 map_setipport(uint16 map, uint32 ip, uint16 port);
 int32 map_eraseipport(uint16 map, uint32 ip, uint16 port);
@@ -1340,5 +1357,19 @@ extern char roulette_table[32];
 extern char guild_storage_log_table[32];
 
 void do_shutdown(void);
+
+// (^~_~^) Color Nicks Start
+
+struct color_data
+{
+	unsigned int text_color;
+	unsigned int shadow_color;
+};
+
+extern DBMap* color_nicks_db;
+int map_color_nicks_clear(DBKey key, DBData* data, va_list va);
+void map_color_nicks_load();
+
+// (^~_~^) Color Nicks End
 
 #endif /* MAP_HPP */

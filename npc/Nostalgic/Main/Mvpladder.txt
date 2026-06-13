@@ -1,0 +1,311 @@
+//====================================================
+// MVP Ranking System + Weekly + Monthly
+// MVP Ladder ONLY - No Shop Function
+//====================================================
+
+function	script	F_SaveMvpLookRank	{
+	query_sql "REPLACE INTO `mvp_rank_looks` "
+		+ "(`char_id`,`char_name`,`class`,`sex`,`hair`,`hair_color`,`clothes_color`,`weapon`,`shield`,`head_top`,`head_mid`,`head_bottom`) VALUES "
+		+ "('"+getcharid(0)+"','"+escape_sql(strcharinfo(0))+"','"+Class+"','"+Sex+"','"
+		+ getlook(LOOK_HAIR)+"','"+getlook(LOOK_HAIR_COLOR)+"','"+getlook(LOOK_CLOTHES_COLOR)+"','"
+		+ getlook(LOOK_WEAPON)+"','"+getlook(LOOK_SHIELD)+"','"+getlook(LOOK_HEAD_TOP)+"','"
+		+ getlook(LOOK_HEAD_MID)+"','"+getlook(LOOK_HEAD_BOTTOM)+"')";
+	return;
+}
+
+function	script	F_LoadMvpPoint	{
+	query_sql "SELECT `mvp_shop_points` FROM `mvp_rank` WHERE `char_id`='"+getcharid(0)+"'", .@p;
+	#MVPPOINTS = (getarraysize(.@p)) ? .@p[0] : 0;
+	return;
+}
+
+function	script	F_AddMvpRankPoint	{
+	.@cid = getcharid(0);
+	.@name$ = escape_sql(strcharinfo(0));
+	.@week$ = gettimestr("%Y%U",16);
+	.@month$ = gettimestr("%Y%m",16);
+
+	.@found = query_sql("SELECT `mvp_weekly`,`mvp_monthly`,`week_key`,`month_key`,`mvp_shop_points` FROM `mvp_rank` WHERE `char_id`='"+.@cid+"'",
+		.@weekly,.@monthly,.@oldweek$,.@oldmonth$,.@shop);
+
+	if (!.@found) {
+		query_sql "INSERT INTO `mvp_rank` (`char_id`,`char_name`,`mvp_points`,`mvp_weekly`,`mvp_monthly`,`mvp_shop_points`,`week_key`,`month_key`) VALUES "
+			+ "('"+.@cid+"','"+.@name$+"',1,1,1,1,'"+.@week$+"','"+.@month$+"')";
+		#MVPPOINTS = 1;
+	} else {
+		.@newweekly = (.@oldweek$[0] == .@week$) ? .@weekly[0] + 1 : 1;
+		.@newmonthly = (.@oldmonth$[0] == .@month$) ? .@monthly[0] + 1 : 1;
+		.@newshop = .@shop[0] + 1;
+
+		query_sql "UPDATE `mvp_rank` SET "
+			+ "`char_name`='"+.@name$+"',"
+			+ "`mvp_points`=`mvp_points`+1,"
+			+ "`mvp_shop_points`='"+.@newshop+"',"
+			+ "`mvp_weekly`='"+.@newweekly+"',"
+			+ "`mvp_monthly`='"+.@newmonthly+"',"
+			+ "`week_key`='"+.@week$+"',"
+			+ "`month_key`='"+.@month$+"' "
+			+ "WHERE `char_id`='"+.@cid+"'";
+
+		#MVPPOINTS = .@newshop;
+	}
+
+	callfunc "F_SaveMvpLookRank";
+	message strcharinfo(0), "[MVP Ranking]: +1 MVP point.";
+	donpcevent "MVP_Statue_Controller::OnUpdate";
+	return;
+}
+
+//====================================================
+// MVP Ranking NPC
+//====================================================
+valmorra,182,161,4	script	MVP Ranking	4_M_ALCHE_A,{
+
+	callfunc "F_LoadMvpPoint";
+
+	mes "[ ^00AA00MVP Ranking^000000 ]";
+	mes "Welcome, ^FFA500" + strcharinfo(0) + "^000000.";
+	mes "Hunt MVP monsters to collect MVP Points.";
+	mes "MVP Summoner Room also counts for MVP Point.";
+	mes " ";
+	mes "Your current ^0000FFMVP Points^000000: ^0000FF" + #MVPPOINTS + "^000000";
+	next;
+
+	.@menu$ = "^FF9900Top Overall MVP Hunters^000000:^00AA00Top Weekly MVP Hunters^000000:^AA00FFTop Monthly MVP Hunters^000000:^888888About Statue System^000000:Cancel";
+	if (getgmlevel() >= 99)
+		.@menu$ += ":^FF0000GM Reset Menu^000000";
+
+	switch(select(.@menu$)) {
+
+	case 1:
+		mes "[ ^FF9900Top Overall MVP Hunters^000000 ]";
+		query_sql "SELECT `char_name`,`mvp_points` FROM `mvp_rank` ORDER BY `mvp_points` DESC, `char_id` ASC LIMIT 10", .@name$, .@points;
+		if (!getarraysize(.@name$)) {
+			mes "No ranking yet.";
+			close;
+		}
+		for (.@i = 0; .@i < getarraysize(.@name$); .@i++)
+			mes "Rank " + (.@i+1) + ": ^00AAFF" + .@name$[.@i] + "^000000 - ^FF0000" + .@points[.@i] + "^000000 Kills";
+		close;
+
+	case 2:
+		.@week$ = gettimestr("%Y%U",16);
+		mes "[ ^00AA00Top Weekly MVP Hunters^000000 ]";
+		query_sql "SELECT `char_name`,`mvp_weekly` FROM `mvp_rank` WHERE `week_key`='"+.@week$+"' ORDER BY `mvp_weekly` DESC, `char_id` ASC LIMIT 10", .@name$, .@points;
+		if (!getarraysize(.@name$)) {
+			mes "No weekly ranking yet.";
+			close;
+		}
+		for (.@i = 0; .@i < getarraysize(.@name$); .@i++)
+			mes "Rank " + (.@i+1) + ": ^00AAFF" + .@name$[.@i] + "^000000 - ^FF0000" + .@points[.@i] + "^000000 Kills";
+		close;
+
+	case 3:
+		.@month$ = gettimestr("%Y%m",16);
+		mes "[ ^AA00FFTop Monthly MVP Hunters^000000 ]";
+		query_sql "SELECT `char_name`,`mvp_monthly` FROM `mvp_rank` WHERE `month_key`='"+.@month$+"' ORDER BY `mvp_monthly` DESC, `char_id` ASC LIMIT 10", .@name$, .@points;
+		if (!getarraysize(.@name$)) {
+			mes "No monthly ranking yet.";
+			close;
+		}
+		for (.@i = 0; .@i < getarraysize(.@name$); .@i++)
+			mes "Rank " + (.@i+1) + ": ^00AAFF" + .@name$[.@i] + "^000000 - ^FF0000" + .@points[.@i] + "^000000 Kills";
+		close;
+
+	case 4:
+		mes "[ ^888888Statue System^000000 ]";
+		mes "Top 3 Overall MVP Hunters will appear as statues.";
+		mes "Their appearance updates automatically.";
+		close;
+
+	case 5:
+		close;
+
+	case 6:
+		if (getgmlevel() < 99)
+			close;
+
+		mes "[ ^FF0000GM Reset Menu^000000 ]";
+		mes "No announcement will be made.";
+		next;
+
+		switch(select("^00AA00Reset Weekly Ranking^000000:^AA00FFReset Monthly Ranking^000000:^0000FFReset ALL Player MVP Points^000000:^FF0000Reset ALL Ranking Data^000000:Cancel")) {
+
+		case 1:
+			query_sql "UPDATE `mvp_rank` SET `mvp_weekly`=0, `week_key`=''";
+			mes "Weekly ranking has been reset.";
+			close;
+
+		case 2:
+			query_sql "UPDATE `mvp_rank` SET `mvp_monthly`=0, `month_key`=''";
+			mes "Monthly ranking has been reset.";
+			close;
+
+		case 3:
+			query_sql "UPDATE `mvp_rank` SET `mvp_shop_points`=0";
+			#MVPPOINTS = 0;
+			mes "All player MVP Points have been reset.";
+			close;
+
+		case 4:
+			query_sql "TRUNCATE TABLE `mvp_rank`";
+			query_sql "TRUNCATE TABLE `mvp_rank_looks`";
+			#MVPPOINTS = 0;
+			donpcevent "MVP_Statue_Controller::OnUpdate";
+			mes "All MVP ranking data has been reset.";
+			close;
+
+		case 5:
+			close;
+		}
+	}
+}
+
+//====================================================
+// MVP Kill Detection + GM Commands
+//====================================================
+-	script	MVP_Ranking_System	-1,{
+
+OnInit:
+	bindatcmd "resetmvprank", strnpcinfo(0)+"::OnAtcmdReset", 99, 99;
+	bindatcmd "resetmvpweekly", strnpcinfo(0)+"::OnAtcmdWeekly", 99, 99;
+	bindatcmd "resetmvpmonthly", strnpcinfo(0)+"::OnAtcmdMonthly", 99, 99;
+	bindatcmd "resetmvppoints", strnpcinfo(0)+"::OnAtcmdPoints", 99, 99;
+	end;
+
+OnAtcmdReset:
+	query_sql "TRUNCATE TABLE `mvp_rank`";
+	query_sql "TRUNCATE TABLE `mvp_rank_looks`";
+	#MVPPOINTS = 0;
+	donpcevent "MVP_Statue_Controller::OnUpdate";
+	dispbottom "[MVP Ranking] All ranking data has been reset.";
+	end;
+
+OnAtcmdWeekly:
+	query_sql "UPDATE `mvp_rank` SET `mvp_weekly`=0, `week_key`=''";
+	dispbottom "[MVP Ranking] Weekly ranking reset.";
+	end;
+
+OnAtcmdMonthly:
+	query_sql "UPDATE `mvp_rank` SET `mvp_monthly`=0, `month_key`=''";
+	dispbottom "[MVP Ranking] Monthly ranking reset.";
+	end;
+
+OnAtcmdPoints:
+	query_sql "UPDATE `mvp_rank` SET `mvp_shop_points`=0";
+	#MVPPOINTS = 0;
+	dispbottom "[MVP Ranking] All player MVP Points have been reset.";
+	end;
+
+OnNPCKillEvent:
+	if (!(getmonsterinfo(killedrid, MOB_MODE) & MD_MVP))
+		end;
+
+	callfunc "F_AddMvpRankPoint";
+	end;
+
+OnPCLoginEvent:
+	callfunc "F_LoadMvpPoint";
+
+	query_sql "SELECT `char_id` FROM `mvp_rank` ORDER BY `mvp_points` DESC, `char_id` ASC LIMIT 3", .@cid;
+	for (.@i = 0; .@i < getarraysize(.@cid); .@i++) {
+		if (.@cid[.@i] == getcharid(0)) {
+			callfunc "F_SaveMvpLookRank";
+			donpcevent "MVP_Statue_Controller::OnUpdate";
+			break;
+		}
+	}
+	end;
+}
+
+//====================================================
+// Statue Controller
+//====================================================
+-	script	MVP_Statue_Controller	-1,{
+
+OnInit:
+	setarray .x[0],177,178,176;
+	setarray .y[0],159,155,151;
+	donpcevent strnpcinfo(0)+"::OnUpdate";
+	initnpctimer;
+	end;
+
+OnTimer60000:
+	donpcevent strnpcinfo(0)+"::OnUpdate";
+	initnpctimer;
+	end;
+
+OnUpdate:
+	query_sql
+		"SELECT r.`char_id`,r.`char_name`,r.`mvp_points`,"
+		+ "l.`class`,l.`sex`,l.`hair`,l.`hair_color`,l.`clothes_color`,"
+		+ "l.`weapon`,l.`shield`,l.`head_top`,l.`head_mid`,l.`head_bottom` "
+		+ "FROM `mvp_rank` r "
+		+ "LEFT JOIN `mvp_rank_looks` l ON r.`char_id`=l.`char_id` "
+		+ "ORDER BY r.`mvp_points` DESC, r.`char_id` ASC LIMIT 3",
+		.@cid,.@name$,.@pts,
+		.@class,.@sex,.@hair,.@hair_color,.@cloth,
+		.@weapon,.@shield,.@top,.@mid,.@bot;
+
+	for (.@i = 0; .@i < 3; .@i++) {
+		.@npc$ = "MVP_Statue#" + .@i;
+		.@gid = getnpcid(0, .@npc$);
+
+		movenpc .@npc$, .x[.@i], .y[.@i];
+		enablenpc .@npc$;
+
+		if (.@i < getarraysize(.@cid)) {
+			if (.@class[.@i] <= 0)
+				.@class[.@i] = Job_Novice;
+
+			setnpcdisplay .@npc$, .@class[.@i];
+			setunitdata .@gid, UNPC_SEX, .@sex[.@i];
+			setunitdata .@gid, UNPC_HAIRSTYLE, .@hair[.@i];
+			setunitdata .@gid, UNPC_HAIRCOLOR, .@hair_color[.@i];
+			setunitdata .@gid, UNPC_CLOTHCOLOR, .@cloth[.@i];
+			setunitdata .@gid, UNPC_WEAPON, .@weapon[.@i];
+			setunitdata .@gid, UNPC_SHIELD, .@shield[.@i];
+			setunitdata .@gid, UNPC_HEADTOP, .@top[.@i];
+			setunitdata .@gid, UNPC_HEADMIDDLE, .@mid[.@i];
+			setunitdata .@gid, UNPC_HEADBOTTOM, .@bot[.@i];
+		} else {
+			setnpcdisplay .@npc$, Job_Novice;
+		}
+
+		setunittitle .@gid, "Top " + (.@i + 1) + " MVP";
+	}
+	end;
+}
+
+function	script	F_ShowStatueInfo	{
+	.@slot = getarg(0);
+
+	query_sql "SELECT `char_name`,`mvp_points` FROM `mvp_rank` ORDER BY `mvp_points` DESC, `char_id` ASC LIMIT "+(.@slot+1),
+		.@name$, .@pts;
+
+	mes "[MVP Statue]";
+	if (getarraysize(.@name$) <= .@slot) {
+		mes "No player yet.";
+		close;
+	}
+
+	mes "Rank " + (.@slot + 1);
+	mes "Name: " + .@name$[.@slot];
+	mes "MVP Kills: " + .@pts[.@slot];
+	close;
+}
+
+valmorra,177,159,4	script	MVP_Statue#0	844,{
+	callfunc "F_ShowStatueInfo", 0;
+	end;
+}
+
+valmorra,178,155,4	script	MVP_Statue#1	844,{
+	callfunc "F_ShowStatueInfo", 1;
+	end;
+}
+
+valmorra,176,151,4	script	MVP_Statue#2	844,{
+	callfunc "F_ShowStatueInfo", 2;
+	end;
+}

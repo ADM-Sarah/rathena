@@ -1,0 +1,141 @@
+// =====================================================
+// Juggernaut Event
+// Latest rAthena Compatible
+// =====================================================
+
+prontera,156,182,4	script	Event Manager	1005,{
+
+	if (getgroupid() >= 99) {
+		mes "[GM Panel]";
+		mes "Event Status: " + (.EventActive ? "Active" : "Inactive");
+		next;
+
+		switch(select("Force Start:Player Menu:Close")) {
+
+		case 1:
+			close2;
+			donpcevent strnpcinfo(3) + "::OnEventInit";
+			end;
+
+		case 2:
+			break;
+
+		default:
+			close;
+		}
+	}
+
+	if (!.RegistrationOpen) {
+		mes "[Event Manager]";
+		mes "Registration is closed.";
+		close;
+	}
+
+	mes "[Event Manager]";
+	mes "Enter the Juggernaut Arena?";
+
+	if (select("Yes:No") == 2)
+		close;
+
+	@JuggernautScore = 0;
+
+	warp "pvp_y_7-2",50,50;
+	close;
+
+OnInit:
+	.EventActive = 0;
+	.RegistrationOpen = 0;
+	.TimerStage = 0;
+	.JuggernautAID = 0;
+	end;
+
+OnClock2000:
+	if (.EventActive)
+		end;
+
+	donpcevent strnpcinfo(3) + "::OnEventInit";
+	end;
+
+OnEventInit:
+
+	.EventActive = 1;
+	.RegistrationOpen = 1;
+	.RegTime = 120;
+
+	announce "[Juggernaut] Registration is now OPEN!", bc_all;
+
+	initnpctimer;
+	end;
+
+OnTimer1000:
+
+	// Registration phase
+	if (.RegistrationOpen) {
+
+		.RegTime--;
+
+		if (.RegTime == 60)
+			announce "[Juggernaut] 60 seconds remaining!", bc_all;
+
+		if (.RegTime <= 0) {
+
+			.RegistrationOpen = 0;
+
+			if (getmapusers("pvp_y_7-2") < 2) {
+
+				announce "[Juggernaut] Cancelled. Not enough players.", bc_all;
+
+				mapwarp "pvp_y_7-2","valmorra",171,132;
+
+				stopnpctimer;
+
+				.EventActive = 0;
+				end;
+			}
+
+			announce "[Juggernaut] Match has started!", bc_all;
+
+			.MatchTime = 600;
+			.TimerStage = 1;
+		}
+
+		end;
+	}
+
+	// Match phase
+	if (.TimerStage == 1) {
+
+		.MatchTime--;
+
+		if (.MatchTime <= 0)
+			goto OnEventEnd;
+
+		end;
+	}
+
+	end;
+
+OnPCDieEvent:
+
+	if (strcharinfo(3) != "pvp_y_7-2")
+		end;
+
+	sleep2 1000;
+
+	warp "valmorra",171,132;
+	end;
+
+OnEventEnd:
+
+	announce "[Juggernaut] Event finished!", bc_all;
+
+	mapwarp "pvp_y_7-2","valmorra",171,132;
+
+	stopnpctimer;
+
+	.EventActive = 0;
+	.RegistrationOpen = 0;
+	.TimerStage = 0;
+
+	end;
+}

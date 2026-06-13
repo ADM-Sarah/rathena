@@ -1,0 +1,347 @@
+//==============================================================
+// THANATOS MVP SYSTEM + QUEST WARPER
+// Entry Requirement: 1,000 Gold
+// GM Level 50+ bypass entry item
+// GM Panel: GM Level 99 only
+// TIMER FIXED VERSION
+//==============================================================
+
+function	script	FmtHMS	{
+	.@sec = getarg(0);
+	if (.@sec < 0) .@sec = 0;
+
+	.@h = .@sec / 3600;
+	.@m = (.@sec % 3600) / 60;
+	.@s = .@sec % 60;
+
+	return sprintf("%02d:%02d:%02d", .@h, .@m, .@s);
+}
+
+function	script	THANA_SQL_Load	{
+	.@key$ = getarg(0);
+
+	query_sql(
+		"SELECT is_alive,next_spawn,last_killer_name FROM thanatos_state WHERE boss_key = '" + escape_sql(.@key$) + "' LIMIT 1",
+		.@is_alive, .@next_spawn, .@last_killer$
+	);
+
+	set getvariableofnpc(.sql_is_alive, "Thanatos_Spawn_Controller"), .@is_alive;
+	set getvariableofnpc(.sql_next_spawn, "Thanatos_Spawn_Controller"), .@next_spawn;
+	set getvariableofnpc(.sql_last_killer_name$, "Thanatos_Spawn_Controller"), .@last_killer$;
+	return;
+}
+
+function	script	THANA_SQL_Save	{
+	.@key$ = getarg(0);
+	.@is_alive = getarg(1);
+	.@next_spawn = getarg(2);
+	.@last_killer$ = getarg(3);
+
+	query_sql(
+		"UPDATE thanatos_state SET " +
+		"is_alive = " + .@is_alive + "," +
+		"next_spawn = " + .@next_spawn + "," +
+		"last_killer_name = '" + escape_sql(.@last_killer$) + "' " +
+		"WHERE boss_key = '" + escape_sql(.@key$) + "'"
+	);
+
+	set getvariableofnpc(.sql_is_alive, "Thanatos_Spawn_Controller"), .@is_alive;
+	set getvariableofnpc(.sql_next_spawn, "Thanatos_Spawn_Controller"), .@next_spawn;
+	set getvariableofnpc(.sql_last_killer_name$, "Thanatos_Spawn_Controller"), .@last_killer$;
+	return;
+}
+
+//------------------------------
+// Spawn Controller
+//------------------------------
+-	script	Thanatos_Spawn_Controller	-1,{
+
+OnInit:
+	.map$ = "thana_boss";
+	.mob_id = 1708;
+	.x = 0;
+	.y = 0;
+	.respawn_sec = 7200;
+
+	.sql_is_alive = 0;
+	.sql_next_spawn = 0;
+	.sql_last_killer_name$ = "";
+
+	donpcevent strnpcinfo(3) + "::OnSQLInit";
+	end;
+
+OnSQLInit:
+	query_sql(
+		"INSERT IGNORE INTO thanatos_state (boss_key,is_alive,next_spawn,last_killer_name) VALUES ('main_thanatos',0,0,'')"
+	);
+
+	stopnpctimer;
+	initnpctimer;
+	startnpctimer;
+
+	donpcevent strnpcinfo(3) + "::OnRestoreState";
+	end;
+
+OnRestoreState:
+	killmonster .map$, "";
+
+	callfunc "THANA_SQL_Load", "main_thanatos";
+
+	.@now = gettimetick(2);
+
+	if (.sql_is_alive) {
+		monster .map$, .x, .y, "--ja-- Thanatos", .mob_id, 1, strnpcinfo(3) + "::OnThanatosDead";
+		end;
+	}
+
+	if (!.sql_is_alive && .sql_next_spawn > .@now)
+		end;
+
+	if (!.sql_is_alive && .sql_next_spawn && .sql_next_spawn <= .@now) {
+		callfunc "THANA_SQL_Save", "main_thanatos", 0, 0, .sql_last_killer_name$;
+		donpcevent strnpcinfo(3) + "::OnRespawn";
+		end;
+	}
+
+	if (!.sql_is_alive && !.sql_next_spawn) {
+		donpcevent strnpcinfo(3) + "::OnRespawn";
+		end;
+	}
+	end;
+
+OnTimer5000:
+	stopnpctimer;
+
+	callfunc "THANA_SQL_Load", "main_thanatos";
+
+	if (!.sql_is_alive && .sql_next_spawn) {
+		.@now = gettimetick(2);
+		.@left = .sql_next_spawn - .@now;
+
+		if (.@left <= 0) {
+			callfunc "THANA_SQL_Save", "main_thanatos", 0, 0, .sql_last_killer_name$;
+			donpcevent strnpcinfo(3) + "::OnRespawn";
+		}
+	}
+
+	initnpctimer;
+	startnpctimer;
+	end;
+
+OnThanatosDead:
+	callfunc "THANA_SQL_Load", "main_thanatos";
+
+	if (!.sql_is_alive)
+		end;
+
+	.@killer$ = "Unknown";
+	if (playerattached())
+		.@killer$ = strcharinfo(0);
+
+	.@next = gettimetick(2) + .respawn_sec;
+
+	callfunc "THANA_SQL_Save", "main_thanatos", 0, .@next, .@killer$;
+
+	announce "[MVP] Thanatos has been defeated by " + .@killer$ + "! Respawn in 2 hours.", bc_all;
+	end;
+
+OnRespawn:
+	killmonster .map$, "";
+
+	monster .map$, .x, .y, "--ja-- Thanatos", .mob_id, 1, strnpcinfo(3) + "::OnThanatosDead";
+
+	callfunc "THANA_SQL_Save", "main_thanatos", 1, 0, .sql_last_killer_name$;
+
+	announce "[MVP] Thanatos has respawned in thana_boss! Go now!", bc_all;
+	end;
+
+OnForceSpawn:
+	killmonster .map$, "";
+	callfunc "THANA_SQL_Save", "main_thanatos", 0, 0, .sql_last_killer_name$;
+	donpcevent strnpcinfo(3) + "::OnRespawn";
+	end;
+
+OnForceDespawn:
+	callfunc "THANA_SQL_Load", "main_thanatos";
+
+	if (!.sql_is_alive)
+		end;
+
+	killmonster .map$, "";
+
+	.@next = gettimetick(2) + .respawn_sec;
+	callfunc "THANA_SQL_Save", "main_thanatos", 0, .@next, .sql_last_killer_name$;
+
+	announce "[MVP] Thanatos has been despawned by GM. Next respawn in 2 hours.", bc_all;
+	end;
+}
+
+//------------------------------
+// Quest Style Warper
+//------------------------------
+valmorra,179,109,4	script	Thana Boss Warper	10824,{
+	callfunc "THANA_SQL_Load", "main_thanatos";
+
+	.@need_item = 969;
+	.@need_amount = 1000;
+	.@gm_bypass_level = 50;
+
+	mes "[^00BFFFThana Boss Warper^000000]";
+	mes "Good day, ^FF9900" + strcharinfo(0) + "^000000.";
+	mes "I guard the path to the forbidden Thanatos Boss Room.";
+	mes "Only brave warriors with enough tribute may enter.";
+	next;
+
+	mes "[^00BFFFThana Boss Warper^000000]";
+
+	if (getvariableofnpc(.sql_is_alive, "Thanatos_Spawn_Controller")) {
+		mes "^00AA00Status:^000000 Thanatos is currently ^00AA00ALIVE^000000.";
+		mes "Location: ^0055FFthana_boss^000000";
+
+		.@killer$ = getvariableofnpc(.sql_last_killer_name$, "Thanatos_Spawn_Controller");
+		if (.@killer$ != "" && .@killer$ != "Unknown")
+			mes "Last Killer: ^FF9900" + .@killer$ + "^000000";
+	}
+	else {
+		mes "^FF0000Status:^000000 Thanatos is currently ^FF0000DEAD^000000.";
+
+		.@next = getvariableofnpc(.sql_next_spawn, "Thanatos_Spawn_Controller");
+		if (.@next > 0) {
+			.@left = .@next - gettimetick(2);
+			mes "Next Respawn In: ^0055FF" + callfunc("FmtHMS", .@left) + "^000000";
+		}
+		else {
+			mes "Next Respawn In: ^0055FFUnknown^000000";
+		}
+
+		.@killer$ = getvariableofnpc(.sql_last_killer_name$, "Thanatos_Spawn_Controller");
+		if (.@killer$ != "" && .@killer$ != "Unknown")
+			mes "Last Killer: ^FF9900" + .@killer$ + "^000000";
+	}
+	next;
+
+	.@menu$ = "^00FF54[ ]^000000 Information";
+	.@menu$ += ":^00FF54[ ]^000000 ^03C04AEnter Thanatos Boss Room^000000";
+	.@menu$ += ":^00FF54[ ]^000000 Check Requirement";
+
+	if (getgmlevel() >= 99) {
+		.@menu$ += ":^FF0000[GM PANEL]^000000 Force Spawn";
+		.@menu$ += ":^FF0000[GM PANEL]^000000 Force Despawn";
+	}
+
+	.@menu$ += ":Cancel";
+
+	switch(select(.@menu$)) {
+
+	case 1:
+		mes "[^00BFFFInformation^000000]";
+		mes "The Thanatos Boss Room is a dangerous place where only prepared warriors should enter.";
+		mes "";
+		mes "^FF9900Entry Requirement:^000000";
+		mes "- " + .@need_amount + "x " + getitemname(.@need_item);
+		mes "";
+
+		if (getgmlevel() >= .@gm_bypass_level) {
+			mes "^FF0000GM Notice:^000000";
+			mes "GM bypass is active. Entry requirement will not be consumed.";
+			mes "";
+		}
+
+		mes "^FF0000Important:^000000";
+		mes "The entry fee will be consumed when you enter.";
+		close;
+
+	case 2:
+		if (getgmlevel() >= .@gm_bypass_level) {
+			mes "[^00BFFFThana Boss Warper^000000]";
+			mes "^FF0000GM Bypass:^000000 Entry requirement skipped.";
+			mes "Do you want to enter now?";
+			next;
+
+			switch(select("^03C04AEnter Now^000000:Cancel")) {
+			case 1:
+				warp "thana_boss",136,116;
+				close;
+			default:
+				close;
+			}
+		}
+
+		if (countitem(.@need_item) < .@need_amount) {
+			mes "[^00BFFFThana Boss Warper^000000]";
+			mes "You do not have enough tribute.";
+			mes "";
+			mes "^FF0000Required:^000000 " + .@need_amount + "x " + getitemname(.@need_item);
+			mes "^0055FFYou Have:^000000 " + countitem(.@need_item) + "x " + getitemname(.@need_item);
+			close;
+		}
+
+		mes "[^00BFFFThana Boss Warper^000000]";
+		mes "Entry requires:";
+		mes "^FF9900" + .@need_amount + "x " + getitemname(.@need_item) + "^000000";
+		mes "";
+		mes "Do you want to enter now?";
+		next;
+
+		switch(select("^03C04AEnter Now^000000:Cancel")) {
+		case 1:
+			if (countitem(.@need_item) < .@need_amount) {
+				mes "[^00BFFFThana Boss Warper^000000]";
+				mes "You no longer have enough Gold.";
+				close;
+			}
+
+			delitem .@need_item, .@need_amount;
+			warp "thana_boss",136,116;
+			close;
+
+		default:
+			close;
+		}
+
+	case 3:
+		mes "[^00BFFFRequirement^000000]";
+		mes "To enter the Thanatos Boss Room, you need:";
+		mes "";
+		mes "^FF9900" + .@need_amount + "x " + getitemname(.@need_item) + "^000000";
+		mes "";
+		mes "^0055FFYour Current Gold:^000000 " + countitem(.@need_item);
+
+		if (getgmlevel() >= .@gm_bypass_level) {
+			mes "";
+			mes "^FF0000GM Bypass Active:^000000 You can enter without consuming Gold.";
+		}
+		close;
+
+	case 4:
+		if (getgmlevel() >= 99) {
+			donpcevent "Thanatos_Spawn_Controller::OnForceSpawn";
+			mes "[GM PANEL]";
+			mes "Force spawn request sent.";
+			close;
+		}
+		close;
+
+	case 5:
+		if (getgmlevel() >= 99) {
+			donpcevent "Thanatos_Spawn_Controller::OnForceDespawn";
+			mes "[GM PANEL]";
+			mes "Force despawn request sent.";
+			close;
+		}
+		close;
+
+	default:
+		close;
+	}
+}
+
+//==================================================
+// MAPFLAGS
+//==================================================
+thana_boss	mapflag	nowarp
+thana_boss	mapflag	nowarpto
+thana_boss	mapflag	nobranch
+thana_boss	mapflag	nomemo
+thana_boss	mapflag	noreturn
+thana_boss	mapflag	nosave	SavePoint

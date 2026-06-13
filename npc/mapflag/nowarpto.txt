@@ -217,3 +217,11 @@ bossnia_04	mapflag	nowarpto
 2012rwc_06	mapflag	nowarpto
 2012rwc_07	mapflag	nowarpto
 2012rwc_08	mapflag	nowarpto
+
+//============================================================
+// Custom disabled maps
+//============================================================
+1@dth3	mapflag	nowarpto
+1@def02	mapflag	nowarpto
+1@def03	mapflag	nowarpto
+1@ge_st	mapflag	nowarpto

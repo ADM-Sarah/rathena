@@ -17,7 +17,7 @@
 //============================================================
 
 // Guild Dungeons =========
-gld_dun01	mapflag	gvg_dungeon
-gld_dun02	mapflag	gvg_dungeon
-gld_dun03	mapflag	gvg_dungeon
-gld_dun04	mapflag	gvg_dungeon
+//gld_dun01	mapflag	gvg_dungeon
+//gld_dun02	mapflag	gvg_dungeon
+//gld_dun03	mapflag	gvg_dungeon
+//gld_dun04	mapflag	gvg_dungeon

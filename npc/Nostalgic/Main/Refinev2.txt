@@ -1,0 +1,203 @@
+//============================================================
+// VIP Refiner (SAFE +1 Refine Each Time, up to +10)
+// Global Announce only when item reaches +10
+//============================================================
+valmorra,146,136,6	script	VIP Refiner	63,{
+
+	.mes$ = "[VIP Refiner]";
+	.ori_id = 7620;
+	.elu_id = 7619;
+	.qty    = 15;
+	.max    = 10;
+
+	.cBlue$  = "^3399FF";
+	.cGreen$ = "^00FF00";
+	.cRed$   = "^FF0000";
+	.cGray$  = "^777777";
+	.cEnd$   = "^000000";
+
+	mes .mes$;
+	mes "^4B0082------------------------------^000000";
+	mes "^4B0082 VIP Refiner Service^000000";
+	mes "^4B0082------------------------------^000000";
+	mes "";
+	mes "Good day, " + strcharinfo(0) + ".";
+	mes "";
+	mes "Refine your equipment safely with";
+	mes "^0055FF+1 refine per attempt^000000 (no failure).";
+	mes "Maximum refine: ^0055FF+" + .max + "^000000.";
+	mes "";
+	mes "^4B0082------------ Required Materials ------------^000000";
+	mes "Weapon, Top, Middle & Lower:";
+	mes "  ^0055FF" + getitemname(.ori_id) + " x" + .qty + "^000000";
+	mes "Armor & Others:";
+	mes "  ^0055FF" + getitemname(.elu_id) + " x" + .qty + "^000000";
+	mes "";
+	mes "^777777Accessory, Costume, and non-refinable items are not allowed.^000000";
+	mes "^4B0082------------------------------^000000";
+	next;
+
+Main:
+	mes .mes$;
+	mes "Choose an option:";
+	next;
+
+	menu "Please Refine Equipment", SlotMenu,
+	     "Cancel", CloseNPC;
+
+SlotMenu:
+	mes .mes$;
+	mes "Choose equipment slot:";
+	next;
+
+	menu
+	"[Head - Top] "  + (getequipisequiped(EQI_HEAD_TOP) ?  getequipname(EQI_HEAD_TOP)  + " " + .cBlue$ + "[+" + getequiprefinerycnt(EQI_HEAD_TOP) + "]" + .cEnd$ : .cGray$ + "(Empty)" + .cEnd$), HT,
+	"[Head - Mid] "  + (getequipisequiped(EQI_HEAD_MID) ?  getequipname(EQI_HEAD_MID)  + " " + .cBlue$ + "[+" + getequiprefinerycnt(EQI_HEAD_MID) + "]" + .cEnd$ : .cGray$ + "(Empty)" + .cEnd$), HM,
+	"[Head - Low] "  + (getequipisequiped(EQI_HEAD_LOW) ?  getequipname(EQI_HEAD_LOW)  + " " + .cBlue$ + "[+" + getequiprefinerycnt(EQI_HEAD_LOW) + "]" + .cEnd$ : .cGray$ + "(Empty)" + .cEnd$), HL,
+	"[Armor] "       + (getequipisequiped(EQI_ARMOR)    ?  getequipname(EQI_ARMOR)     + " " + .cBlue$ + "[+" + getequiprefinerycnt(EQI_ARMOR)    + "]" + .cEnd$ : .cGray$ + "(Empty)" + .cEnd$), AR,
+	"[Garment] "     + (getequipisequiped(EQI_GARMENT)  ?  getequipname(EQI_GARMENT)   + " " + .cBlue$ + "[+" + getequiprefinerycnt(EQI_GARMENT)  + "]" + .cEnd$ : .cGray$ + "(Empty)" + .cEnd$), GA,
+	"[Right Hand] "  + (getequipisequiped(EQI_HAND_R)   ?  getequipname(EQI_HAND_R)    + " " + .cBlue$ + "[+" + getequiprefinerycnt(EQI_HAND_R)   + "]" + .cEnd$ : .cGray$ + "(Empty)" + .cEnd$), RH,
+	"[Left Hand] "   + (getequipisequiped(EQI_HAND_L)   ?  getequipname(EQI_HAND_L)    + " " + .cBlue$ + "[+" + getequiprefinerycnt(EQI_HAND_L)   + "]" + .cEnd$ : .cGray$ + "(Empty)" + .cEnd$), LH,
+	"[Shoes] "       + (getequipisequiped(EQI_SHOES)    ?  getequipname(EQI_SHOES)     + " " + .cBlue$ + "[+" + getequiprefinerycnt(EQI_SHOES)    + "]" + .cEnd$ : .cGray$ + "(Empty)" + .cEnd$), SH,
+	"[Left Acc] "    + .cGray$ + "(Not Allowed)" + .cEnd$, AL,
+	"[Right Acc] "   + .cGray$ + "(Not Allowed)" + .cEnd$, RA,
+	"Back", Main,
+	"Cancel", CloseNPC;
+
+HT: set .@slot, EQI_HEAD_TOP; goto Refine;
+HM: set .@slot, EQI_HEAD_MID; goto Refine;
+HL: set .@slot, EQI_HEAD_LOW; goto Refine;
+AR: set .@slot, EQI_ARMOR;    goto Refine;
+GA: set .@slot, EQI_GARMENT;  goto Refine;
+RH: set .@slot, EQI_HAND_R;   goto Refine;
+LH: set .@slot, EQI_HAND_L;   goto Refine;
+SH: set .@slot, EQI_SHOES;    goto Refine;
+AL: set .@slot, EQI_ACC_L;    goto Refine;
+RA: set .@slot, EQI_ACC_R;    goto Refine;
+
+Refine:
+	if (.@slot == EQI_ACC_L || .@slot == EQI_ACC_R) {
+		mes .mes$;
+		mes "Accessory cannot be refined here.";
+		next;
+		goto Main;
+	}
+
+	if (!getequipisequiped(.@slot)) {
+		mes .mes$;
+		mes "You don't have any item equipped there.";
+		next;
+		goto Main;
+	}
+
+	if (getequiprefinerycnt(.@slot) < 0) {
+		mes .mes$;
+		mes "Costume / this item cannot be refined.";
+		next;
+		goto Main;
+	}
+
+	.@cur = getequiprefinerycnt(.@slot);
+	if (.@cur >= .max) {
+		mes .mes$;
+		mes "This item is already " + .cBlue$ + "+" + .max + .cEnd$ + ".";
+		next;
+		goto Main;
+	}
+
+	.@target = .@cur + 1;
+	.@id = getequipid(.@slot);
+
+	if (.@slot == EQI_HEAD_TOP || .@slot == EQI_HEAD_MID || .@slot == EQI_HEAD_LOW) {
+		.@mat = .ori_id;
+	} else if (getiteminfo(.@id, ITEMINFO_TYPE) == IT_WEAPON) {
+		.@mat = .ori_id;
+	} else {
+		.@mat = .elu_id;
+	}
+
+	mes .mes$;
+	mes "Item: " + .cGreen$ + getequipname(.@slot) + .cEnd$;
+	mes "Current refine: " + .cBlue$ + "+" + .@cur + .cEnd$;
+	mes "Next refine: " + .cBlue$ + "+" + .@target + .cEnd$;
+	mes "Required: " + .cRed$ + .qty + " " + getitemname(.@mat) + .cEnd$;
+	mes "You have: " + .cBlue$ + countitem(.@mat) + .cEnd$;
+	next;
+
+	menu "Proceed", DoRefine,
+	     "Cancel", Main;
+
+DoRefine:
+	if (.@slot == EQI_ACC_L || .@slot == EQI_ACC_R) {
+		mes .mes$;
+		mes "Accessory cannot be refined here.";
+		next;
+		goto Main;
+	}
+
+	if (!getequipisequiped(.@slot)) {
+		mes .mes$;
+		mes "You don't have any item equipped there.";
+		next;
+		goto Main;
+	}
+
+	if (getequiprefinerycnt(.@slot) < 0) {
+		mes .mes$;
+		mes "Costume / this item cannot be refined.";
+		next;
+		goto Main;
+	}
+
+	.@cur = getequiprefinerycnt(.@slot);
+	if (.@cur >= .max) {
+		mes .mes$;
+		mes "This item is already " + .cBlue$ + "+" + .max + .cEnd$ + ".";
+		next;
+		goto Main;
+	}
+
+	.@target = .@cur + 1;
+	.@id = getequipid(.@slot);
+
+	if (.@slot == EQI_HEAD_TOP || .@slot == EQI_HEAD_MID || .@slot == EQI_HEAD_LOW) {
+		.@mat = .ori_id;
+	} else if (getiteminfo(.@id, ITEMINFO_TYPE) == IT_WEAPON) {
+		.@mat = .ori_id;
+	} else {
+		.@mat = .elu_id;
+	}
+
+	if (countitem(.@mat) < .qty) {
+		mes .mes$;
+		mes "Not enough materials.";
+		mes "Need: " + .cRed$ + .qty + " " + getitemname(.@mat) + .cEnd$;
+		mes "You have: " + .cBlue$ + countitem(.@mat) + .cEnd$;
+		next;
+		goto Main;
+	}
+
+	delitem .@mat, .qty;
+
+	successrefitem(.@slot);
+
+	.@new_refine = getequiprefinerycnt(.@slot);
+
+	if (.@new_refine == .max) {
+		announce "[VIP Refiner] " + strcharinfo(0) + " has successfully refined " + getequipname(.@slot) + " to +" + .max + "! Congratulations on achieving a perfect refinement!", bc_all;
+	}
+
+	mes .mes$;
+	mes "Refine successful!";
+	mes "New refine: " + .cBlue$ + "+" + .@new_refine + .cEnd$ + " (Max +" + .max + ")";
+	next;
+	goto Main;
+
+CloseNPC:
+	mes .mes$;
+	mes "See you next time.";
+	close;
+
+OnInit:
+	end;
+}

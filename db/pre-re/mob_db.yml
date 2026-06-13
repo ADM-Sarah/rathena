@@ -12638,8 +12638,6 @@ Body:
         Rate: 800
       - Item: Kronos
         Rate: 100
-      - Item: Grimtooth_
-        Rate: 300
       - Item: Mage_Coat
         Rate: 300
       - Item: Cape_Of_Ancient_Lord
@@ -13310,7 +13308,7 @@ Body:
     AegisName: EMPELIUM
     Name: Emperium
     Level: 90
-    Hp: 68430
+    Hp: 15000000
     Attack: 60
     Attack2: 71
     Defense: 40
@@ -15680,8 +15678,6 @@ Body:
         Rate: 7275
       - Item: Gaia_Sword
         Rate: 250
-      - Item: Grimtooth_
-        Rate: 188
       - Item: Crown
         Rate: 12
         StealProtected: true
@@ -26637,16 +26633,12 @@ Body:
       - Item: Luna_Bow
         Rate: 2000
     Drops:
-      - Item: Combat_Knife
-        Rate: 3500
       - Item: Sucsamad
         Rate: 3500
       - Item: Old_Violet_Box
         Rate: 9000
       - Item: Moonlight_Sword
         Rate: 1500
-      - Item: Grimtooth_
-        Rate: 3500
       - Item: Bow_Of_Rudra
         Rate: 1500
       - Item: Dragon_Wing
@@ -36539,7 +36531,7 @@ Body:
     AegisName: BARRICADE
     Name: Barricade
     Level: 98
-    Hp: 120000
+    Hp: 20000000
     Agi: 17
     Int: 80
     Dex: 126

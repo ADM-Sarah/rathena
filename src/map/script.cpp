@@ -32,6 +32,8 @@
 #include <common/utils.hpp>
 
 #include "achievement.hpp"
+#include "autoattack.hpp"
+#include "autoattack_script.hpp"
 #include "atcommand.hpp"
 #include "battle.hpp"
 #include "battleground.hpp"
@@ -5639,6 +5641,9 @@ BUILDIN_FUNC(warp)
 	x = script_getnum(st,3);
 	y = script_getnum(st,4);
 
+	if (sd->state.autoattack && strcmp(str, "Random") != 0)
+		return SCRIPT_CMD_SUCCESS;
+
 	if(strcmp(str,"Random")==0)
 		ret = pc_randomwarp(sd,CLR_TELEPORT,true);
 	else if(strcmp(str,"SavePoint")==0 || strcmp(str,"Save")==0)
@@ -5649,6 +5654,14 @@ BUILDIN_FUNC(warp)
 	if( ret ) {
 		ShowError("buildin_warp: moving player '%s' to \"%s\",%d,%d failed.\n", sd->status.name, str, x, y);
 		return SCRIPT_CMD_FAILURE;
+	}
+
+	if (sd->state.autoattack) {
+		aa_status_checkmapchange(sd);
+		if (sd->state.autotrade) {
+			pc_delinvincibletimer(sd);
+			clif_parse_LoadEndAck(0, sd);
+		}
 	}
 
 	return SCRIPT_CMD_SUCCESS;
@@ -6112,6 +6125,9 @@ BUILDIN_FUNC(jobchange)
 			return SCRIPT_CMD_SUCCESS;
 
 		pc_jobchange(sd, job, upper);
+
+		sd->aa.autoattackskills.clear();
+		sd->aa.autobuffskills.clear();
 	}
 
 	return SCRIPT_CMD_SUCCESS;
@@ -12930,6 +12946,8 @@ BUILDIN_FUNC(resetskill)
 	if (!script_charid2sd(2,sd))
 		return SCRIPT_CMD_FAILURE;
 	pc_resetskill(sd,1);
+	sd->aa.autoattackskills.clear();
+	sd->aa.autobuffskills.clear();
 	return SCRIPT_CMD_SUCCESS;
 }
 
@@ -27793,6 +27811,557 @@ BUILDIN_FUNC(mesitemicon){
 	return SCRIPT_CMD_SUCCESS;
 }
 
+BUILDIN_FUNC(duplicate_remove) {
+    struct npc_data* nd;
+    if (script_hasdata(st, 2)) {
+        nd = npc_name2id(script_getstr(st, 2));
+        if (nd == NULL) {
+            ShowError("duplicate_remove: NPC not found: %s\n", script_getstr(st ,2));
+            script_pushint(st, 0);
+            return SCRIPT_CMD_FAILURE;
+        }
+    }
+    else
+        nd = (struct npc_data*)map_id2bl(st->oid);
+
+    if (nd != NULL) {
+        st->state = END;
+        if (nd->src_id == 0)
+            npc_unload_duplicates(nd);
+        else
+            npc_unload(nd, true);
+    }
+    script_pushint(st, 1);
+    return SCRIPT_CMD_SUCCESS;
+}
+
+/// aa_getskillinfostring(<id>,<skill id>)
+/// aa_getskillinfostring(<id>,"<skill name>")
+/// 0 = Description
+BUILDIN_FUNC(aa_getskillinfostring)
+{
+	int skill_id, id;
+	TBL_PC* sd;
+
+	if (!script_rid2sd(sd))
+		return SCRIPT_CMD_FAILURE;// no player attached, report source
+
+	id = script_getnum(st, 2);
+	skill_id = (script_isstring(st, 3) ? skill_name2id(script_getstr(st, 3)) : script_getnum(st, 3));
+
+	switch (id) {
+	case 0:	// skill->desc
+		std::shared_ptr<s_skill_db> skill = skill_db.find(skill_id);
+		if (!skill)
+			return SCRIPT_CMD_SUCCESS;
+		script_pushstrcopy(st, skill->desc);
+		break;
+	}
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+// Start auto buff from rental items
+BUILDIN_FUNC(autoattack_fromitem) {
+	map_session_data* sd;
+	t_tick max_duration = 86400;
+
+	if (!script_rid2sd(sd))
+		return SCRIPT_CMD_FAILURE;
+
+	t_itemid item_id = script_getnum(st, 2);
+
+	return handleAutoattack_fromitem(sd, item_id, max_duration);
+}
+
+/*
+	Returns info of player on autoattack
+
+	aa_getautoattackstring(<id>{,<index>})
+	0 = Auto Heal all desc - Index = skill id
+	1 = HP / SP Potions
+	2 = Ressurrection
+	3 = auto buff skill desc
+	4 = auto sit rest
+	5 = auto buff items desc
+	6 = teleport desc
+	7 = General autoattack_potions state (disable / enable)
+	8 = Return to savepoint when dead (disable / enable)
+	9 = Token of siegfried use for auto res (disable / enable)
+	10 = Auto accept party request
+	11 = Priorize Loot / Fight - 0 Fight - 1 Loot
+	12 = Monster selection
+	13 = Item pickup selection
+*/
+BUILDIN_FUNC(aa_getautoattackstring)
+{
+	int index = 0, extra_index = 0, id;
+	TBL_PC* sd;
+	std::ostringstream os_buf;
+	os_buf.str("");
+	struct party_data* p = nullptr;
+
+	if (!script_rid2sd(sd))
+		return SCRIPT_CMD_FAILURE;// no player attached, report source
+
+	id = script_getnum(st, 2);
+	index = script_getnum(st, 3);
+	extra_index = script_getnum(st, 4);
+
+	switch (id) {
+	case 0: // auto heal desc
+		handle_autoattack_heal(os_buf, index, extra_index, st, sd);
+		break;
+
+	case 1: // HP / SP Potions - // potion_menu_list
+		handle_autoattack_potions(os_buf, index, st, sd);
+		break;
+
+	case 2: // auto attack skill desc
+		handle_autoattack_attack(os_buf, index, extra_index, st, sd);
+		break;
+
+	case 3:// auto buff skill desc
+		handle_autoattack_buff(os_buf, index, extra_index, st, sd);
+		break;
+
+	case 4: // Auto sit to rest
+		handle_autoattack_sitrest(os_buf, index, st, sd);
+		break;
+
+	case 5:	// Buff items - Used for show the buffitems_menu
+		handle_autoattack_items(os_buf, index, st, sd);
+		break;
+
+	case 6: 
+		handle_autoattack_teleport(os_buf, index, st, sd);
+		break;
+
+	case 7:
+		handle_potions(os_buf, sd);
+		break;
+
+	case 8:
+		handle_return_to_savepoint(os_buf, sd);
+		break;
+
+	case 9:
+		handle_token_of_siegfried(os_buf, sd);
+		break;
+
+	case 10:
+		handle_party_request(os_buf, sd);
+		break;
+
+	case 11:
+		handle_priorize_loot_fight(os_buf, sd);
+		break;
+
+	case 12: // monster desc
+		handle_autoattack_monsterselection(os_buf, index, extra_index, st, sd);
+		break;
+
+	case 13: // item pick up
+		handle_autoattack_itempickup(os_buf, index, extra_index, st, sd);
+		break;
+
+	case 14:
+		handle_autoslave(os_buf, sd);
+		break;
+
+	case 15:
+		handle_autoimpo(os_buf, sd);
+		break;
+
+	case 16:
+		handle_autohealing(os_buf, sd);
+		break;
+
+	case 17:
+		handle_autoagi(os_buf, sd);
+		break;
+
+	case 18:
+		handle_autobless(os_buf, sd);
+		break;
+
+	case 19:
+		handle_autoangelus(os_buf, sd);
+		break;
+
+	case 20:
+		handle_autokyrie(os_buf, sd);
+		break;
+
+	case 21:
+		handle_automagni(os_buf, sd);
+		break;
+
+	case 22:
+		handle_autogloria(os_buf, sd);
+		break;
+
+	case 23:
+		handle_autosuffra(os_buf, sd);
+		break;
+
+	case 24:
+		handle_autoassump(os_buf, sd);
+		break;
+
+	case 25:
+		handle_autoresu(os_buf, sd);
+		break;
+
+	}
+
+	script_pushstrcopy(st, os_buf.str().c_str());
+	return SCRIPT_CMD_SUCCESS;
+}
+
+BUILDIN_FUNC(aa_getautoattackint)
+{
+	TBL_PC* sd;
+	if (!script_rid2sd(sd)) return SCRIPT_CMD_SUCCESS; // No player attached, report source
+
+	int id = script_getnum(st, 2);
+	int num = 0; // Variable utilisee pour stocker le resultat
+	std::shared_ptr<item_data> item_data;
+
+	const uint32 char_id = sd->status.char_id;
+
+	switch (id) {
+	case 0: // Auto heal
+	case 2: // Active auto attack skills
+	case 3: // Active auto buffs skills
+	case 4: // Active potions
+	case 5: // Buff items
+	case 6: // Return to save point on death
+	case 7: // Token of Siegfried
+	case 8: // Auto accept party request
+	case 9: // Pick up item config
+	case 10: // Prio item config
+	case 11: // Stop melee
+	case 12: // teleport use fly wing
+	case 13: // teleport use skill
+	case 14: // Sit regen hp
+	case 15: // Sit regen sp
+	case 16: // Attack aggressve monster
+	case 17: // Item pick up selecton size
+	case 18: // Action on end
+	case 19: // AutoSlaveMode
+	case 20: // autoimpo
+	case 21: // autohealing
+	case 22: // autoagi
+	case 23: // autobless
+	case 24: // autoangelus
+	case 25: // autokyrie
+	case 26: // automagni
+	case 27: // autogloria
+	case 28: // autosuffra
+	case 29: // autoassump
+	case 30: // autoresu
+	case 31: // teleport MVP
+	case 32: // teleport Mini Boss
+		num = handleGetautoattackint(sd, id);
+		break;
+	case 1: // HP / SP Potions available in inventory
+		for (int i = 0; i < MAX_INVENTORY; ++i) {
+			item_data = item_db.find(sd->inventory.u.items_inventory[i].nameid);
+			if (!item_data) break;
+			if (item_data->type == IT_HEALING) ++num;
+		}
+		break;
+	default:
+		num = 0;
+		break;
+	}
+
+	script_pushint(st, num);
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/*
+	Save info of player on autoattack
+
+	aa_setautoattack(<str>)
+	Parse a string with ; as separator
+	id;
+	id = 0 - autoheal (is_active;skill_id;skill_lv;min_hp)
+	id = 1 - autopotion (is_active;item_id;min_hp;min_sp)
+	id = 2 - attack skill (is_active;skill_id;skill_lv)
+	id = 3 - buff skills (is_active;skill_id;skill_lv)
+	id = 4 - teleport flywing
+	id = 5 - autoattackitems(is_active; item_id; delay)
+	id = 6 - teleport skill
+	id = 7 - Melee Attack
+	id = 8 - Active autoattack potions
+	id = 9 - Return to save point on death
+	id = 10 - reset config
+	id = 11 - Token of siegfried
+	id = 12 - Auto accept parrty request
+	id = 13 - Priorize loot / fight
+	id = 14 - Sit rest hp
+	id = 15 - Sit rest sp
+	id = 16 - Teleport min hp
+	id = 17 - Teleport delay no mob meet
+	id = 18 - Ignore aggressive monster not in the list
+	id = 19 - Monster selection list
+	id = 20 - Item Pickup configuration
+	id = 21 - Item Pickup selection
+	id = 22 - Action on end
+	id = 23 - Max monster surround
+	id = 24 - AutoSlaveMode
+	id = 25 - autoimpo
+	id = 26 - autohealing
+	id = 27 - autoagi
+	id = 28 - autobless
+	id = 29 - autoangelus
+	id = 30 - autokyrie
+	id = 31 - automagni
+	id = 32 - autogloria
+	id = 33 - autosuffra
+	id = 34 - autoassump
+	id = 35 - autoresu
+*/
+BUILDIN_FUNC(aa_setautoattack)
+{
+	TBL_PC* sd;
+	const char delim = ';';
+	std::vector<std::string> result;
+	std::string item, str;
+	int id = -1;
+
+	if (!script_rid2sd(sd))
+		return SCRIPT_CMD_SUCCESS; // No player attached
+
+	str = script_getstr(st, 2);
+	std::stringstream ss(str);
+
+	while (std::getline(ss, item, delim)) {
+		result.push_back(item);
+	}
+
+	if (result.empty())
+		return SCRIPT_CMD_FAILURE;
+
+	// Extract the ID to process
+	id = std::stoi(result[0]);
+
+	switch (id) {
+	case 0:
+		handleAutoHeal(result, sd);
+		break;
+	case 1:
+		handleAutoPotion(result, sd);
+		break;
+	case 2:
+		handleAutoAttackSkills(result, sd);
+		break;
+	case 3:
+		handleAutoBuffSkills(result, sd);
+		break;
+	case 4:
+		handleTeleportFlywing(result, sd);
+		break;
+	case 5:
+		handleAutoAttackItems(result, sd);
+		break;
+	case 6:
+		handleTeleportSkill(result, sd);
+		break;
+	case 7:
+		handleMeleeAttack(result, sd);
+		break;
+	case 8:
+		handleAutoAttackPotionState(result, sd);
+		break;
+	case 9:
+		handleReturnToSavepoint(result, sd);
+		break;
+	case 10:
+		handleResetAutoAttackConfig(sd);
+		break;
+	case 11:
+		handleTokenOfSiegfried(result, sd);
+		break;
+	case 12:
+		handleAcceptPartyRequest(result, sd);
+		break;
+	case 13:
+		handlePriorizeLootFight(result, sd);
+		break;
+	case 14:
+		handleSitRestHp(result, sd);
+		break;
+	case 15:
+		handleSitRestSp(result, sd);
+		break;
+	case 16:
+		handleTeleportMinHp(result, sd);
+		break;
+	case 17:
+		handleTeleportNoMobMeet(result, sd);
+		break;
+	case 18:
+		handleIgnoreAggressiveMonster(result, sd);
+		break;
+	case 19:
+		handleMonsterSelection(result, sd);
+		break;
+	case 20:
+		handleItemPickupConfiguration(result, sd);
+		break;
+	case 21:
+		handleItemPickupSelection(result, sd);
+		break;
+	case 22:
+		handleActionOnEnd(result, sd);
+		break;
+	case 23:
+		handleMonsterSurround(result, sd);
+		break;
+	case 24:
+		handleAutoSlaveMode(result, sd);
+		break;
+	case 25:
+		handleAutoImpo(result, sd);
+		break;
+	case 26:
+		handleAutoHealing(result, sd);
+		break;
+	case 27:
+		handleAutoAgi(result, sd);
+		break;
+	case 28:
+		handleAutoBless(result, sd);
+		break;
+	case 29:
+		handleAutoAngelus(result, sd);
+		break;
+	case 30:
+		handleAutoKyrie(result, sd);
+		break;
+	case 31:
+		handleAutoMagni(result, sd);
+		break;
+	case 32:
+		handleAutoGloria(result, sd);
+		break;
+	case 33:
+		handleAutoSuffra(result, sd);
+		break;
+	case 34:
+		handleAutoAssump(result, sd);
+		break;
+	case 35:
+		handleAutoResu(result, sd);
+		break;
+	case 36:
+		handleTeleportMvp(result, sd);
+		break;
+	case 37:
+		handleTeleportMiniBoss(result, sd);
+		break;
+	}
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+BUILDIN_FUNC(aa_getstate)
+{
+	TBL_PC* sd;
+
+	if (!script_rid2sd(sd))
+		return SCRIPT_CMD_SUCCESS;// no player attached, report source
+
+		script_pushint(st, sd->state.autoattack);
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+BUILDIN_FUNC(stop_autoattack)
+{
+	map_session_data* pl_sd;
+	s_mapiterator* iter;
+
+	iter = mapit_getallusers();
+	for (pl_sd = (map_session_data*)mapit_first(iter); mapit_exists(iter); pl_sd = (map_session_data*)mapit_next(iter)) {
+		pc_setreg(pl_sd, add_str("@need_relog"), 1);
+		status_change_end(pl_sd, SC_AUTOATTACK);
+		clif_displaymessage(pl_sd->fd, "Automessage - Free daily battery reset.");
+	}
+	mapit_free(iter);
+
+	script_pushint(st, 1);
+	return SCRIPT_CMD_SUCCESS;
+}
+
+BUILDIN_FUNC(set_need_relog)
+{
+	map_session_data* pl_sd;
+	s_mapiterator* iter;
+
+	iter = mapit_getallusers();
+	for (pl_sd = (map_session_data*)mapit_first(iter); mapit_exists(iter); pl_sd = (map_session_data*)mapit_next(iter)) {
+		pc_setreg(pl_sd, add_str("@need_relog"), 1);
+		clif_displaymessage(pl_sd->fd, "Auto-Battle maintenance is now complete.");
+		clif_displaymessage(pl_sd->fd, "Please relog to update Auto-Battle settings.");
+	}
+	mapit_free(iter);
+
+	script_pushint(st, 1);
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/// Returns the skill's name
+///
+/// getskillname(<skill id>)
+/// getskillname("<skill name>")
+BUILDIN_FUNC(getskillname)
+{
+	uint16 skill_id = (script_isstring(st,2) ? skill_name2id(script_getstr(st,2)) : script_getnum(st,2));
+	if (!skill_get_index(skill_id))
+		script_pushconststr(st, "Unknown Skill");
+	else
+		script_pushstrcopy(st,skill_get_desc(skill_id));
+	return SCRIPT_CMD_SUCCESS;
+}
+
+BUILDIN_FUNC(getbattleconf) {
+	const char* key = script_getstr(st, 2);
+
+	if (strcmp(key, "autobattle.battery_system") == 0) {
+		script_pushint(st, battle_config.autobattle_battery_system);
+		return SCRIPT_CMD_SUCCESS;
+	} else if (strcmp(key, "autobattle.daily_limit") == 0) {
+		script_pushint(st, battle_config.autobattle_daily_limit);
+		return SCRIPT_CMD_SUCCESS;
+	} else if (strcmp(key, "autobattle.battleoffline_system") == 0) {
+		script_pushint(st, battle_config.autobattle_battleoffline_system);
+		return SCRIPT_CMD_SUCCESS;
+	}
+
+	ShowError("getbattleconf: Unknown battle config key '%s'\n", key);
+	script_pushint(st, -1);
+	return SCRIPT_CMD_SUCCESS;
+}
+
+BUILDIN_FUNC(fstatus)
+{
+	TBL_PC* sd = map_charid2sd(script_getnum(st, 2));
+	int icon = script_getnum(st, 3);
+	int time = script_getnum(st, 4);
+	bool state = (script_getnum(st, 5) == 1);
+
+	if (sd == NULL)
+		return SCRIPT_CMD_FAILURE;
+
+	clif_status_change(sd, icon, state, time, 0, 0, 0);
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
 #include <custom/script.inc>
 
 // declarations that were supposed to be exported from npc_chat.cpp
@@ -27841,9 +28410,96 @@ BUILDIN_FUNC(preg_match) {
 #endif
 }
 
+// (^~_~^) Gepard Shield Start
+
+BUILDIN_FUNC(get_unique_id)
+{
+	map_session_data* sd;
+
+	if (!script_rid2sd(sd))
+	{
+		script_pushint(st, 0);
+		return SCRIPT_CMD_FAILURE;
+	}
+
+	script_pushint(st, session[sd->fd]->gepard_info.unique_id);
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+// (^~_~^) Gepard Shield End
+
+// (^~_~^) Color Nicks Start
+
+BUILDIN_FUNC(set_color_nick)
+{
+	map_session_data* sd;
+	unsigned int group_id = script_getnum(st, 2);
+
+	if (!script_rid2sd(sd))
+	{
+		return SCRIPT_CMD_FAILURE;
+	}
+
+	if (group_id == 0)
+	{
+		sd->color_nicks_group_id = 0;
+	}
+	else
+	{
+		if (idb_exists(color_nicks_db, group_id) == 0)
+		{
+			script_pushint(st, -1);
+			return SCRIPT_CMD_FAILURE;
+		}
+
+		sd->color_nicks_group_id = group_id;
+	}
+
+	pc_setglobalreg(sd, add_str("CN_GROUP_ID"), sd->color_nicks_group_id);
+
+	clif_send_colornicks(sd);
+
+	script_pushint(st, 0);
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+BUILDIN_FUNC(get_color_nick)
+{
+	map_session_data* sd;
+
+	if (!script_rid2sd(sd))
+	{
+		script_pushint(st, -1);
+
+		return SCRIPT_CMD_FAILURE;
+	}
+
+	script_pushint(st, sd->color_nicks_group_id);
+
+	return SCRIPT_CMD_SUCCESS;
+}
+
+// (^~_~^) Color Nicks End
+
 /// script command definitions
 /// for an explanation on args, see add_buildin_func
 struct script_function buildin_func[] = {
+
+// (^~_~^) Color Nicks Start
+
+	BUILDIN_DEF(set_color_nick,"i"),
+	BUILDIN_DEF(get_color_nick,""),
+
+// (^~_~^) Color Nicks End
+
+// (^~_~^) Gepard Shield Start
+
+	BUILDIN_DEF(get_unique_id,""),
+
+// (^~_~^) Gepard Shield End
+
 	// NPC interaction
 	BUILDIN_DEF(mes,"s*"),
 	BUILDIN_DEF(next,""),
@@ -28568,6 +29224,25 @@ struct script_function buildin_func[] = {
 	BUILDIN_DEF2(permission_add, "permission_remove", "i?"),
 
 	BUILDIN_DEF( mesitemicon, "v??" ),
+
+	BUILDIN_DEF(aa_getskillinfostring, "iv"),
+	BUILDIN_DEF(aa_setautoattack, "s"),
+	BUILDIN_DEF(autoattack_fromitem, "i"),
+	BUILDIN_DEF(aa_getautoattackstring, "i??"),
+	BUILDIN_DEF(aa_getautoattackint, "i?"),
+	BUILDIN_DEF(aa_getstate, ""),
+
+	BUILDIN_DEF(stop_autoattack, ""),
+	BUILDIN_DEF(set_need_relog, ""),
+
+	BUILDIN_DEF(getskillname,"v"),
+
+	BUILDIN_DEF(getbattleconf, "s"),
+
+	// Events
+	BUILDIN_DEF(duplicate_remove, "s"),
+
+	BUILDIN_DEF(fstatus,"iiii"),
 
 #include <custom/script_def.inc>
 

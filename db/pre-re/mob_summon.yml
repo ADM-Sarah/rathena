@@ -101,12 +101,12 @@ Body:
         Rate: 500000
       - Mob: LADY_TANEE
         Rate: 500000
-      - Mob: THANATOS
-        Rate: 500000
+#      - Mob: THANATOS
+#        Rate: 500000
       - Mob: DETALE
         Rate: 500000
-      - Mob: KIEL_
-        Rate: 500000
+#      - Mob: KIEL_
+#        Rate: 500000
       - Mob: RANDGRIS
         Rate: 500000
       - Mob: GLOOMUNDERNIGHT
@@ -125,6 +125,18 @@ Body:
         Rate: 500000
       - Mob: S_NYDHOG
         Rate: 500000
+      - Mob: B_SHECIL
+        Rate: 600000
+      - Mob: B_EREMES
+        Rate: 600000
+      - Mob: B_HARWORD
+        Rate: 700000
+      - Mob: B_SEYREN
+        Rate: 600000
+      - Mob: B_MAGALETA
+        Rate: 600000
+      - Mob: B_KATRINN
+        Rate: 600000
   - Group: Branch_Of_Dead_Tree
     Default: SCORPION
     Summon:

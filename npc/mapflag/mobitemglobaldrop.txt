@@ -1,0 +1,17 @@
+//===== Shakto Script ========================================
+//===== https://ronovelty.com/ ===============================
+//= Mapflag: mobitemglobaldrop
+//===== Description: =========================================
+//= Add items drops for all maps
+//= itemid,droprate,itemid,droprate....
+//===== Additional Comments: =================================
+//= 1.0 Create file
+//============================================================
+
+//prt_fild08	mapflag	mobitemglobaldrop	1002,51005,10000 // Specific MobID in the Map
+//prt_fild09	mapflag	mobitemglobaldrop	609,10000,610,10000     // All monster in the Map
+//all_map	mapflag	mobitemglobaldrop	3531,51004,10000,51005,10000,33048,100         // Global Map
+//all_map	mapflag	mobitemglobaldrop	3532,51004,10000,51005,10000,33048,100         // Global Map
+//all_map	mapflag	mobitemglobaldrop	28008,33048,100
+//gld_dun01	mapflag	mobitemglobaldrop	3541,607,10000
+//gld_dun01	mapflag	mobitemglobaldrop	3542,607,10000

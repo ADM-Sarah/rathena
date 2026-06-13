@@ -1,0 +1,160 @@
+//=========================== KafraShop.net ===============================
+//=        _    _       ____                   _         
+//=       | |  / /     /  __\                 / \
+//=       | |_/ / ___ _| |____ ___ ___ _  ____| |___  _____ _____
+//=       |  _  \/ _ ' |  __/ '__/  _ ' |/ ___|  _  \/  _  \  __ \
+//=       | | \ | |_|  | |  | |  | |_|  | ___ | | | |  |_| | |_| |
+//=       \_/  \ \__,|_| |  \_/   \__,|_|\____/_| | |\____/| .___/
+//=             \_/    \_/                        \_/      | |
+//=                                                        \_/
+//=========================================================================
+//= Mini-Games : Poring Punch
+//================= Description ===========================================
+//= Survive from attacking zombies.
+//================= Current Version =======================================
+//= 1.0
+//================= Changelogs ============================================
+//= 1.0 - Implementation
+//=========================================================================
+
+-	script	MG_PoringPunch	FAKE_NPC,{
+
+OnInit:
+	.evtName$ = "Poring Punch";		// Event Name
+	end;
+
+OnStart:
+	.cnt = 3;
+	.minute = 5;
+	donpcevent(strnpcinfo(0)+"::OnPuncherInstruct");
+	end;
+
+OnPuncherInstruct:
+	mapannounce("ppuncher_ev", "["+.evtName$+"] Welome to the Poring Puncher Event.",bc_all|bc_blue);
+	sleep(2000);
+	mapannounce("ppuncher_ev", "["+.evtName$+"] Just gain points by using your bare hands and be the highest scorer.",bc_all|bc_blue);
+	sleep(2000);
+	mapannounce("ppuncher_ev", "["+.evtName$+"] Every kill, there is a corresponding point.",bc_all|bc_blue);
+	sleep(2000);
+	mapannounce("ppuncher_ev", "["+.evtName$+"] The event will run for 5 minutes.",bc_all|bc_blue);
+	sleep(2000);
+	mapannounce("ppuncher_ev", "["+.evtName$+"] Let's begin the event...",bc_all|bc_blue);
+	sleep(2000);
+	donpcevent(strnpcinfo(0)+"::OnSpawnCountdown");
+	end;
+
+OnSpawnCountdown:
+	setnpctimer(300000);
+	startnpctimer();
+
+OnTimer300000:
+	if (.minute > 0) {
+		mapannounce("ppuncher_ev", "["+.evtName$+"] The event will end after "+.minute+" "+(.minute != 1 ? "minutes":"minute")+".",bc_all|bc_blue);
+		monster("ppuncher_ev", 0, 0, "1 Point", 1002, 30, strnpcinfo(0)+"::OnNormalPoint");
+		monster("ppuncher_ev", 0, 0, "5 Points", 1002, 5, strnpcinfo(0)+"::OnBonusPoint");
+		monster("ppuncher_ev", 0, 0, "-3 Points", 1002, 30, strnpcinfo(0)+"::OnPenaltyPoint");
+	} else
+		donpcevent(strnpcinfo(0)+"::OnStop");
+	end;
+
+OnTimer360000:
+	stopnpctimer();
+	.minute--;
+	donpcevent(strnpcinfo(0)+"::OnSpawnCountdown");
+	end;
+
+OnStop:
+	stopnpctimer();
+	$EVT_PUNCHER = 0;
+	killmonsterall("ppuncher_ev");
+	.minute = 5;
+	.cnt = 3;
+	if (attachrid($EVT_PUNCHER_TOP_PLAYER)) {
+		announce("["+.evtName$+"] "+strcharinfo(0)+" has won the event!",bc_all|bc_blue);
+		$EVT_PUNCHER_WINNER$ = strcharinfo(0);
+		if (getarraysize($EVT_PUNCHER_ITEM) > 1) {
+			for (.@i=0; .@i<getarraysize($EVT_PUNCHER_ITEM); .@i+=2)
+				getitem($EVT_PUNCHER_ITEM[.@i], $EVT_PUNCHER_ITEM[.@i+1]);
+		}
+		if ($EVT_PUNCHER_POINT > 0) {
+			F_PointGain(0, $EVT_PUNCHER_POINT, .evtName$);
+			F_ShowCurrency("#EVENTPOINT", "Event", $EVT_PUNCHER_POINT);
+			EVENTWINS += $EVT_PUNCHER_POINT;
+			EVENTWINS_PUNCH += $EVT_PUNCHER_POINT;
+		}
+	}
+	detachrid();
+	.@cnt = getmapunits(BL_PC, "ppuncher_ev", .@units[0]);
+	if (.@cnt) {
+		for (.@i=0; .@i<.@cnt; .@i++) {
+			if (attachrid(.@units[.@i])) {
+				if ($EVT_PUNCHER_TOP_PLAYER == getcharid(3))
+					continue;
+				if ($EVT_PUNCHER_CONSO_POINT) {
+					F_PointGain(1, $EVT_PUNCHER_CONSO_POINT, .evtName$);
+					F_ShowCurrency("#EVENTPOINT", "Event", $EVT_PUNCHER_CONSO_POINT);
+					EVENTWINS += $EVT_PUNCHER_CONSO_POINT;
+					EVENTWINS_PUNCH += $EVT_PUNCHER_CONSO_POINT;
+				}
+			}
+			detachrid();
+		}
+		$EVT_PUNCHER_SCORE = 0;
+		$EVT_PUNCHER_TOP_PLAYER = 0;
+	}
+	if (getmapusers("ppuncher_ev") > 0)
+		mapwarp("ppuncher_ev", "prontera", 149, 156);
+	end;
+
+OnNormalPoint:
+	if (!playerattached()) end;
+	callsub(S_CheckWeapon);
+	@PPScore++;
+	if (@PPScore > $EVT_PUNCHER_SCORE) {
+		$EVT_PUNCHER_TOP_PLAYER = getcharid(3);
+		$EVT_PUNCHER_SCORE = @PPScore;
+	}
+	dispbottom("["+.evtName$+"] You currently have "+@PPScore+" Poring Points.");
+	end;
+
+OnBonusPoint:
+	if (!playerattached()) end;
+	callsub(S_CheckWeapon);
+	@PPScore+=5;
+	if (@PPScore > $EVT_PUNCHER_SCORE) {
+		$EVT_PUNCHER_TOP_PLAYER = getcharid(3);
+		$EVT_PUNCHER_SCORE = @PPScore;
+	}
+	dispbottom("["+.evtName$+"] You currently have "+@PPScore+" Poring Points.");
+	end;
+
+OnPenaltyPoint:
+	if (!playerattached()) end;
+	callsub(S_CheckWeapon);
+	@PPScore -= 3;
+	if (@PPScore < 0) @PPScore = 0;
+	dispbottom("["+.evtName$+"] You currently have "+@PPScore+" Poring Points.");
+	end;
+
+S_CheckWeapon:
+	if (!(getequipweaponlv(EQI_HAND_R) == 0 && getequipweaponlv(EQI_HAND_L) == 0)) {
+		dispbottom("["+.evtName$+"] You killed a [ Poring ] with a weapon equipped on.");
+		warp("prontera", 149, 156);
+		end;
+	}
+	return;
+}
+
+//ppuncher_ev	mapflag	macprotect
+ppuncher_ev	mapflag	nobranch
+ppuncher_ev	mapflag	nodrop
+ppuncher_ev	mapflag	noexp
+ppuncher_ev	mapflag	noicewall
+ppuncher_ev	mapflag	noloot
+ppuncher_ev	mapflag	nomemo
+ppuncher_ev	mapflag	nosave	SavePoint
+ppuncher_ev	mapflag	noskill
+ppuncher_ev	mapflag	noteleport
+ppuncher_ev	mapflag	nowarp
+ppuncher_ev	mapflag	nowarpto
+ppuncher_ev	mapflag	pvp	off

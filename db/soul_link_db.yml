@@ -1,0 +1,75 @@
+Header:
+  Type: SOUL_LINK_DB
+  Version: 1
+
+Body:
+  - Soul: Alchemist
+    Script: |
+        bonus2 bSkillAtk,"CR_ACIDDEMONSTRATION",3;
+  - Soul: Monk
+    Script: |
+        bonus2 bSkillAtk,"MO_FINGEROFFENSIVE",3;
+  - Soul: Star Gladiator
+    Script: |
+        bonus bMaxHPRate,10;
+        bonus2 bAddEle,Ele_All,10;
+        bonus2 bSkillAtk,"TK_JUMPKICK",10;
+  - Soul: Sage
+    Script: |
+        bonus bMaxHPRate,10;
+  - Soul: Crusader
+    Script: |
+        bonus bMaxHPRate,10;
+  - Soul: Super Novice
+    Script: |
+        bonus bMaxHPRate,50;
+  - Soul: Knight
+    Script: |
+        bonus2 bSkillAtk,"KN_BOWLINGBASH",3;
+        bonus2 bSkillAtk,"LK_SPIRALPIERCE",3;
+        bonus2 bSkillAtk,"KN_BRANDISHSPEAR",3;
+  - Soul: Wizard
+    Script: |
+        bonus bMaxHPRate,50;
+        bonus2 bSkillAtk,"WZ_STORMGUST",10;
+        bonus2 bSkillAtk,"WZ_VERMILION",10;
+        bonus2 bSkillAtk,"WZ_METEOR",10;
+  - Soul: Priest
+    Script: |
+        bonus bMaxHPRate,50;
+  - Soul: Bard Dancer
+    Script: |
+        bonus2 bSkillAtk,"CG_ARROWVULCAN",3;
+        bonus2 bSkillAtk,"BA_MUSICALSTRIKE",3;
+  - Soul: Rogue
+    Script: |
+        bonus2 bSkillAtk,"AC_DOUBLE",10;
+        bonus bLongAtkRate,10;
+        bonus bSpeedRate,60;
+  - Soul: Assassin
+    Script: |
+        bonus2 bSkillAtk,"ASC_BREAKER",10;
+  - Soul: Blacksmith
+    Script: |
+        bonus2 bSkillAtk,"WS_CARTTERMINATION",3;
+        bonus2 bSkillAtk,"MC_MAMMONITE",3;
+  - Soul: Hunter
+    Script: |
+        bonus2 bSkillAtk,"SN_SHARPSHOOTING",3;
+        bonus2 bSkillAtk,"AC_DOUBLE",3;
+  - Soul: Soul Linker
+    Script: |
+        bonus bMaxHPRate,5;
+        bonus2 bSkillAtk,"SL_SMA",5;
+  - Soul: Gunslinger
+    Script: |
+        bonus bMaxHPRate,10;
+        bonus2 bSkillAtk,"GS_TRACKING",3;
+        bonus2 bSkillAtk,"GS_RAPIDSHOWER",3;
+        bonus2 bSkillAtk,"GS_DESPERADO",3;
+        bonus2 bSkillAtk,"GS_FULLBUSTER",3;
+  - Soul: Ninja
+    Script: |
+        bonus bMaxHPRate,5;
+        bonus bAtkRate,3;
+        bonus bMatkRate,10;

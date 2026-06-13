@@ -19,6 +19,7 @@
 #include <common/utilities.hpp>
 #include <common/utils.hpp>
 
+#include "autoattack.hpp"
 #include "battle.hpp"
 #include "chat.hpp"
 #include "clif.hpp"
@@ -1936,7 +1937,16 @@ int32 npc_touch_areanpc(map_session_data* sd, int16 m, int16 x, int16 y, npc_dat
 			sd->count_rewarp = 0;
 			break;
 		}
+		if (sd->state.autoattack && sd->mapindex != nd->u.warp.mapindex)
+			break;
 		pc_setpos(sd, nd->u.warp.mapindex, nd->u.warp.x, nd->u.warp.y, CLR_OUTSIGHT);
+		if (sd->state.autoattack) {
+			aa_status_checkmapchange(sd);
+			if (sd->state.autotrade) {
+				pc_delinvincibletimer(sd);
+				clif_parse_LoadEndAck(0, sd);
+			}
+		}
 		return 2;
 	case NPCTYPE_SCRIPT:
 		// warp type sorted first, no need to check if they override any other OnTouch areas.
@@ -4023,7 +4033,6 @@ static const char* npc_parse_shop(char* w1, char* w2, char* w3, char* w4, const 
 			ShowError("npc_parse_shop: Invalid shop definition in file '%s', line '%d'.\n * w1=%s\n * w2=%s\n * w3=%s\n * w4=%s\n", filepath, strline(buffer,start-buffer), w1, w2, w3, w4);
 			return strchr(start,'\n');// skip and continue
 		}
-
 		m = map_mapname2mapid(mapname);
 	}
 
@@ -5429,6 +5438,16 @@ static const char* npc_parse_mapflag(char* w1, char* w2, char* w3, char* w4, con
 		ShowError("npc_parse_mapflag: Invalid mapflag definition in file '%s', line '%d'.\n * w1=%s\n * w2=%s\n * w3=%s\n * w4=%s\n", filepath, strline(buffer,start-buffer), w1, w2, w3, w4);
 		return strchr(start,'\n');// skip and continue
 	}
+	if (strcmp(mapname, "all_map") == 0) {
+		/***********************************/
+		/***********    Shakto      ********/
+		/**    https://ronovelty.com/     **/
+		/***********************************/
+
+		map_mapadditemglobaldrop(-1, w4);
+
+		return strchr(start,'\n');// continue
+	}
 	m = map_mapname2mapid(mapname);
 	if (m < 0) {
 		ShowWarning("npc_parse_mapflag: Unknown map '%s' in file '%s', line '%d'.\n * w1=%s\n * w2=%s\n * w3=%s\n * w4=%s\n", mapname, filepath, strline(buffer,start-buffer), w1, w2, w3, w4);
@@ -5628,6 +5647,15 @@ static const char* npc_parse_mapflag(char* w1, char* w2, char* w3, char* w4, con
 			}
 			break;
 
+		case MF_MOBITEMGLOBALDROP:
+			if (state && w4 && *w4) {
+				ShowInfo("MOBITEMGLOBALDROP LOADED map=%s args=%s\n",
+					map_mapid2mapname(m), w4);
+
+				map_mapadditemglobaldrop(m, w4);
+			}
+			break;
+
 		// All others do not need special treatment
 		default:
 			map_setmapflag(m, mapflag, state);
@@ -5761,7 +5789,7 @@ int32 npc_parsesrcfile(const char* filepath)
 				// If we were not able to parse any x and y coordinates(usually used by mapflags)
 				x = y = 0;
 			}
-
+			if(strcmp(mapname, "all_map") != 0){
 			if (!mapindex_name2id(mapname)) {// Incorrect map, we must skip the script info...
 				ShowError("npc_parsesrcfile: Unknown map '%s' in file '%s', line '%d'. Skipping line...\n", mapname, filepath, strline(buffer,p-buffer));
 				if (has_script && (p = npc_skip_script(p,buffer,filepath)) == nullptr)
@@ -5786,6 +5814,7 @@ int32 npc_parsesrcfile(const char* filepath)
 				p = strchr(p,'\n');// next line
 				continue;
 			}
+		    }
 		}
 
 		// parse the data according to w2

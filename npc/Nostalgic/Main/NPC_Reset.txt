@@ -1,0 +1,63 @@
+valmorra,183,145,4	script	Reset Manager	11022,{
+
+	.@base_reset = 1000000;
+	.@char_id = getcharid(0);
+	.@account_id = getcharid(3);
+	.@name$ = escape_sql(strcharinfo(0));
+	.@count = 0;
+
+	query_sql("SELECT `count` FROM `reset_data` WHERE `char_id` = '"+.@char_id+"'", .@count);
+
+	.@cost = .@base_reset * (.@count + 1);
+
+	mes "[Reset Manager]";
+	mes "Reset Status: " + callfunc("F_InsertComma", .@cost) + " zeny";
+	mes "Reset Skills: " + callfunc("F_InsertComma", .@cost) + " zeny";
+	next;
+
+	switch(select("~ Cancel:~ Reset Status:~ Reset Skills")) {
+		case 1:
+			close;
+
+		case 2:
+			if (Zeny < .@cost) {
+				mes "[Reset Manager]";
+				mes "Sorry, you don't have enough zeny.";
+				close;
+			}
+
+			set Zeny, Zeny - .@cost;
+
+			query_sql(
+				"INSERT INTO `reset_data` (`account_id`,`char_id`,`player_name`,`count`) VALUES ("+
+				.@account_id+", "+.@char_id+", '"+.@name$+"', 1) "+
+				"ON DUPLICATE KEY UPDATE `count` = `count` + 1, `player_name` = VALUES(`player_name`), `account_id` = VALUES(`account_id`)"
+			);
+
+			ResetStatus;
+			mes "[Reset Manager]";
+			mes "There you go!";
+			close;
+
+		case 3:
+			if (Zeny < .@cost) {
+				mes "[Reset Manager]";
+				mes "Sorry, you don't have enough zeny.";
+				close;
+			}
+
+			set Zeny, Zeny - .@cost;
+
+			query_sql(
+				"INSERT INTO `reset_data` (`account_id`,`char_id`,`player_name`,`count`) VALUES ("+
+				.@account_id+", "+.@char_id+", '"+.@name$+"', 1) "+
+				"ON DUPLICATE KEY UPDATE `count` = `count` + 1, `player_name` = VALUES(`player_name`), `account_id` = VALUES(`account_id`)"
+			);
+
+			sc_end_class;
+			ResetSkill;
+			mes "[Reset Manager]";
+			mes "There you go!";
+			close;
+	}
+}

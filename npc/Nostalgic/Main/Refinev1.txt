@@ -1,0 +1,186 @@
+valmorra,150,132,6	script	Refiner HD	826,{
+
+	.mes$ = "[ Refiner HD ]";
+
+Start:
+	mes .mes$;
+	mes "Welcome to the High Density Refinement Service.";
+	mes "Here, your equipment is handled with ^FF0000advanced refining technology^000000.";
+	next;
+
+	mes .mes$;
+	mes "^BBA14F[+10 Refinement Set Bonus]^000000";
+	mes "Achieve ^00AAFF+10 refinement^000000 on the required equipment";
+	mes "to unlock an exclusive bonus stat and visual effect.";
+	mes "";
+	mes "^FF6600Required Equipment:^000000";
+	mes "- ^00AAFFWeapon^000000 must be ^FF5555+10^000000";
+	mes "- ^00AAFFTop Headgear^000000 must be ^FF5555+10^000000";
+	mes "- ^00AAFFMiddle Headgear^000000 must be ^FF5555+10^000000";
+	next;
+
+	mes .mes$;
+	mes "^BBA14F[Bonus Set Effect]^000000";
+	mes "- All Stats ^FF5555+1^000000";
+	mes "- ATK / MATK ^FF5555+2%^000000";
+	mes "- Max Weight ^FF5555+500^000000";
+	mes "- Drop Rate ^FF5555+2%^000000";
+	mes "- Max HP ^FF5555+5%^000000";
+	mes "";
+	mes "^FF0000Note:^000000 All 3 required parts must be refined to ^FF5555+10^000000";
+	mes "before the bonus stat and effect will be activated.";
+	next;
+
+	mes .mes$;
+	mes "^FF0000[Safe Refinement System]^000000";
+	mes "- Your equipment ^FF0000will NOT break^000000 upon failure.";
+	mes "- Failed refinement will only ^FF0000reduce the refine level by 1^000000.";
+	mes "- A safer method compared to traditional refining.";
+	next;
+
+	mes .mes$;
+	mes "However, greater safety comes with greater cost.";
+	mes "Make sure you are fully prepared before proceeding.";
+	mes "Choose equipment to refine.";
+	next;
+
+	setarray .@indices[0],
+		EQI_HEAD_TOP, EQI_HEAD_MID, EQI_HEAD_LOW,
+		EQI_ARMOR, EQI_GARMENT, EQI_SHOES,
+		EQI_HAND_L, EQI_HAND_R;
+
+	.@menu$ = "";
+	.@count = 0;
+
+	for (.@i = 0; .@i < getarraysize(.@indices); .@i++) {
+		.@s = .@indices[.@i];
+		if (getequipisequiped(.@s)) {
+			.@elist[.@count] = .@s;
+			.@menu$ += F_getpositionname(.@s) + "-[" + getequipname(.@s) + "]:";
+			.@count++;
+		}
+	}
+
+	if (!.@count) {
+		mes .mes$;
+		mes "You don't have any equipment I can refine.";
+		close;
+	}
+
+	.@menu$ += "Cancel";
+	.@sel = select(.@menu$);
+	if (.@sel == .@count + 1) close;
+
+	.@slot = .@elist[.@sel - 1];
+
+	if (getequiprefinerycnt(.@slot) < 0) {
+		mes .mes$;
+		mes "This item cannot be refined.";
+		close;
+	}
+
+	if (getequiprefinerycnt(.@slot) >= 10) {
+		mes .mes$;
+		mes "This equipment is already perfected.";
+		close;
+	}
+
+RefineLoop:
+	.@isvip = vip_status(1);
+
+	if (.@isvip) {
+		.@price = 6000000;
+	} else {
+		if (@adv_refine_failcost < 10000000)
+			@adv_refine_failcost = 10000000;
+		.@price = @adv_refine_failcost;
+	}
+
+	.@material = (getequipweaponlv(.@slot) ? 984 : 985);
+
+	mes .mes$;
+	mes "Item   : ^00FF00" + getequipname(.@slot) + "^000000";
+	mes "Slot   : " + F_getpositionname(.@slot);
+	mes "Refine : +" + getequiprefinerycnt(.@slot);
+	mes "Cost   : 1 " + getitemname(.@material);
+	mes "Zeny   : " + F_InsertComma(.@price);
+	if (.@isvip) mes "^00AA00VIP price + bonus applied.^000000";
+	next;
+
+	.@menu = select("Refine:Change Item:Cancel");
+	if (.@menu == 2) goto Start;
+	if (.@menu == 3) close;
+
+	if (countitem(.@material) < 1 || Zeny < .@price) {
+		mes .mes$;
+		mes "You don't have enough materials or zeny.";
+		close;
+	}
+
+	delitem .@material,1;
+	Zeny -= .@price;
+
+	mes .mes$;
+	mes "Clang! Clang! Clang!";
+
+	.@ref = getequiprefinerycnt(.@slot);
+
+	switch (.@ref) {
+		case 0: .@chance = 100; break;
+		case 1: .@chance = 100; break;
+		case 2: .@chance = 100; break;
+		case 3: .@chance = 100; break;
+		case 4: .@chance = 100; break;
+		case 5: .@chance = 60; break;
+		case 6: .@chance = 50; break;
+		case 7: .@chance = 25; break;
+		case 8: .@chance = 20; break;
+		case 9: .@chance = 7; break;
+		default: .@chance = 0;
+	}
+
+	if (.@isvip) .@chance += 5;
+	if (.@chance > 100) .@chance = 100;
+
+	if (rand(100) < .@chance) {
+		successrefitem .@slot;
+
+		if (!.@isvip)
+			@adv_refine_failcost = 10000000;
+
+		.@new_refine = getequiprefinerycnt(.@slot);
+		.@item_name$ = getequipname(.@slot);
+		.@slot_name$ = F_getpositionname(.@slot);
+
+		if (.@new_refine == 9) {
+			announce "[Refiner HD] " + strcharinfo(0) + " has successfully refined " + .@item_name$ + " [" + .@slot_name$ + "] to +9! Almost perfect, only 1 more refine level to reach +10!", bc_all;
+		}
+		else if (.@new_refine == 10) {
+			announce "[Refiner HD] " + strcharinfo(0) + " has successfully refined " + .@item_name$ + " [" + .@slot_name$ + "] to +10! Congratulations on achieving a perfect refinement!", bc_all;
+		}
+
+		next;
+		emotion ET_BEST;
+		mes .mes$;
+		mes "^00FF00Refine successful!^000000";
+	} else {
+		downrefitem .@slot;
+
+		if (!.@isvip)
+			@adv_refine_failcost += 6000000;
+
+		next;
+		emotion ET_HUK;
+		mes .mes$;
+		mes "^FF0000Refine failed. Refinement decreased.^000000";
+	}
+
+	next;
+	if (getequiprefinerycnt(.@slot) < 10 && select("Continue refining:Stop") == 1)
+		goto RefineLoop;
+
+	close;
+
+OnInit:
+	end;
+}

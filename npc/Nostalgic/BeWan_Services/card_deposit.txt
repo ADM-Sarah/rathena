@@ -1,0 +1,517 @@
+//============================================================
+// NostalgicRO MVP Card Deposit System
+// Complete Tier Reward Version
+// Normal Tier = 100 each Normal MVP Card
+// Rare Tier   = 15 each Rare MVP Card
+// Reward item claim = once only by Account / IP / Gepard Unique ID
+// Bonus stat active only while tier is complete
+//============================================================
+
+valmorra,150,150,5	script	Card Deposit Agent	4_F_BANKER,{
+
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "Welcome, ^00AA00" + strcharinfo(0) + "^000000!";
+	mes "Deposit MVP cards to unlock permanent tier bonuses.";
+	next;
+
+	switch(select(
+		"^FF0000System Information^000000",
+		"^3366CCCard Collections^000000",
+		"^993399My Deposited Cards^000000",
+		"^00AA00Deposit Cards^000000",
+		"^FF6600Withdraw Cards^000000",
+		"^999999Cancel^000000"
+	)) {
+		case 1: callsub S_Info; close;
+		case 2: callsub S_Collections; close;
+		case 3: callsub S_DepositedList; close;
+		case 4: callsub S_DepositMenu; close;
+		case 5: callsub S_WithdrawMenu; close;
+		default: close;
+	}
+
+	end;
+
+
+//============================================================
+// Information
+//============================================================
+S_Info:
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "^00AA00Normal MVP Tier^000000";
+	mes "Requirement:";
+	mes "- Deposit ^FF9900100 cards^000000 for every Normal MVP card in the list.";
+	mes "";
+	mes "Bonus when completed:";
+	mes "- All Stats +5";
+	mes "- Reflect Magic Attack +2%";
+	mes "- Reduce Long Range Damage +2%";
+	mes "- Weight +200";
+	mes "";
+	mes "Reward item:";
+	mes "- 7 Days VIP Ticket x1";
+	mes "- War Badge x50";
+	next;
+
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "^FF0000Rare MVP Tier^000000";
+	mes "Requirement:";
+	mes "- Deposit ^FF990015 cards^000000 for every Rare MVP card in the list.";
+	mes "";
+	mes "Bonus when completed:";
+	mes "- ATK +30";
+	mes "- HIT +100";
+	mes "- Resist All Element except Neutral +3%";
+	mes "- Damage on Boss Monster +10%";
+	mes "- Reduce Damage from Boss Monster +10%";
+	mes "- Drop Rate +3%";
+	mes "- Weight +500";
+	mes "";
+	mes "Reward item:";
+	mes "- 30 Days VIP Ticket x1";
+	mes "- Nostalgic Coin x10";
+	mes "- Branch Box x1";
+	mes "- War Badge x100";
+	next;
+
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "^FF0000Important Information:^000000";
+	mes "- You may withdraw your deposited cards.";
+	mes "- Bonus stat will only remain active while the tier is complete.";
+	mes "- If you withdraw and the tier becomes incomplete, the bonus stat will be removed.";
+	mes "- Reward item can only be received ^FF0000one time only^000000.";
+	mes "- Reward claims are protected. All players can claim rewards once only.";
+	return;
+
+
+//============================================================
+// Show Collections
+//============================================================
+S_Collections:
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "^00AA00Normal MVP Card Tier^000000";
+	callsub S_ShowTier, 1;
+	next;
+
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "^FF0000Rare MVP Card Tier^000000";
+	callsub S_ShowTier, 2;
+	return;
+
+
+//============================================================
+// My Deposited List
+//============================================================
+S_DepositedList:
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "Your deposited card progress:";
+	mes "";
+
+	.@found = 0;
+
+	for (.@i = 0; .@i < getarraysize(.CardID); .@i++) {
+		.@amount = 0;
+		query_sql("SELECT `amount` FROM `card_deposits` WHERE `account_id` = " + getcharid(3) + " AND `card_id` = " + .CardID[.@i], .@amount);
+
+		if (.@amount > 0) {
+			.@found++;
+			.@tier_name$ = (.Tier[.@i] == 2) ? "Rare" : "Normal";
+			mes "[" + .@tier_name$ + "] ^3366CC" + getitemname(.CardID[.@i]) + "^000000 [" + .@amount + "/" + .Required[.@i] + "]";
+		}
+	}
+
+	if (.@found <= 0)
+		mes "^999999No deposited cards found.^000000";
+
+	next;
+
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "Tier Status:";
+	mes "Normal MVP Tier: " + (callsub(S_IsTierComplete, 1) ? "^00AA00Complete^000000" : "^FF0000Incomplete^000000");
+	mes "Rare MVP Tier: " + (callsub(S_IsTierComplete, 2) ? "^00AA00Complete^000000" : "^FF0000Incomplete^000000");
+	return;
+
+
+//============================================================
+// Deposit Menu
+//============================================================
+S_DepositMenu:
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "Which card do you want to deposit?";
+	next;
+
+	.@menu$ = "";
+
+	for (.@i = 0; .@i < getarraysize(.CardID); .@i++) {
+		.@amount = 0;
+		query_sql("SELECT `amount` FROM `card_deposits` WHERE `account_id` = " + getcharid(3) + " AND `card_id` = " + .CardID[.@i], .@amount);
+
+		.@tier_name$ = (.Tier[.@i] == 2) ? "Rare" : "Normal";
+		.@menu$ += "[" + .@tier_name$ + "] " + getitemname(.CardID[.@i]) + " [" + .@amount + "/" + .Required[.@i] + "]:";
+	}
+
+	.@select = select(.@menu$) - 1;
+
+	.@card_id = .CardID[.@select];
+	.@required = .Required[.@select];
+	.@tier = .Tier[.@select];
+
+	.@current = 0;
+	query_sql("SELECT `amount` FROM `card_deposits` WHERE `account_id` = " + getcharid(3) + " AND `card_id` = " + .@card_id, .@current);
+
+	.@have = countitem(.@card_id);
+
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "Selected Card:";
+	mes "^3366CC" + getitemname(.@card_id) + "^000000";
+	mes "";
+	mes "Current Deposit: ^FF9900" + .@current + "/" + .@required + "^000000";
+	mes "Card in Inventory: ^00AA00" + .@have + "^000000";
+	mes "";
+	mes "How many do you want to deposit?";
+	next;
+
+	if (.@have <= 0) {
+		mes "[^3366CCCard Deposit Agent^000000]";
+		mes "You don't have this card.";
+		close;
+	}
+
+	input .@deposit_amount;
+
+	if (.@deposit_amount <= 0) {
+		mes "[^3366CCCard Deposit Agent^000000]";
+		mes "Invalid amount.";
+		close;
+	}
+
+	if (.@deposit_amount > .@have) {
+		mes "[^3366CCCard Deposit Agent^000000]";
+		mes "You don't have enough cards.";
+		close;
+	}
+
+	delitem .@card_id, .@deposit_amount;
+
+	query_sql("INSERT INTO `card_deposits` (`account_id`, `card_id`, `amount`) VALUES (" + getcharid(3) + ", " + .@card_id + ", " + .@deposit_amount + ") ON DUPLICATE KEY UPDATE `amount` = `amount` + " + .@deposit_amount);
+
+	.@new_amount = 0;
+	query_sql("SELECT `amount` FROM `card_deposits` WHERE `account_id` = " + getcharid(3) + " AND `card_id` = " + .@card_id, .@new_amount);
+
+	recalculatestat;
+
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "You have deposited ^00AA00" + .@deposit_amount + "x^000000";
+	mes "^3366CC" + getitemname(.@card_id) + "^000000.";
+	mes "";
+	mes "Current Progress: ^FF9900" + .@new_amount + "/" + .@required + "^000000";
+	next;
+
+	if (callsub(S_IsTierComplete, .@tier)) {
+		callsub S_TryRewardClaim, .@tier;
+	}
+
+	close;
+
+
+//============================================================
+// Withdraw Menu
+//============================================================
+S_WithdrawMenu:
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "^FF0000Important:^000000";
+	mes "You can withdraw your deposited cards.";
+	mes "However, if the tier becomes incomplete, the bonus stat will be removed.";
+	next;
+
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "Which card do you want to withdraw?";
+	next;
+
+	.@menu$ = "";
+	.@count = 0;
+
+	for (.@i = 0; .@i < getarraysize(.CardID); .@i++) {
+		.@amount = 0;
+		query_sql("SELECT `amount` FROM `card_deposits` WHERE `account_id` = " + getcharid(3) + " AND `card_id` = " + .CardID[.@i], .@amount);
+
+		if (.@amount > 0) {
+			.@Index[.@count] = .@i;
+			.@tier_name$ = (.Tier[.@i] == 2) ? "Rare" : "Normal";
+			.@menu$ += "[" + .@tier_name$ + "] " + getitemname(.CardID[.@i]) + " [" + .@amount + "/" + .Required[.@i] + "]:";
+			.@count++;
+		}
+	}
+
+	if (.@count <= 0) {
+		mes "[^3366CCCard Deposit Agent^000000]";
+		mes "You don't have any deposited cards.";
+		close;
+	}
+
+	.@select = select(.@menu$) - 1;
+	.@real_index = .@Index[.@select];
+
+	.@card_id = .CardID[.@real_index];
+	.@required = .Required[.@real_index];
+	.@tier = .Tier[.@real_index];
+
+	.@current = 0;
+	query_sql("SELECT `amount` FROM `card_deposits` WHERE `account_id` = " + getcharid(3) + " AND `card_id` = " + .@card_id, .@current);
+
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "You have ^00AA00" + .@current + "x^000000";
+	mes "^3366CC" + getitemname(.@card_id) + "^000000 deposited.";
+	mes "";
+	mes "How many do you want to withdraw?";
+	next;
+
+	input .@withdraw_amount;
+
+	if (.@withdraw_amount <= 0) {
+		mes "[^3366CCCard Deposit Agent^000000]";
+		mes "Invalid amount.";
+		close;
+	}
+
+	if (.@withdraw_amount > .@current) {
+		mes "[^3366CCCard Deposit Agent^000000]";
+		mes "You don't have that many deposited.";
+		close;
+	}
+
+	if (!checkweight(.@card_id, .@withdraw_amount)) {
+		mes "[^3366CCCard Deposit Agent^000000]";
+		mes "You are overweight.";
+		close;
+	}
+
+	query_sql("UPDATE `card_deposits` SET `amount` = `amount` - " + .@withdraw_amount + " WHERE `account_id` = " + getcharid(3) + " AND `card_id` = " + .@card_id);
+	query_sql("DELETE FROM `card_deposits` WHERE `account_id` = " + getcharid(3) + " AND `card_id` = " + .@card_id + " AND `amount` <= 0");
+
+	getitem .@card_id, .@withdraw_amount;
+
+	.@new_amount = 0;
+	query_sql("SELECT `amount` FROM `card_deposits` WHERE `account_id` = " + getcharid(3) + " AND `card_id` = " + .@card_id, .@new_amount);
+
+	recalculatestat;
+
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "You have withdrawn ^FF0000" + .@withdraw_amount + "x^000000";
+	mes "^3366CC" + getitemname(.@card_id) + "^000000.";
+	mes "";
+	mes "Current Progress: ^FF9900" + .@new_amount + "/" + .@required + "^000000";
+
+	if (!callsub(S_IsTierComplete, .@tier)) {
+		mes "";
+		mes "^FF0000This tier is now incomplete.^000000";
+		mes "^FF0000The tier bonus stat has been removed.^000000";
+	}
+
+	close;
+
+
+//============================================================
+// Show Tier Progress
+//============================================================
+S_ShowTier:
+	.@tier = getarg(0);
+
+	for (.@i = 0; .@i < getarraysize(.CardID); .@i++) {
+		if (.Tier[.@i] == .@tier) {
+			.@amount = 0;
+			query_sql("SELECT `amount` FROM `card_deposits` WHERE `account_id` = " + getcharid(3) + " AND `card_id` = " + .CardID[.@i], .@amount);
+
+			mes "^3366CC" + getitemname(.CardID[.@i]) + "^000000 [" + .@amount + "/" + .Required[.@i] + "]";
+		}
+	}
+
+	mes "";
+	mes "Status: " + (callsub(S_IsTierComplete, .@tier) ? "^00AA00Complete^000000" : "^FF0000Incomplete^000000");
+	return;
+
+
+//============================================================
+// Check Tier Complete
+//============================================================
+S_IsTierComplete:
+	.@tier = getarg(0);
+
+	for (.@i = 0; .@i < getarraysize(.CardID); .@i++) {
+		if (.Tier[.@i] == .@tier) {
+			.@amount = 0;
+			query_sql("SELECT `amount` FROM `card_deposits` WHERE `account_id` = " + getcharid(3) + " AND `card_id` = " + .CardID[.@i], .@amount);
+
+			if (.@amount < .Required[.@i])
+				return 0;
+		}
+	}
+
+	return 1;
+
+
+//============================================================
+// Reward Claim Check
+//============================================================
+S_TryRewardClaim:
+	.@tier = getarg(0);
+
+	.@account_id = getcharid(3);
+	.@ip$ = getcharip();
+	.@unique_id$ = get_unique_id();
+
+	.@claimed = 0;
+	query_sql("SELECT COUNT(*) FROM `card_deposit_claim` WHERE `tier` = " + .@tier + " AND (`account_id` = " + .@account_id + " OR `ip` = '" + escape_sql(.@ip$) + "' OR `unique_id` = '" + escape_sql(.@unique_id$) + "')", .@claimed);
+
+	if (.@claimed > 0) {
+		mes "[^3366CCCard Deposit Agent^000000]";
+		mes "^00AA00Congratulations!^000000";
+		mes "You have completed this tier.";
+		mes "";
+		mes "^FF0000Reward item cannot be received again.^000000";
+		mes "This reward has already been claimed before using the same Account, IP Address or Gepard Unique ID.";
+		mes "";
+		mes "^00AA00Bonus stat will still be active while this tier remains complete.^000000";
+		return;
+	}
+
+	if (.@tier == 1) {
+		if (!checkweight(33036,1) || !checkweight(7773,50)) {
+			mes "[^3366CCCard Deposit Agent^000000]";
+			mes "You have completed the Normal MVP Tier.";
+			mes "But your inventory is overweight.";
+			mes "Please make some space and talk to me again.";
+			return;
+		}
+	}
+	else {
+		if (!checkweight(33037,1) || !checkweight(33048,10) || !checkweight(51002,1) || !checkweight(7773,100)) {
+			mes "[^3366CCCard Deposit Agent^000000]";
+			mes "You have completed the Rare MVP Tier.";
+			mes "But your inventory is overweight.";
+			mes "Please make some space and talk to me again.";
+			return;
+		}
+	}
+
+	mes "[^3366CCCard Deposit Agent^000000]";
+	mes "^00AA00Congratulations!^000000";
+	mes "You have completed the " + ((.@tier == 1) ? "Normal MVP Tier." : "Rare MVP Tier.");
+	mes "";
+	mes "Please wait while your reward is being processed.";
+	close2;
+
+	progressbar "0x00FF00",4;
+
+	if (.@tier == 1) {
+		getitem 33036,1;
+		getitem 7773,50;
+	}
+	else {
+		getitem 33037,1;
+		getitem 33048,10;
+		getitem 51002,1;
+		getitem 7773,100;
+	}
+
+	query_sql("INSERT INTO `card_deposit_claim` (`account_id`, `ip`, `unique_id`, `tier`, `claimed_at`) VALUES (" + .@account_id + ", '" + escape_sql(.@ip$) + "', '" + escape_sql(.@unique_id$) + "', " + .@tier + ", NOW())");
+
+	recalculatestat;
+
+	message strcharinfo(0), "You've successfully received the bonus stat.";
+	dispbottom "You've successfully received the bonus stat.";
+	end;
+
+
+//============================================================
+// Stat Bonus
+//============================================================
+OnPCStatCalcEvent:
+
+	// Normal Tier Bonus
+	if (callsub(S_IsTierComplete, 1)) {
+		bonus bAllStats,5;
+		bonus bMagicDamageReturn,2;
+		bonus bLongAtkDef,2;
+		bonus bMaxWeight,2000; // 200 weight
+	}
+
+	// Rare Tier Bonus
+	if (callsub(S_IsTierComplete, 2)) {
+		bonus bAtk,30;
+		bonus bHit,100;
+
+		// Resist all element except Neutral
+		bonus2 bSubEle,Ele_Water,3;
+		bonus2 bSubEle,Ele_Earth,3;
+		bonus2 bSubEle,Ele_Fire,3;
+		bonus2 bSubEle,Ele_Wind,3;
+		bonus2 bSubEle,Ele_Poison,3;
+		bonus2 bSubEle,Ele_Holy,3;
+		bonus2 bSubEle,Ele_Dark,3;
+		bonus2 bSubEle,Ele_Ghost,3;
+		bonus2 bSubEle,Ele_Undead,3;
+
+		bonus2 bAddRace,RC_Boss,10;
+		bonus2 bSubRace,RC_Boss,10;
+		bonus bDropAddRace,RC_All,3;
+		bonus bMaxWeight,5000; // 500 weight
+	}
+
+	end;
+
+
+//============================================================
+// Init Card List
+//============================================================
+OnInit:
+
+	setarray .NormalCards[0],
+		4142, // Doppelganger Card
+		4144, // Osiris Card
+		4147, // Baphomet Card
+		4134, // Moonlight Flower Card
+		4145, // Beelzebub Card
+		4121, // Amon Ra Card
+		4168, // Dark Lord Card
+		4236, // Lord of Death Card
+		4305, // Turtle General Card
+		4386, // Detale Card
+		4302, // Tao Gunka Card
+		4430, // Ifrit Card
+		4419, // Ktullanux Card
+		4324, // Garm Card
+		4318, // Stormy Knight Card
+		4441, // Fallen Bishop Card
+		4330, // Evil Snake Lord Card
+		4376, // Lady Tanee Card
+		4352; // Ygnizem Card
+
+	setarray .RareCards[0],
+		4399, // Thanatos Card
+		4403, // Kiel Card
+		4359, // Assassin Cross Card
+		4367, // Sniper Shecil Card
+		4365, // High Wizard Card
+		4357, // Lord Knight Seyren Card
+		4361, // Whitesmith Howard Card
+		4363; // High Priest Card
+
+	.@index = 0;
+
+	for (.@i = 0; .@i < getarraysize(.NormalCards); .@i++) {
+		.CardID[.@index] = .NormalCards[.@i];
+		.Required[.@index] = 100;
+		.Tier[.@index] = 1;
+		.@index++;
+	}
+
+	for (.@i = 0; .@i < getarraysize(.RareCards); .@i++) {
+		.CardID[.@index] = .RareCards[.@i];
+		.Required[.@index] = 10;
+		.Tier[.@index] = 2;
+		.@index++;
+	}
+
+	end;
+}

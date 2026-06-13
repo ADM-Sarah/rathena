@@ -1,0 +1,569 @@
+//==================================================
+// WORLD BOSS SYSTEM (SQL VERSION - FINAL FIXED)
+// RESTART-SAFE + RELOADSCRIPT-SAFE + SQL STATE SAVE
+//==================================================
+
+
+//==================================================
+// MAIN CONTROLLER
+//==================================================
+-	script	worldboss_controller	-1,{
+
+OnInit:
+	setarray .BossID[0],3531,3532;
+
+	.Map$ = "pvp_arena";
+	.MapName$ = "World Boss Arena";
+	.BossKey$ = "main_worldboss";
+
+	setarray .SpawnX[0],49,29,14,49,75,62,49;
+	setarray .SpawnY[0],51,48,49,81,49,30,17;
+
+	.RespawnTime = 43200; // 12 hours
+
+	.ReturnMap$ = "valmorra";
+	.ReturnX = 171;
+	.ReturnY = 125;
+
+	.KillerReward1 = 33048;
+	.KillerAmt1    = 1;
+	.KillerReward2 = 51001;
+	.KillerAmt2    = 10;
+	.KillerReward3 = 51005;
+	.KillerAmt3    = 1;
+	.KillerReward4 = 51004;
+	.KillerAmt4    = 1;
+
+	.PartReward1 = 51001;
+	.PartAmt1    = 5;
+	.PartReward2 = 51005;
+	.PartAmt2    = 1;
+	.PartReward3 = 51004;
+	.PartAmt3    = 1;
+	.PartReward4 = 55703;
+	.PartAmt4    = 1;
+
+	.DeathHandled = 0;
+	.WarpSession = 0;
+
+	.sql_is_active = 0;
+	.sql_boss_id = 0;
+	.sql_spawn_x = 0;
+	.sql_spawn_y = 0;
+	.sql_next_spawn = 0;
+	.sql_announce5 = 0;
+	.sql_last_killer_aid = 0;
+	.sql_last_killer_name$ = "";
+	.sql_last_kill_time = 0;
+
+	donpcevent strnpcinfo(3)+"::OnSQLInit";
+	end;
+
+OnSQLInit:
+	query_sql(
+		"INSERT IGNORE INTO world_boss_state " +
+		"(boss_key,is_active,boss_id,spawn_x,spawn_y,next_spawn,announce5,last_killer_aid,last_killer_name,last_kill_time) VALUES " +
+		"('"+.BossKey$+"',0,0,0,0,0,0,0,'',0)"
+	);
+
+	stopnpctimer;
+	initnpctimer;
+	donpcevent strnpcinfo(3)+"::OnRestoreState";
+	end;
+
+OnRestoreState:
+	killmonsterall .Map$;
+
+	.DeathHandled = 0;
+	.WarpSession++;
+
+	callfunc "WB_SQL_Load", .BossKey$;
+
+	.@now = gettimetick(2);
+	.@active = .sql_is_active;
+	.@boss_id = .sql_boss_id;
+	.@x = .sql_spawn_x;
+	.@y = .sql_spawn_y;
+	.@next_spawn = .sql_next_spawn;
+
+	if (.@next_spawn < 0) .@next_spawn = 0;
+	if (.@x < 0) .@x = 0;
+	if (.@y < 0) .@y = 0;
+
+	if (.@active) {
+		if (!.@boss_id)
+			.@boss_id = .BossID[rand(getarraysize(.BossID))];
+
+		if (!.@x || !.@y) {
+			.@p = rand(getarraysize(.SpawnX));
+			.@x = .SpawnX[.@p];
+			.@y = .SpawnY[.@p];
+		}
+
+		monster .Map$, .@x, .@y, "[World Boss]", .@boss_id, 1, strnpcinfo(3)+"::OnBossDead";
+
+		callfunc "WB_SQL_Save", .BossKey$, 1, .@boss_id, .@x, .@y, 0, 0, .sql_last_killer_aid, .sql_last_killer_name$, .sql_last_kill_time;
+		end;
+	}
+
+	if (!.@active && .@next_spawn > .@now) {
+		end;
+	}
+
+	if (!.@active && .@next_spawn && .@next_spawn <= .@now) {
+		callfunc "WB_SQL_Save", .BossKey$, 0, 0, 0, 0, 0, 0, .sql_last_killer_aid, .sql_last_killer_name$, .sql_last_kill_time;
+		donpcevent strnpcinfo(3)+"::OnSpawnBoss";
+		end;
+	}
+
+	if (!.@active && !.@next_spawn) {
+		donpcevent strnpcinfo(3)+"::OnSpawnBoss";
+		end;
+	}
+	end;
+
+OnTimer5000:
+	callfunc "WB_SQL_Load", .BossKey$;
+
+	if (!.sql_is_active && .sql_next_spawn) {
+		.@now = gettimetick(2);
+		.@remain = .sql_next_spawn - .@now;
+
+		if (.@remain <= 300 && .@remain > 0 && !.sql_announce5) {
+			announce "[World Boss] A powerful boss will appear in 5 minutes at "+.MapName$+"!", bc_all;
+			callfunc "WB_SQL_Save", .BossKey$, 0, .sql_boss_id, .sql_spawn_x, .sql_spawn_y, .sql_next_spawn, 1, .sql_last_killer_aid, .sql_last_killer_name$, .sql_last_kill_time;
+		}
+
+		if (.@remain <= 0) {
+			callfunc "WB_SQL_Save", .BossKey$, 0, 0, 0, 0, 0, 0, .sql_last_killer_aid, .sql_last_killer_name$, .sql_last_kill_time;
+			donpcevent strnpcinfo(3)+"::OnSpawnBoss";
+		}
+	}
+	end;
+
+OnForceSpawn:
+	killmonsterall .Map$;
+
+	.DeathHandled = 0;
+	.WarpSession++;
+
+	callfunc "WB_SQL_Load", .BossKey$;
+	callfunc "WB_SQL_Save", .BossKey$, 0, 0, 0, 0, 0, 0, .sql_last_killer_aid, .sql_last_killer_name$, .sql_last_kill_time;
+
+	donpcevent strnpcinfo(3)+"::OnSpawnBoss";
+	end;
+
+OnForceDespawn:
+	callfunc "WB_SQL_Load", .BossKey$;
+	if (!.sql_is_active) end;
+
+	killmonsterall .Map$;
+
+	.DeathHandled = 0;
+	.WarpSession++;
+
+	.@next = gettimetick(2) + .RespawnTime;
+
+	callfunc "WB_SQL_Save", .BossKey$, 0, 0, 0, 0, .@next, 0, .sql_last_killer_aid, .sql_last_killer_name$, .sql_last_kill_time;
+
+	announce "[World Boss] Boss despawned by GM. Next spawn in 12 hours.", bc_all;
+	end;
+
+OnSpawnBoss:
+	callfunc "WB_SQL_Load", .BossKey$;
+	if (.sql_is_active) end;
+
+	.@boss_id = .BossID[rand(getarraysize(.BossID))];
+	.@p = rand(getarraysize(.SpawnX));
+	.@x = .SpawnX[.@p];
+	.@y = .SpawnY[.@p];
+
+	.DeathHandled = 0;
+	.WarpSession++;
+
+	monster .Map$, .@x, .@y, "[World Boss]", .@boss_id, 1, strnpcinfo(3)+"::OnBossDead";
+
+	callfunc "WB_SQL_Save", .BossKey$, 1, .@boss_id, .@x, .@y, 0, 0, 0, "", .sql_last_kill_time;
+
+	announce "[World Boss] A powerful boss has appeared in "+.MapName$+"! ("+.@x+","+.@y+")", bc_all;
+	end;
+
+OnBossDead:
+	callsub S_HandleDeath;
+	end;
+
+S_HandleDeath:
+	callfunc "WB_SQL_Load", .BossKey$;
+
+	if (!.sql_is_active) return;
+	if (.DeathHandled) return;
+
+	.DeathHandled = 1;
+
+	.@killer_aid = 0;
+	.@killer_name$ = "";
+
+	if (playerattached()) {
+		.@killer_aid = getcharid(3);
+		.@killer_name$ = strcharinfo(0);
+	}
+
+	.@now = gettimetick(2);
+	.@next = .@now + .RespawnTime;
+
+	announce "[World Boss] The boss has been defeated!", bc_all;
+
+	if (.@killer_name$ != "")
+		announce "[World Boss] MVP Killer: "+.@killer_name$+".", bc_all;
+
+	announce "[World Boss] Rewards have been sent to all players still inside "+.MapName$+".", bc_all;
+	announce "[World Boss] All players in the boss map will be teleported to town in 2 minutes.", bc_all;
+
+	addrid(1);
+	if (strcharinfo(3) == .Map$) {
+		if (.@killer_aid && getcharid(3) == .@killer_aid) {
+			getitem .KillerReward1, .KillerAmt1;
+			getitem .KillerReward2, .KillerAmt2;
+			getitem .KillerReward3, .KillerAmt3;
+			getitem .KillerReward4, .KillerAmt4;
+			dispbottom "[World Boss] MVP Reward sent to your inventory.";
+		}
+		else {
+			getitem .PartReward1, .PartAmt1;
+			getitem .PartReward2, .PartAmt2;
+			getitem .PartReward3, .PartAmt3;
+			getitem .PartReward4, .PartAmt4;
+			dispbottom "[World Boss] Participation Reward sent to your inventory.";
+		}
+	}
+	detachrid;
+
+	callfunc "WB_SQL_Save", .BossKey$, 0, 0, 0, 0, .@next, 0, .@killer_aid, .@killer_name$, .@now;
+
+	.WarpSession++;
+	$WB_warp_session = .WarpSession;
+	donpcevent strnpcinfo(3)+"::OnBeginTownWarpCountdown";
+
+	return;
+
+OnBeginTownWarpCountdown:
+	.@session = $WB_warp_session;
+
+	sleep 110000;
+	if (.@session != .WarpSession) end;
+
+	mapannounce .Map$, "YOU WILL BE TELEPORT TO MAINTOWN IN 10...", bc_map, 0xFF0000;
+	sleep 1000;
+	if (.@session != .WarpSession) end;
+	mapannounce .Map$, "YOU WILL BE TELEPORT TO MAINTOWN IN 9...", bc_map, 0xFF0000;
+	sleep 1000;
+	if (.@session != .WarpSession) end;
+	mapannounce .Map$, "YOU WILL BE TELEPORT TO MAINTOWN IN 8...", bc_map, 0xFF0000;
+	sleep 1000;
+	if (.@session != .WarpSession) end;
+	mapannounce .Map$, "YOU WILL BE TELEPORT TO MAINTOWN IN 7...", bc_map, 0xFF0000;
+	sleep 1000;
+	if (.@session != .WarpSession) end;
+	mapannounce .Map$, "YOU WILL BE TELEPORT TO MAINTOWN IN 6...", bc_map, 0xFF0000;
+	sleep 1000;
+	if (.@session != .WarpSession) end;
+	mapannounce .Map$, "YOU WILL BE TELEPORT TO MAINTOWN IN 5...", bc_map, 0xFF0000;
+	sleep 1000;
+	if (.@session != .WarpSession) end;
+	mapannounce .Map$, "YOU WILL BE TELEPORT TO MAINTOWN IN 4...", bc_map, 0xFF0000;
+	sleep 1000;
+	if (.@session != .WarpSession) end;
+	mapannounce .Map$, "YOU WILL BE TELEPORT TO MAINTOWN IN 3...", bc_map, 0xFF0000;
+	sleep 1000;
+	if (.@session != .WarpSession) end;
+	mapannounce .Map$, "YOU WILL BE TELEPORT TO MAINTOWN IN 2...", bc_map, 0xFF0000;
+	sleep 1000;
+	if (.@session != .WarpSession) end;
+	mapannounce .Map$, "YOU WILL BE TELEPORT TO MAINTOWN IN 1...", bc_map, 0xFF0000;
+	sleep 1000;
+	if (.@session != .WarpSession) end;
+
+	mapwarp .Map$, .ReturnMap$, .ReturnX, .ReturnY;
+	end;
+}
+
+
+//==================================================
+// NPC
+//==================================================
+valmorra,164,105,4	script	World Boss Manager	10880,{
+
+	callfunc "WB_SQL_Load", "main_worldboss";
+
+	mes "[World Boss Manager]";
+
+	if (getvariableofnpc(.sql_is_active, "worldboss_controller")) {
+		mes "Status : ^00FF00ALIVE^000000";
+		mes "Map    : pvp_arena ("+getvariableofnpc(.sql_spawn_x, "worldboss_controller")+","+getvariableofnpc(.sql_spawn_y, "worldboss_controller")+")";
+		mes "Next Spawn : After the boss is defeated";
+	}
+	else {
+		mes "Status : ^FF0000DEAD^000000";
+		.@next = getvariableofnpc(.sql_next_spawn, "worldboss_controller");
+		if (.@next) {
+			.@t = .@next - gettimetick(2);
+			if (.@t <= 0)
+				mes "Next Spawn : Spawning very soon...";
+			else
+				mes "Next Spawn : "+callfunc("WB_Time2Str", .@t);
+		}
+		else {
+			mes "Next Spawn : Not scheduled";
+		}
+	}
+
+	next;
+
+	.@menu$ = "Warp to Boss:Information:Last Boss Info:World Boss Shop:Close";
+	if (getgmlevel() >= 99)
+		.@menu$ = "Warp to Boss:Information:Last Boss Info:World Boss Shop:GM Tools:Close";
+
+	switch(select(.@menu$)) {
+
+	case 1:
+		if (!getvariableofnpc(.sql_is_active, "worldboss_controller")) {
+			mes "No active boss.";
+			close;
+		}
+		warp "pvp_arena", getvariableofnpc(.sql_spawn_x, "worldboss_controller"), getvariableofnpc(.sql_spawn_y, "worldboss_controller");
+		close;
+
+	case 2:
+		mes "[Information]";
+		mes "";
+		mes "^FF0000[Reminder]^000000";
+		mes "^FF0000• This boss monster can drop:^000000";
+		mes "^FF0000  1x Nostalgic Coin (1% Chance)^000000";
+		mes "^FF0000  1x Nostalgic MVP Ticket^000000";
+		mes "^FF0000  1x Nostalgic Event Ticket^000000";
+		mes "^FF0000  1x WorldBoss Ticket^000000";
+		mes "^FF0000• Please don't forget to use @autoloot !!^000000";
+		next;
+		mes "^0000FFMVP Killer Rewards:^000000";
+		mes "• 1x "+getitemname(33048);
+		mes "• 10x "+getitemname(51001);
+		mes "• 1x "+getitemname(51005);
+		mes "• 1x "+getitemname(51004);
+		next;
+		mes "^0000FFParticipation Rewards:^000000";
+		mes "• 5x "+getitemname(51001);
+		mes "• 1x "+getitemname(51005);
+		mes "• 1x "+getitemname(51004);
+		mes "• 1x "+getitemname(55703);
+		next;
+		mes "[Rules]";
+		mes "• Rewards are automatically sent to your inventory";
+		mes "• You must remain inside the boss map when the boss is defeated";
+		mes "• All players in the boss map will be teleported to town after 2 minutes";
+		mes "• Final 10 seconds will show a red countdown announcement";
+		mes "• MVP Killer is determined by the final hit";
+		mes "• Boss respawns 12 hours after being defeated";
+		close;
+
+	case 3:
+		mes "[Last Boss Info]";
+		.@lasttime = getvariableofnpc(.sql_last_kill_time, "worldboss_controller");
+		.@lastkiller$ = getvariableofnpc(.sql_last_killer_name$, "worldboss_controller");
+
+		if (!.@lasttime) {
+			mes "No data yet.";
+			close;
+		}
+		mes "Recorded at: "+gettimestr("%Y-%m-%d %H:%M:%S",21,.@lasttime);
+		mes "Last MVP Killer: "+(.@lastkiller$ == "" ? "-" : .@lastkiller$);
+		close;
+
+	case 4:
+		mes "[World Boss Shop]";
+		mes "Welcome to the World Boss Shop.";
+		mes "Exchange your ^0000FF"+getitemname(55703)+"^000000 for exclusive costume sets.";
+		next;
+
+		switch(select("Fusion Set:Baryon Set:Cancel")) {
+
+		case 1:
+			mes "[Fusion Set]";
+			mes "You will receive:";
+			mes "• "+getitemname(51098);
+			mes "• "+getitemname(51097);
+			mes "• "+getitemname(51099);
+			mes "";
+			mes "Required:";
+			mes "• 50x "+getitemname(55703);
+			next;
+
+			if (select("Redeem Fusion Set:Cancel") == 2)
+				close;
+
+			if (countitem(55703) < 50) {
+				mes "[World Boss Shop]";
+				mes "You don't have enough "+getitemname(55703)+".";
+				mes "Required: ^FF000050x^000000";
+				close;
+			}
+
+			if (!checkweight(51098,1) || !checkweight(51097,1) || !checkweight(51099,1)) {
+				mes "[World Boss Shop]";
+				mes "Please free up some inventory space first.";
+				close;
+			}
+
+			delitem 55703,50;
+			getitem 51098,1;
+			getitem 51097,1;
+			getitem 51099,1;
+
+			mes "[World Boss Shop]";
+			mes "Congratulations!";
+			mes "You have redeemed the ^0000FFFusion Set^000000.";
+			close;
+
+		case 2:
+			mes "[Baryon Set]";
+			mes "You will receive:";
+			mes "• "+getitemname(51028);
+			mes "• "+getitemname(51027);
+			mes "• "+getitemname(51029);
+			mes "";
+			mes "Required:";
+			mes "• 50x "+getitemname(55703);
+			next;
+
+			if (select("Redeem Baryon Set:Cancel") == 2)
+				close;
+
+			if (countitem(55703) < 50) {
+				mes "[World Boss Shop]";
+				mes "You don't have enough "+getitemname(55703)+".";
+				mes "Required: ^FF000050x^000000";
+				close;
+			}
+
+			if (!checkweight(51028,1) || !checkweight(51027,1) || !checkweight(51029,1)) {
+				mes "[World Boss Shop]";
+				mes "Please free up some inventory space first.";
+				close;
+			}
+
+			delitem 55703,50;
+			getitem 51028,1;
+			getitem 51027,1;
+			getitem 51029,1;
+
+			mes "[World Boss Shop]";
+			mes "Congratulations!";
+			mes "You have redeemed the ^0000FFBaryon Set^000000.";
+			close;
+
+		default:
+			close;
+		}
+
+	case 5:
+		if (getgmlevel() < 99) close;
+
+		switch(select("Force Spawn Boss Now:Force Despawn Boss:Close")) {
+		case 1:
+			donpcevent "worldboss_controller::OnForceSpawn";
+			mes "Spawn request sent.";
+			close;
+
+		case 2:
+			donpcevent "worldboss_controller::OnForceDespawn";
+			mes "Despawn request sent.";
+			close;
+
+		default:
+			close;
+		}
+
+	default:
+		close;
+	}
+}
+
+
+//==================================================
+// GLOBAL FUNCTIONS
+//==================================================
+function	script	WB_SQL_Load	{
+	.@key$ = getarg(0);
+
+	query_sql(
+		"SELECT is_active,boss_id,spawn_x,spawn_y,next_spawn,announce5,last_killer_aid,last_killer_name,last_kill_time " +
+		"FROM world_boss_state WHERE boss_key = '"+.@key$+"' LIMIT 1",
+		.@is_active, .@boss_id, .@spawn_x, .@spawn_y, .@next_spawn, .@announce5, .@killer_aid, .@killer_name$, .@last_kill_time
+	);
+
+	set getvariableofnpc(.sql_is_active, "worldboss_controller"), .@is_active;
+	set getvariableofnpc(.sql_boss_id, "worldboss_controller"), .@boss_id;
+	set getvariableofnpc(.sql_spawn_x, "worldboss_controller"), .@spawn_x;
+	set getvariableofnpc(.sql_spawn_y, "worldboss_controller"), .@spawn_y;
+	set getvariableofnpc(.sql_next_spawn, "worldboss_controller"), .@next_spawn;
+	set getvariableofnpc(.sql_announce5, "worldboss_controller"), .@announce5;
+	set getvariableofnpc(.sql_last_killer_aid, "worldboss_controller"), .@killer_aid;
+	set getvariableofnpc(.sql_last_killer_name$, "worldboss_controller"), .@killer_name$;
+	set getvariableofnpc(.sql_last_kill_time, "worldboss_controller"), .@last_kill_time;
+	return;
+}
+
+function	script	WB_SQL_Save	{
+	.@key$ = getarg(0);
+	.@is_active = getarg(1);
+	.@boss_id = getarg(2);
+	.@spawn_x = getarg(3);
+	.@spawn_y = getarg(4);
+	.@next_spawn = getarg(5);
+	.@announce5 = getarg(6);
+	.@killer_aid = getarg(7);
+	.@killer_name$ = getarg(8);
+	.@last_kill_time = getarg(9);
+
+	query_sql(
+		"UPDATE world_boss_state SET " +
+		"is_active = "+.@is_active+"," +
+		"boss_id = "+.@boss_id+"," +
+		"spawn_x = "+.@spawn_x+"," +
+		"spawn_y = "+.@spawn_y+"," +
+		"next_spawn = "+.@next_spawn+"," +
+		"announce5 = "+.@announce5+"," +
+		"last_killer_aid = "+.@killer_aid+"," +
+		"last_killer_name = '"+.@killer_name$+"'," +
+		"last_kill_time = "+.@last_kill_time+" " +
+		"WHERE boss_key = '"+.@key$+"'"
+	);
+
+	set getvariableofnpc(.sql_is_active, "worldboss_controller"), .@is_active;
+	set getvariableofnpc(.sql_boss_id, "worldboss_controller"), .@boss_id;
+	set getvariableofnpc(.sql_spawn_x, "worldboss_controller"), .@spawn_x;
+	set getvariableofnpc(.sql_spawn_y, "worldboss_controller"), .@spawn_y;
+	set getvariableofnpc(.sql_next_spawn, "worldboss_controller"), .@next_spawn;
+	set getvariableofnpc(.sql_announce5, "worldboss_controller"), .@announce5;
+	set getvariableofnpc(.sql_last_killer_aid, "worldboss_controller"), .@killer_aid;
+	set getvariableofnpc(.sql_last_killer_name$, "worldboss_controller"), .@killer_name$;
+	set getvariableofnpc(.sql_last_kill_time, "worldboss_controller"), .@last_kill_time;
+	return;
+}
+
+function	script	WB_Time2Str	{
+	.@s = getarg(0);
+	if (.@s < 0) .@s = 0;
+	.@h = .@s / 3600; .@s %= 3600;
+	.@m = .@s / 60;   .@s %= 60;
+	return .@h+"h "+.@m+"m "+.@s+"s";
+}
+
+
+//==================================================
+// MAPFLAGS
+//==================================================
+pvp_arena	mapflag	nowarp
+pvp_arena	mapflag	nowarpto
+pvp_arena	mapflag	nobranch
+pvp_arena	mapflag	nomemo
+pvp_arena	mapflag	nosave	SavePoint

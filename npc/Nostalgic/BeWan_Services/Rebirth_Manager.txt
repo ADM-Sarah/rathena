@@ -1,0 +1,163 @@
+prontera,164,166,4	script	Rebirth Manager	642,{
+
+if(ClassHelper == 1 || #ClassHelper == 1){
+	mes "[ Rebirth Manager ]";
+	mes "You are not allowed to rebirth. Because you use instant job changer.";
+	mes " ";
+	mes "If you want to rebirth, i can turn you into level 1 novice again.";
+	switch(select("~ Nevermind", "~ Okay, Go ahead")){
+		case 1:
+			close;
+
+		case 2:
+			Baselevel = Baselevel - (Baselevel - 1);
+			Joblevel = Joblevel - (Joblevel - 1);
+			jobchange 0;
+			ResetStatus;
+			ResetSkill;
+			set SkillPoint,0;
+			set #ClassHelper,0;
+			set ClassHelper,0;
+			end;
+	}
+}else{
+	switch(select("~ Rebirth", "~ Rebirth Rank Status", "~ Rebirth Information")){
+		case 1:
+			if((Class >= 0 && Class <= 4007) || Class >= 4022){
+				mes "[ Rebirth Manager ]";
+				mes "Transcended class only.";
+				close;
+			}else if(Baselevel < 255){
+				mes "[ Rebirth Manager ]";
+				mes "You need "+(255 - Baselevel)+" more base level to rebirth.";
+				close;
+			}else if(Joblevel < 120){
+				mes "[ Rebirth Manager ]";
+				mes "You need "+(120 - Joblevel)+" more job level to rebirth.";
+				close;
+			}else if(#RebirthSystem == 100){
+				mes "[ Rebirth Manager ]";
+				mes "Maximum rebirth level attained, you've become a true god!";
+				close;
+			}else{
+				set #RebirthSystem, (#RebirthSystem + 1);
+				Baselevel = Baselevel - (Baselevel - 1);
+				Joblevel = Joblevel - (Joblevel - 1);
+				jobchange 0;
+				ResetStatus;
+				ResetSkill;
+				set SkillPoint,0;
+				mes "[ Rebirth Manager ]";
+				mes "Rebirth Success.";
+				mes " ";
+				mes "Your current rebirth level is: ^FF0000"+#RebirthSystem+"^000000";
+				if(#RebirthSystem <= 10){ mes "You current rank status: ^FF0000Noob ^000000"; }
+				if(#RebirthSystem >= 11 && #RebirthSystem <= 20){ mes "You current rank status: ^FF0000Student ^000000"; }
+				if(#RebirthSystem >= 21 && #RebirthSystem <= 30){ mes "You current rank status: ^FF0000Rookie ^000000"; }
+				if(#RebirthSystem >= 31 && #RebirthSystem <= 40){ mes "You current rank status: ^FF0000Commander ^000000"; }
+				if(#RebirthSystem >= 41 && #RebirthSystem <= 50){ mes "You current rank status: ^FF0000Master ^000000"; }
+				if(#RebirthSystem >= 51 && #RebirthSystem <= 60){ mes "You current rank status: ^FF0000King ^000000"; }
+				if(#RebirthSystem >= 61 && #RebirthSystem <= 70){ mes "You current rank status: ^FF0000Saint ^000000"; }
+				if(#RebirthSystem >= 71 && #RebirthSystem <= 80){ mes "You current rank status: ^FF0000Angel ^000000"; }
+				if(#RebirthSystem >= 81 && #RebirthSystem <= 90){ mes "You current rank status: ^FF0000Demi-God ^000000"; }
+				if(#RebirthSystem >= 91 && #RebirthSystem <= 100){ mes "You current rank status: ^FF0000God ^000000"; }
+
+				if(#RebirthSystem == 10){
+					getitembound rand(33039,33044),1,Bound_Char; close; end;
+				}else if(#RebirthSystem == 20){
+					getitembound rand(33039,33044),1,Bound_Char; close; end;
+				}else if(#RebirthSystem == 30){
+					getitembound rand(33039,33044),1,Bound_Char; close; end;
+				}else if(#RebirthSystem == 40){
+					getitembound rand(33039,33044),1,Bound_Char; close; end;
+				}else if(#RebirthSystem == 50){
+					getitembound rand(33039,33044),1,Bound_Char; close; end;
+				}else if(#RebirthSystem == 60){
+					getitembound rand(33039,33044),1,Bound_Char; close; end;
+				}else if(#RebirthSystem == 70){
+					getitembound rand(33039,33044),1,Bound_Char; close; end;
+				}else if(#RebirthSystem == 80){
+					getitembound rand(33039,33044),1,Bound_Char; close; end;
+				}else if(#RebirthSystem == 90){
+					getitembound rand(33039,33044),1,Bound_Char; getitembound rand(33039,33044),1,Bound_Char; close; end;
+				}else if(#RebirthSystem == 100){
+					getitembound rand(33039,33044),1,Bound_Char; getitembound rand(33039,33044),1,Bound_Char;
+					getitembound rand(33039,33044),1,Bound_Char; getitembound rand(33039,33044),1,Bound_Char; getitembound rand(33039,33044),1,Bound_Char;
+					close;
+					end;
+				}else{
+					end;
+				}
+			}
+
+		case 2:
+			mes "[ Rebirth Manager ]";
+			mes "Your rebirth level is: ^FF0000"+#RebirthSystem+"^000000";
+			if(#RebirthSystem <= 10){ mes "You current rank status: ^FF0000Noob ^000000"; }
+			if(#RebirthSystem >= 11 && #RebirthSystem <= 20){ mes "You current rank status: ^FF0000Student ^000000"; }
+			if(#RebirthSystem >= 21 && #RebirthSystem <= 30){ mes "You current rank status: ^FF0000Rookie ^000000"; }
+			if(#RebirthSystem >= 31 && #RebirthSystem <= 40){ mes "You current rank status: ^FF0000Commander ^000000"; }
+			if(#RebirthSystem >= 41 && #RebirthSystem <= 50){ mes "You current rank status: ^FF0000Master ^000000"; }
+			if(#RebirthSystem >= 51 && #RebirthSystem <= 60){ mes "You current rank status: ^FF0000King ^000000"; }
+			if(#RebirthSystem >= 61 && #RebirthSystem <= 70){ mes "You current rank status: ^FF0000Saint ^000000"; }
+			if(#RebirthSystem >= 71 && #RebirthSystem <= 80){ mes "You current rank status: ^FF0000Angel ^000000"; }
+			if(#RebirthSystem >= 81 && #RebirthSystem <= 90){ mes "You current rank status: ^FF0000Demi-God ^000000"; }
+			if(#RebirthSystem >= 91 && #RebirthSystem <= 100){ mes "You current rank status: ^FF0000God ^000000"; }
+
+			mes " ";
+			mes "Rebirth Rank Status:";
+			mes "Rebirth level 1 to level 10:";
+				mes "~ ^FF0000Noob ^000000";
+			mes "Rebirth level 11 to level 20:";
+				mes "~ ^FF0000Student ^000000";
+			mes "Rebirth level 21 to level 30:";
+				mes "~ ^FF0000Rookie ^000000";
+			mes "Rebirth level 31 to level 40:";
+				mes "~ ^FF0000Commander ^000000";
+			mes "Rebirth level 41 to level 50";
+				mes "~ ^FF0000Master ^000000";
+			mes "Rebirth level 51 to level 60:";
+				mes "~ ^FF0000King ^000000";
+			mes "Rebirth level 61 to level 70";
+				mes "~ ^FF0000Saint ^000000";
+			mes "Rebirth level 71 to level 80";
+				mes "~ ^FF0000Angel ^000000";
+			mes "Rebirth level 81 to level 90";
+				mes "~ ^FF0000Demi-God ^000000";
+			mes "Rebirth level 91 to level 100";
+				mes "~ ^FF0000God ^000000";
+			close;
+
+		case 3:
+			mes "[ Rebirth Manager ]";
+			mes "^FF0000*REMINDER: Every season ends, rebirth status rank will be reset to zero.^000000";
+			mes " ";
+			mes "Rebirth level 10";
+				mes "^FF0000= 1x Random Rebirth Stone (STR, AGI, VIT, INT, DEX, LUK)^000000";
+			mes "Rebirth level 20";
+				mes "^FF0000= 1x Random Rebirth Stone (STR, AGI, VIT, INT, DEX, LUK)^000000";
+			mes "Rebirth level 30";
+				mes "^FF0000= 1x Random Rebirth Stone (STR, AGI, VIT, INT, DEX, LUK)^000000";
+			mes "Rebirth level 40";
+				mes "^FF0000= 1x Random Rebirth Stone (STR, AGI, VIT, INT, DEX, LUK)^000000";
+			mes "Rebirth level 50";
+				mes "^FF0000= 1x Random Rebirth Stone (STR, AGI, VIT, INT, DEX, LUK)^000000";
+			mes "Rebirth level 60";
+				mes "^FF0000= 1x Random Rebirth Stone (STR, AGI, VIT, INT, DEX, LUK)^000000";
+			mes "Rebirth level 70";
+				mes "^FF0000= 1x Random Rebirth Stone (STR, AGI, VIT, INT, DEX, LUK)^000000";
+			mes "Rebirth level 80";
+				mes "^FF0000= 1x Random Rebirth Stone (STR, AGI, VIT, INT, DEX, LUK)^000000";
+			mes "Rebirth level 90";
+				mes "^FF0000= 2x Random Rebirth Stone (STR, AGI, VIT, INT, DEX, LUK)^000000";
+			mes "Rebirth level 100";
+				mes "^FF0000= 5x Random Rebirth Stone (STR, AGI, VIT, INT, DEX, LUK)^000000";
+			close;
+	}
+}
+
+//OnInit:
+//  waitingroom "Rebirth Manager",0;
+//  end;
+
+}

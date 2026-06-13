@@ -1,0 +1,153 @@
+//===== rAthena Script ===========================================|
+//= Autoloot Settings                                             =|
+//===== By: ======================================================|
+//= crazyarashi                                                   =|
+//===== Modified: ================================================|
+//= Max 50 Slot                                                   =|
+//= Fixed for latest rAthena menu limits                          =|
+//================================================================|
+
+valmorra,191,137,3	script	Autoloot Manager	123,{
+
+	function	autoloot_setting;
+	function	aloot_setid;
+
+	autoloot_setting();
+
+function	autoloot_setting	{
+
+	mes "[ ^0000FFAutoloot Settings^000000 ]";
+	mes "Adjust your Autoloot Settings.";
+	next;
+
+	explode(.@alootid$, alootid$, ":");
+
+	.@page = 0;
+
+L_Menu:
+
+	.@menu$ = "Quit:";
+
+	for (.@i = (.@page * 10); .@i < ((.@page * 10) + 10); .@i++) {
+
+		if (.@i >= 50)
+			break;
+
+		if (atoi(.@alootid$[.@i]) == 0) {
+			.@menu$ += "^202020Slot [" + (.@i + 1) + "] Empty^000000:";
+		} else {
+			.@menu$ += "^0000FF" + getitemname(atoi(.@alootid$[.@i])) + "^000000 [ ^00FF00" + atoi(.@alootid$[.@i]) + "^000000 ]:";
+		}
+	}
+
+	if (.@page > 0)
+		.@menu$ += "Previous Page:";
+
+	if (((.@page + 1) * 10) < 50)
+		.@menu$ += "Next Page:";
+
+	.@s = select(.@menu$);
+
+	if (.@s == 1)
+		end;
+
+	.@s -= 2;
+
+	if (.@page > 0) {
+		if (.@s == 10) {
+			.@page--;
+			goto L_Menu;
+		}
+	}
+
+	if (((.@page + 1) * 10) < 50) {
+
+		if (
+			(.@page == 0 && .@s == 10) ||
+			(.@page > 0 && .@s == 11)
+		) {
+			.@page++;
+			goto L_Menu;
+		}
+	}
+
+	.@s += (.@page * 10);
+
+	switch (select(
+		"Set Slot" +
+		((atoi(.@alootid$[.@s]) > 0) ? ":Reset Slot" : "")
+	)) {
+
+	case 1:
+		.@item_id = aloot_setid(.@s);
+		.@alootid$[.@s] = .@item_id;
+		alootid$ = implode(.@alootid$, ":");
+
+		mes "[ ^0000FFAutoloot Settings^000000 ]";
+		mes "The Item ID: ^00FF00" + .@item_id + "^000000";
+		mes "has been successfully added in Slot ^0000FF" + (.@s + 1) + "^000000.";
+		next;
+		goto L_Menu;
+
+	case 2:
+		.@alootid$[.@s] = 0;
+		alootid$ = implode(.@alootid$, ":");
+
+		mes "[ ^0000FFAutoloot Settings^000000 ]";
+		mes "Slot ^0000FF" + (.@s + 1) + "^000000 has been reset.";
+		next;
+		goto L_Menu;
+	}
+
+	end;
+}
+
+function	aloot_setid	{
+
+	mes "[ ^0000FFAutoloot Settings^000000 ]";
+	mes "Set the Item ID in ^0000FFSlot " + (getarg(0) + 1) + "^000000.";
+	next;
+
+	input .@temporary_id;
+
+	.@item_name$ = getitemname(.@temporary_id);
+
+	if (.@temporary_id < 501 || .@item_name$ == "null") {
+
+		mes "[ ^0000FFAutoloot Settings^000000 ]";
+		mes "Please set a valid Item ID.";
+		next;
+
+		return aloot_setid(getarg(0));
+	}
+
+	explode(.@alootid$, alootid$, ":");
+
+	for (.@i = 0; .@i < 50; .@i++) {
+
+		if (atoi(.@alootid$[.@i]) == .@temporary_id) {
+
+			mes "[ ^0000FFAutoloot Settings^000000 ]";
+			mes "You already have this Item ID in your autoloot settings.";
+			next;
+
+			return aloot_setid(getarg(0));
+		}
+	}
+
+	return .@temporary_id;
+}
+
+OnPCLoginEvent:
+
+	explode(.@alootid$, alootid$, ":");
+
+	for (.@i = 0; .@i < 50; .@i++) {
+
+		if (atoi(.@alootid$[.@i]) > 0) {
+			useatcmd "@alootid +" + atoi(.@alootid$[.@i]);
+		}
+	}
+
+	end;
+}

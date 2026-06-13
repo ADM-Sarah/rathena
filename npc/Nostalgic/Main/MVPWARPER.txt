@@ -1,0 +1,487 @@
+//===== rAthena Script =======================================
+//= Private MVP Room
+//= Fixed: MVP point only given to real killer
+//= Fixed: No attachrid to summoner on mob dead
+//= MVP summon quantity max 10
+//= Boss Raid counter untouched
+//============================================================
+
+valmorra,182,128,4	script	Private MVP Room	11008,{
+	mes "[Private MVP Room]";
+	mes "Please select a private MVP room.";
+	if ( getvariableofnpc( .rentcost, "MVP Summoner" ) )
+		mes "The cost to rent a room for "+ getvariableofnpc( .timeout, "MVP Summoner" ) +" minutes is "+ callfunc("F_InsertComma", getvariableofnpc( .rentcost, "MVP Summoner" ) ) +" zeny.";
+	else
+		mes "You can only use the room for only "+ getvariableofnpc( .timeout, "MVP Summoner" ) +" minutes.";
+	mes " ";
+
+	for ( .@i = 1; .@i <= 8; .@i++ )
+		if ( getvariableofnpc( .renttime[.@i], "MVP Summoner" ) )
+			mes "Room #"+ .@i +" = "+ .color$[ .type[.@i] ] + .whoinuse$[.@i] +"^000000";
+	next;
+
+	.@room = select(
+		"MVP Room 1 ["+ getmapusers("06guild_01") +"]",
+		"MVP Room 2 ["+ getmapusers("06guild_02") +"]",
+		"MVP Room 3 ["+ getmapusers("06guild_03") +"]",
+		"MVP Room 4 ["+ getmapusers("06guild_04") +"]",
+		"MVP Room 5 ["+ getmapusers("06guild_05") +"]",
+		"MVP Room 6 ["+ getmapusers("06guild_06") +"]",
+		"MVP Room 7 ["+ getmapusers("06guild_07") +"]",
+		"MVP Room 8 ["+ getmapusers("06guild_08") +"]"
+	);
+
+	if ( getvariableofnpc( .renttime[.@room], "MVP Summoner" ) ) {
+		if ( .inuseid[.@room] == getcharid( .type[.@room] ) ) {
+			warp "06guild_0"+ .@room, 0,0;
+			close;
+		} else {
+			mes "[Private MVP Room]";
+			mes "This room is reserved for ";
+			mes .color$[ .type[.@room] ] + .whoinuse$[.@room] +"^000000.";
+			mes "Please select another.";
+			close;
+		}
+	}
+
+	mes "[Private MVP Room]";
+	mes "Reserve this room for...";
+	next;
+
+	set .@type, select( "For my party members:For my guild members:For personal account use" );
+
+	if ( !getcharid(.@type) ) {
+		mes "[Private MVP Room]";
+		mes "You do not own a "+( ( .@type == 1 )? "Party" : "Guild" )+".";
+		close;
+	}
+	else if ( Zeny < getvariableofnpc( .rentcost, "MVP Summoner" ) ) {
+		mes "You don't have enough zeny to rent a room.";
+		close;
+	}
+	else if ( getvariableofnpc( .renttime[.@room], "MVP Summoner" ) ) {
+		mes "[Private MVP Room]";
+		mes "I'm sorry, somebody else has already registered this room faster than you.";
+		close;
+	}
+
+	for ( .@i = 1; .@i <= 8; .@i++ ) {
+		if ( ( getvariableofnpc( .renttime[.@i], "MVP Summoner" ) ) && .@type == .type[.@i] && getcharid(.@type) == .inuseid[.@i] ) {
+			mes "[Private MVP Room]";
+			mes "You already rented Room#"+ .@i +". Use that room instead.";
+			close;
+		}
+	}
+
+	set .type[.@room], .@type;
+	set .inuseid[.@room], getcharid(.@type);
+	set .whoinuse$[.@room], strcharinfo( ( .@type == 3 )? 0 : .@type );
+
+	Zeny -= getvariableofnpc( .rentcost, "MVP Summoner" );
+
+	warp "06guild_0"+ .@room, 0,0;
+	killmonsterall "06guild_0"+ .@room;
+	donpcevent "MVP Summoner#"+ .@room +"::OnEnterMap";
+	close;
+
+OnInit:
+	.color$[1] = "^EE8800";
+	.color$[2] = "^70CC11";
+	.color$[3] = "^0000FF";
+	end;
+}
+
+-	script	MVP Summoner	-1,{
+	.@id = atoi(strnpcinfo(2));
+	.@left = (.renttime[.@id] + (.timeout * 60)) - gettimetick(2);
+
+	if (.@left < 0)
+		.@left = 0;
+
+	.@hour = .@left / 3600;
+	.@min  = (.@left % 3600) / 60;
+	.@sec  = .@left % 60;
+
+	mes "[MVP Summoner]";
+	mes sprintf("Time left: %dh %02dm %02ds", .@hour, .@min, .@sec);
+	mes "Hi, what can I do for you?";
+	next;
+
+	switch ( select(.menu$) ) {
+
+	case 1:
+		if ( mobcount( "this", strnpcinfo(3)+"::OnMobDead" ) ) {
+			mes "[MVP Summoner]";
+			mes "There are still monsters in the room.";
+			close;
+		}
+
+		if ( !#last_mvp_id || !#last_mvp_amount ) {
+			mes "[MVP Summoner]";
+			mes "You don't have any previous MVP summon saved.";
+			close;
+		}
+
+		.@totalcost = .mvpcost * #last_mvp_amount;
+
+		mes "[MVP Summoner]";
+		mes "Previous MVP:";
+		mes "^00AAFF"+ getmonsterinfo(#last_mvp_id, MOB_NAME ) +"^000000";
+		mes "Amount: ^00AA00"+ #last_mvp_amount +"^000000";
+		mes "Total Cost: ^FF9900"+ callfunc( "F_InsertComma", .@totalcost ) +" zeny^000000";
+		next;
+
+		if ( Zeny < .@totalcost ) {
+			mes "[MVP Summoner]";
+			mes "You don't have enough zeny.";
+			close;
+		}
+
+		mes "[MVP Summoner]";
+		mes "Re-summoning previous MVP.";
+		close2;
+
+		if ( Zeny < .@totalcost )
+			end;
+
+		Zeny -= .@totalcost;
+
+		monster "this", 0, 0, "--ja--", #last_mvp_id, #last_mvp_amount, strnpcinfo(3)+"::OnMobDead";
+		end;
+
+	case 2:
+		mes "[MVP Summoner]";
+
+		if ( mobcount( "this", strnpcinfo(3)+"::OnMobDead" ) ) {
+			mes "I cannot offer heal service when there are monsters around.";
+			close;
+		}
+
+		sc_end SC_STONE;
+		sc_end SC_SLOWDOWN;
+		sc_end SC_FREEZE;
+		sc_end SC_SLEEP;
+		sc_end SC_CURSE;
+		sc_end SC_SILENCE;
+		sc_end SC_CONFUSION;
+		sc_end SC_BLIND;
+		sc_end SC_BLEEDING;
+		sc_end SC_DECREASEAGI;
+		sc_end SC_POISON;
+		sc_end SC_HALLUCINATION;
+		sc_end SC_STRIPWEAPON;
+		sc_end SC_STRIPARMOR;
+		sc_end SC_STRIPHELM;
+		sc_end SC_STRIPSHIELD;
+		sc_end SC_CHANGEUNDEAD;
+		sc_end SC_ORCISH;
+		sc_end SC_BERSERK;
+		sc_end SC_SKE;
+		sc_end SC_SWOO;
+		sc_end SC_SKA;
+
+		percentheal 100,100;
+
+		sc_start SC_BLESSING,600000,10;
+		sc_start SC_INCREASEAGI,600000,10;
+
+		specialeffect2 EF_HEAL;
+		specialeffect2 EF_BLESSING;
+		specialeffect2 EF_INCAGILITY;
+
+		mes "You have been fully healed.";
+		mes "Blessing and Increase AGI have been applied.";
+		close;
+
+	case 3:
+		if ( mobcount( "this", strnpcinfo(3)+"::OnMobDead" ) ) {
+			mes "[MVP Summoner]";
+			mes "I cannot summon another MVP when there are monsters around.";
+			close;
+		}
+
+		mes "[MVP Summoner]";
+
+		if ( .mvpcost )
+			mes "The cost to summon an MVP is "+ callfunc( "F_InsertComma", .mvpcost ) +" zeny each.";
+		else
+			mes "MVP summon is free.";
+		next;
+
+		set .@menu, select(.mvpid_menu$) - 1;
+
+		mes "[MVP Summoner]";
+		mes "How many MVP do you want to summon?";
+		mes "Maximum summon: ^FF000010^000000";
+		input .@amount;
+
+		if ( .@amount < 1 ) {
+			mes "[MVP Summoner]";
+			mes "Invalid amount.";
+			close;
+		}
+
+		if ( .@amount > 10 ) {
+			mes "[MVP Summoner]";
+			mes "You can only summon maximum ^FF000010 MVP^000000 at once.";
+			mes "Summon cancelled.";
+			close;
+		}
+
+		.@totalcost = .mvpcost * .@amount;
+
+		#last_mvp_id = .mvpid[.@menu];
+		#last_mvp_amount = .@amount;
+
+		mes "[MVP Summoner]";
+		mes "Selected MVP: ^00AAFF"+ getmonsterinfo( .mvpid[.@menu], MOB_NAME ) +"^000000";
+		mes "Amount: ^00AA00"+ .@amount +"^000000";
+		mes "Total Cost: ^FF9900"+ callfunc( "F_InsertComma", .@totalcost ) +" zeny^000000";
+		next;
+
+		if ( Zeny < .@totalcost ) {
+			mes "[MVP Summoner]";
+			mes "You don't have enough zeny to summon this amount.";
+			close;
+		}
+
+		mes "[MVP Summoner]";
+		mes "Please get ready.";
+		close2;
+
+		if ( Zeny < .@totalcost )
+			end;
+
+		Zeny -= .@totalcost;
+
+		monster "this", 0, 0, "--ja--", .mvpid[.@menu], .@amount, strnpcinfo(3)+"::OnMobDead";
+		end;
+
+	case 4:
+		if ( mobcount( "this", strnpcinfo(3)+"::OnMobDead" ) ) {
+			mes "[MVP Summoner]";
+			mes "I cannot summon another mini-boss when there are monsters around.";
+			close;
+		}
+		else if ( .bosscost ) {
+			mes "[MVP Summoner]";
+			mes "The cost to summon a mini-boss is "+ callfunc( "F_InsertComma", .bosscost ) +" zeny.";
+			next;
+
+			set .@menu, select(.bossid_menu$) - 1;
+
+			mes "[MVP Summoner]";
+
+			if ( Zeny < .bosscost ) {
+				mes "You doesn't have enough zeny to summon a mini-boss.";
+				close;
+			}
+		}
+		else {
+			set .@menu, select(.bossid_menu$) - 1;
+			mes "[MVP Summoner]";
+		}
+
+		mes "Please get ready.";
+		close2;
+
+		if ( Zeny < .bosscost )
+			end;
+
+		Zeny -= .bosscost;
+
+		monster "this", 0, 0, "--ja--", .bossid[.@menu], 1, strnpcinfo(3)+"::OnMobDead";
+		end;
+
+	case 5:
+		mes "[MVP Summoner]";
+		mes "Are you sure you want to leave this room?";
+		next;
+
+		if ( select( "Yes:No" ) == 1 ) {
+			close2;
+			warp .respawnmap$, .respawnx, .respawny;
+			end;
+		}
+		close;
+
+	case 6:
+		mes "[MVP Summoner]";
+		mes "Are you sure you want to give up this room?";
+
+		if ( .rentcost )
+			mes "You will need to pay again to enter this room.";
+
+		mes "All monsters will be removed and all players inside will be warped out.";
+		next;
+
+		if ( select( "Yes, give up room:Cancel" ) == 2 )
+			close;
+
+		mes "[MVP Summoner]";
+		mes "Room has been given up.";
+		mes "Cleaning monsters and warping all players out.";
+		close2;
+
+		.@map$ = strnpcinfo(4);
+		.@id = atoi(strnpcinfo(2));
+
+		killmonsterall .@map$;
+		mapwarp .@map$, .respawnmap$, .respawnx, .respawny;
+
+		.renttime[.@id] = 0;
+		.type[.@id] = 0;
+		.inuseid[.@id] = 0;
+		.whoinuse$[.@id] = "";
+		end;
+	}
+
+	close;
+
+OnMobDead:
+	// This label is automatically attached to the real killer.
+	// Do NOT attachrid to summoner here, or summoner will get point even without killing.
+
+	if ( !playerattached() )
+		end;
+
+	// MVP Ladder point.
+	callfunc "F_AddMvpRankPoint";
+
+	// Boss Raid counter - DO NOT REMOVE.
+	callfunc "F_WorldBoss_AddMvpKill", 1;
+
+	end;
+
+OnEnterMap:
+	.@id = atoi( strnpcinfo(2) );
+
+	.renttime[.@id] = gettimetick(2);
+
+	sleep .timeout * 60000;
+
+	mapwarp strnpcinfo(4), .respawnmap$, .respawnx, .respawny;
+
+	.renttime[.@id] = 0;
+	.type[.@id] = 0;
+	.inuseid[.@id] = 0;
+	.whoinuse$[.@id] = "";
+
+	killmonsterall strnpcinfo(4);
+	end;
+
+OnInit:
+	if ( !getstrlen( strnpcinfo(2) ) ) {
+
+		set .timeout, 60;
+
+		set .rentcost, 10000000;
+		set .mvpcost, 5000000;
+		set .bosscost, 2000000;
+
+		set .@menu[1], 1;
+		set .@menu[2], 1;
+		set .@menu[3], 1;
+
+		set .respawnmap$, "valmorra";
+		set .respawnx, 171;
+		set .respawny, 127;
+
+		setarray .mvpid[0],
+			1511,1785,1630,1039,1874,1272,1719,1046,1389,1112,1115,1418,1871,1252,1768,1086,1885,1832,1492,1251,1779,1688,1373,1147,1059,1150,1087,1190,1038,2022,1157,1159,1623,1583,1312,1751,1685,1917,1658;
+
+		setarray .bossid[0],
+			1096,1388,1795,1830,1839,1309,1283,1302,1198,1582,1091,1093,1205,1783,1592,1120,1259,1720,1090,1289,1262,1203,1870,1295,1829,1204,1089,1092,1765;
+
+		if ( !.timeout )
+			set .timeout, 60;
+
+		.menu$ = "Re-Summon Previous MVP:";
+		.menu$ = .menu$ + ( .@menu[1] ? "Heal" : "" ) + ":";
+		.menu$ = .menu$ + ( .@menu[2] ? "Summon MVP" : "" ) + ":";
+		.menu$ = .menu$ + ( .@menu[3] ? "Summon Mini-boss" : "" ) + ":";
+		.menu$ = .menu$ + "Leave this room:Give up this room";
+
+		if ( .@menu[2] ) {
+			.@size = getarraysize( .mvpid );
+
+			for ( .@i = 0; .@i < .@size; .@i++ )
+				.mvpid_menu$ = .mvpid_menu$ + getmonsterinfo( .mvpid[.@i], MOB_NAME ) + ":";
+		}
+
+		if ( .@menu[3] ) {
+			.@size = getarraysize( .bossid );
+
+			for ( .@i = 0; .@i < .@size; .@i++ )
+				.bossid_menu$ = .bossid_menu$ + getmonsterinfo( .bossid[.@i], MOB_NAME ) + ":";
+		}
+	}
+	else {
+		mapannounce strnpcinfo(4), "An administrator has refreshed the server. Please re-register this room.", bc_map;
+		mapwarp strnpcinfo(4), .respawnmap$, .respawnx, .respawny;
+	}
+	end;
+}
+
+06guild_01,49,49,4	duplicate(MVP Summoner)	MVP Summoner#1	116
+06guild_02,49,49,4	duplicate(MVP Summoner)	MVP Summoner#2	116
+06guild_03,49,49,4	duplicate(MVP Summoner)	MVP Summoner#3	116
+06guild_04,49,49,4	duplicate(MVP Summoner)	MVP Summoner#4	116
+06guild_05,49,49,4	duplicate(MVP Summoner)	MVP Summoner#5	116
+06guild_06,49,49,4	duplicate(MVP Summoner)	MVP Summoner#6	116
+06guild_07,49,49,4	duplicate(MVP Summoner)	MVP Summoner#7	116
+06guild_08,49,49,4	duplicate(MVP Summoner)	MVP Summoner#8	116
+
+06guild_01	mapflag	nowarpto
+06guild_02	mapflag	nowarpto
+06guild_03	mapflag	nowarpto
+06guild_04	mapflag	nowarpto
+06guild_05	mapflag	nowarpto
+06guild_06	mapflag	nowarpto
+06guild_07	mapflag	nowarpto
+06guild_08	mapflag	nowarpto
+
+06guild_01	mapflag	nomemo
+06guild_02	mapflag	nomemo
+06guild_03	mapflag	nomemo
+06guild_04	mapflag	nomemo
+06guild_05	mapflag	nomemo
+06guild_06	mapflag	nomemo
+06guild_07	mapflag	nomemo
+06guild_08	mapflag	nomemo
+
+06guild_01	mapflag	noteleport
+06guild_02	mapflag	noteleport
+06guild_03	mapflag	noteleport
+06guild_04	mapflag	noteleport
+06guild_05	mapflag	noteleport
+06guild_06	mapflag	noteleport
+06guild_07	mapflag	noteleport
+06guild_08	mapflag	noteleport
+
+06guild_01	mapflag	nosave	SavePoint
+06guild_02	mapflag	nosave	SavePoint
+06guild_03	mapflag	nosave	SavePoint
+06guild_04	mapflag	nosave	SavePoint
+06guild_05	mapflag	nosave	SavePoint
+06guild_06	mapflag	nosave	SavePoint
+06guild_07	mapflag	nosave	SavePoint
+06guild_08	mapflag	nosave	SavePoint
+
+06guild_01	mapflag	nopenalty
+06guild_02	mapflag	nopenalty
+06guild_03	mapflag	nopenalty
+06guild_04	mapflag	nopenalty
+06guild_05	mapflag	nopenalty
+06guild_06	mapflag	nopenalty
+06guild_07	mapflag	nopenalty
+06guild_08	mapflag	nopenalty
+
+06guild_01	mapflag	nobranch
+06guild_02	mapflag	nobranch
+06guild_03	mapflag	nobranch
+06guild_04	mapflag	nobranch
+06guild_05	mapflag	nobranch
+06guild_06	mapflag	nobranch
+06guild_07	mapflag	nobranch
+06guild_08	mapflag	nobranch

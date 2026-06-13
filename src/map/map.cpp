@@ -105,6 +105,13 @@ Sql* logmysql_handle;
 struct inter_conf inter_config {};
 
 // DBMap declaration
+
+// (^~_~^) Color Nicks Start
+
+DBMap* color_nicks_db = NULL; // int group_id -> struct color_data*
+
+// (^~_~^) Color Nicks End
+
 static DBMap* id_db=nullptr; /// int32 id -> block_list*
 static DBMap* pc_db=nullptr; /// int32 id -> map_session_data*
 static DBMap* mobid_db=nullptr; /// int32 id -> mob_data*
@@ -127,7 +134,7 @@ static block_list *bl_list[BL_LIST_MAX];
 static int32 bl_list_count = 0;
 
 #ifndef MAP_MAX_MSG
-	#define MAP_MAX_MSG 1550
+	#define MAP_MAX_MSG 2500
 #endif
 
 struct map_data map[MAX_MAP_PER_SERVER];
@@ -185,6 +192,53 @@ char wisp_server_name[NAME_LENGTH] = "Server"; // can be modified in char-server
 int32 console = 0;
 int32 enable_spy = 0; //To enable/disable @spy commands, which consume too much cpu time when sending packets. [Skotlex]
 int32 enable_grf = 0;	//To enable/disable reading maps from GRF files, bypassing mapcache [blackhole89]
+
+// (^~_~^) Color Nicks Start
+
+static bool map_color_nicks_parse(char* split[], size_t columns, size_t current)
+{
+	struct color_data* cn_data; 
+	int group_id = atoi(split[0]);
+
+	if (group_id == 0)
+	{
+		ShowWarning("Incorrect ID '%d' has been found in 'db/color_nicks.txt'\n", group_id);
+		return false;
+	}
+
+	if (idb_exists(color_nicks_db, group_id))
+	{
+		ShowWarning("Duplicated ID '%d' has been found in 'db/color_nicks.txt'\n", group_id);
+		return false;
+	}
+
+	CREATE(cn_data, struct color_data, 1);
+
+	cn_data->text_color = (unsigned int)strtol(split[1],NULL,0);
+	cn_data->shadow_color = (unsigned int)strtol(split[2],NULL,0);
+
+	idb_put(color_nicks_db, group_id, cn_data);
+
+	return true;
+}
+
+int map_color_nicks_clear(DBKey key, DBData* data, va_list va)
+{
+	struct color_data* cn_data = (struct color_data*)db_data2ptr(data);
+
+	db_remove(color_nicks_db,key);
+	aFree(cn_data);
+
+	return 0;
+}
+
+void map_color_nicks_load()
+{
+	color_nicks_db->foreach(color_nicks_db, map_color_nicks_clear);
+	sv_readdb(db_path, "color_nicks.txt", ',', 3, 3, USHRT_MAX, map_color_nicks_parse, true);
+}
+
+// (^~_~^) Color Nicks End
 
 #ifdef MAP_GENERATOR
 struct s_generator_options {
@@ -3152,6 +3206,75 @@ int16 map_mapindex2mapid(uint16 mapindex)
 	return md->m;
 }
 
+void map_mapadditemglobaldrop(int16 m, char* w4) {
+	struct map_data* mapdata = nullptr;
+
+	if (m >= 0)
+		mapdata = map_getmapdata(m);
+
+	if (m >= 0 && mapdata == nullptr)
+		return;
+
+	auto add_drop_to_map = [&](struct map_data* mapdata) {
+		struct s_mobitemglobaldrop_list mid;
+
+		char* droplist = strdup(w4);
+		if (!droplist)
+			return;
+
+		char* tok = strtok(droplist, ", ");
+		if (!tok) {
+			free(droplist);
+			return;
+		}
+
+		int first = atoi(tok);
+		int mob_id = 0;
+
+		if (mob_db.find(first)) {
+			mob_id = first;
+			tok = strtok(NULL, ", ");
+		}
+
+		while (tok) {
+			s_mobitemglobaldrop_sub_list sub{};
+			sub.mob_id = mob_id;
+			sub.drop_id = atoi(tok);
+
+			tok = strtok(NULL, ", ");
+			if (!tok)
+				break;
+
+			sub.drop_per = atoi(tok);
+			mid.mobitemglobaldrop_sub_list.push_back(sub);
+
+			tok = strtok(NULL, ", ");
+		}
+
+		if (!mid.mobitemglobaldrop_sub_list.empty())
+			mapdata->mobitemglobaldrop_list.push_back(mid);
+
+		free(droplist);
+	};
+
+	// m == -1 means all_map
+	if (m == -1) {
+		DBIterator* iter = db_iterator(map_db);
+
+		for (mapdata = (struct map_data*)dbi_first(iter);
+			dbi_exists(iter);
+			mapdata = (struct map_data*)dbi_next(iter)) {
+
+			if (mapdata && mapdata->cell)
+				add_drop_to_map(mapdata);
+		}
+
+		dbi_destroy(iter);
+	} else {
+		add_drop_to_map(mapdata);
+	}
+}
+
 /*==========================================
  * Switching Ip, port ? (like changing map_server) get ip/port from map_name
  *------------------------------------------*/
@@ -3770,6 +3893,9 @@ void map_flags_init(void){
 
 		mapdata->initMapFlags(); // Resize and define default values
 		mapdata->drop_list.clear();
+		for(auto it = std::begin(mapdata->mobitemglobaldrop_list); it != std::end(mapdata->mobitemglobaldrop_list); ++it)
+			it->mobitemglobaldrop_sub_list.clear();
+		mapdata->mobitemglobaldrop_list.clear();
 		args.flag_val = 100;
 
 		// additional mapflag data
@@ -5072,6 +5198,7 @@ void MapServer::finalize(){
 	do_final_vending();
 	do_final_buyingstore();
 	do_final_path();
+	do_final_emotions();
 
 	map_db->destroy(map_db, map_db_final);
 
@@ -5102,6 +5229,13 @@ void MapServer::finalize(){
 	charid_db->destroy(charid_db, nullptr);
 	iwall_db->destroy(iwall_db, nullptr);
 	regen_db->destroy(regen_db, nullptr);
+
+// (^~_~^) Color Nicks Start
+
+	color_nicks_db->foreach(color_nicks_db, map_color_nicks_clear);
+	color_nicks_db->destroy(color_nicks_db, NULL);
+
+// (^~_~^) Color Nicks End
 
 	map_sql_close();
 
@@ -5400,6 +5534,12 @@ bool MapServer::initialize( int32 argc, char *argv[] ){
 	regen_db = idb_alloc(DB_OPT_BASE); // efficient status_natural_heal processing
 	iwall_db = strdb_alloc(DB_OPT_RELEASE_DATA,2*NAME_LENGTH+2+1); // [Zephyrus] Invisible Walls
 
+// (^~_~^) Color Nicks Start
+
+	color_nicks_db = idb_alloc(DB_OPT_BASE);
+
+// (^~_~^) Color Nicks End
+
 	map_sql_init();
 	if (log_config.sql_logs)
 		log_sql_init();
@@ -5446,8 +5586,20 @@ bool MapServer::initialize( int32 argc, char *argv[] ){
 	do_init_duel();
 	do_init_vending();
 	do_init_buyingstore();
+	do_init_emotions();
+
+// (^~_~^) Color Nicks Start
+
+	map_color_nicks_load();
+
+// (^~_~^) Color Nicks End
 
 	npc_event_do_oninit();	// Init npcs (OnInit)
+
+	if(battle_config.autobattle_move_min > battle_config.autobattle_move_max){
+		ShowError("autobattle_move_min > autobattle_move_max, forcing to 1 \n");
+		battle_config.autobattle_move_min = 1;
+	}
 
 	if (battle_config.pk_mode)
 		ShowNotice("Server is running on '" CL_WHITE "PK Mode" CL_RESET "'.\n");

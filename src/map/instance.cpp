@@ -744,6 +744,19 @@ size_t instance_addmap( int32 instance_id ){
 		return 0;
 	}
 
+	struct map_data *mapdata_entry_init = map_getmapdata(db->enter.map);
+	struct map_data *mapdata_entry_instance = map_getmapdata(m);
+	for (const auto &it : mapdata_entry_init->mobitemglobaldrop_list){
+		struct s_mobitemglobaldrop_list mid;
+		for (const auto &it_sub : it.mobitemglobaldrop_sub_list){
+			struct s_mobitemglobaldrop_sub_list mid_sub;
+			mid_sub.drop_id = it_sub.drop_id;
+			mid_sub.drop_per = it_sub.drop_per;
+			mid.mobitemglobaldrop_sub_list.push_back(mid_sub);
+		}
+		mapdata_entry_instance->mobitemglobaldrop_list.push_back(mid);
+	}
+
 	struct s_instance_map entry;
 
 	entry.m = m;
@@ -759,6 +772,18 @@ size_t instance_addmap( int32 instance_id ){
 			entry.m = m;
 			entry.src_m = it;
 			idata->map.push_back(entry);
+			struct map_data *mapdata_entry_init = map_getmapdata(it);
+			struct map_data *mapdata_entry_instance = map_getmapdata(m);
+			for (const auto &it : mapdata_entry_init->mobitemglobaldrop_list){
+				struct s_mobitemglobaldrop_list mid;
+				for (const auto &it_sub : it.mobitemglobaldrop_sub_list){
+					struct s_mobitemglobaldrop_sub_list mid_sub;
+					mid_sub.drop_id = it_sub.drop_id;
+					mid_sub.drop_per = it_sub.drop_per;
+					mid.mobitemglobaldrop_sub_list.push_back(mid_sub);
+				}
+				mapdata_entry_instance->mobitemglobaldrop_list.push_back(mid);
+			}
 		}
 	}
 

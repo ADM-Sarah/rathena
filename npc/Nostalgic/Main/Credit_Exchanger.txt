@@ -1,0 +1,132 @@
+valmorra,185,123,5	script	Credit Exchanger	630,{
+
+	cutin "kafra_08",2;
+
+	mes "[" + .colors$[1] + .npc_name$ + .colors$[0] + "]";
+	mes "What would you like to do today?";
+	.@trade_type = select("- Credit -> Zeny:- Zeny -> Credit");
+
+	mes "Very well. Here is the list on how much each credit is worth:";
+
+	.@coin_menu$ = "";
+	for (.@a = 0; .@a < getarraysize(.coin_id); .@a++) {
+		mes .colors$[3 + .@a] + getitemname(.coin_id[.@a]) + .colors$[0] + ": " + .coin_to_zeny_format$[.@a] + "z";
+		.@coin_menu$ = .@coin_menu$ + (.@coin_menu$ == "" ? "" : ":") + .colors$[3 + .@a] + getitemname(.coin_id[.@a]) + .colors$[0];
+	}
+
+	mes "Tell me, what credit would you like to exchange?";
+	next;
+
+	.@coin_choice = select(.@coin_menu$) - 1;
+
+	next;
+	mes "[" + .colors$[1] + .npc_name$ + .colors$[0] + "]";
+
+	switch (.@trade_type) {
+
+		case 1:
+			mes "How much credit would you like to give up?";
+			input .@amount;
+
+			if (.@amount <= 0) {
+				mes .colors$[2] + "Please input a number greater than 0.";
+				close2;
+				cutin "",255;
+				end;
+			}
+
+			if (countitem(.coin_id[.@coin_choice]) < .@amount) {
+				mes .colors$[2] + "I'm sorry, you do not have " + .@amount + " " + getitemname(.coin_id[.@coin_choice]) + (.@amount == 1 ? "" : "s") + ".";
+				close2;
+				cutin "",255;
+				end;
+			}
+
+			.@total_zeny = .coin_to_zeny[.@coin_choice] * .@amount;
+
+			if (Zeny >= 1800000000 || Zeny + .@total_zeny > 2000000000) {
+				mes "I'm sorry, but I can't allow you to exchange Credits into Zeny when your Zeny is too high.";
+				mes "Please reduce your Zeny first.";
+				close2;
+				cutin "",255;
+				end;
+			}
+
+			delitem .coin_id[.@coin_choice], .@amount;
+			Zeny += .@total_zeny;
+
+			mes "Pleasure doing business with you.";
+			close2;
+			cutin "",255;
+			end;
+
+		case 2:
+			mes "How much credit would you like?";
+			input .@amount;
+
+			if (.@amount <= 0) {
+				mes .colors$[2] + "Please input a number greater than 0.";
+				close2;
+				cutin "",255;
+				end;
+			}
+
+			if (!checkweight(.coin_id[.@coin_choice], .@amount)) {
+				mes .colors$[2] + "I'm sorry, but you can't carry this due to weight restrictions.";
+				close2;
+				cutin "",255;
+				end;
+			}
+
+			.@total_zeny = .coin_to_zeny[.@coin_choice] * .@amount;
+
+			if (Zeny < .@total_zeny) {
+				mes .colors$[2] + "I'm sorry, you do not have enough zeny.";
+				close2;
+				cutin "",255;
+				end;
+			}
+
+			Zeny -= .@total_zeny;
+			getitem .coin_id[.@coin_choice], .@amount;
+
+			mes "Pleasure doing business with you.";
+			close2;
+			cutin "",255;
+			end;
+	}
+
+	end;
+
+OnInit:
+	.npc_name$ = "Credit Master";
+
+	setarray .colors$[0],
+		"^000000",
+		"^336699",
+		"^550000",
+		"^996633",
+		"^666666",
+		"^BBA14F",
+		"^99CCCC";
+
+	setarray .coin_id[0],
+		33017,
+		33018,
+		33019,
+		33020;
+
+	setarray .coin_to_zeny[0],
+		1000000,
+		100000000,
+		500000000,
+		1000000000;
+
+	setarray .coin_to_zeny_format$[0],
+		"1,000,000",
+		"100,000,000",
+		"500,000,000",
+		"1,000,000,000";
+
+	end;
+}

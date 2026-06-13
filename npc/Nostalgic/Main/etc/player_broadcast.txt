@@ -1,0 +1,74 @@
+//============================================================
+// MEGAPHONE BROADCAST NPC
+//============================================================
+
+valmorra,150,116,5	script	Megaphone Broadcaster	4_M_SALVATION,{
+
+	.@megaphone_id = 7040;
+	.@zeny_cost = 5000000;
+	.@megaphone_count = 1;
+	.@cooldown = 600; // 10 minutes in seconds
+
+	mes "[Megaphone Broadcaster]";
+	mes "Hello! I can help you broadcast a message to the entire server.";
+	next;
+
+// Cooldown Check
+	if (gettimetick(2) < #CUS_Megaphone_Cooldown) {
+		mes "[Megaphone Broadcaster]";
+		mes "You must wait " + (#CUS_Megaphone_Cooldown - gettimetick(2)) + " seconds before broadcasting again.";
+		close;
+	}
+
+	// Page 1: Requirements
+	mes "[Megaphone Broadcaster]";
+	mes "To use this service, you will need:";
+	mes "^FF0000- 1x Megaphone^000000";
+	mes "^FF0000- 5,000,000 Zeny^000000";
+	next;
+
+	// Page 2: Requirements Check
+	if (countitem(.@megaphone_id) < .@megaphone_count || Zeny < .@zeny_cost) {
+		mes "[Megaphone Broadcaster]";
+		mes "It looks like you don't have the required items or Zeny.";
+		close;
+	}
+
+	// Page 3: Input
+	mes "[Megaphone Broadcaster]";
+	mes "Everything is set!";
+	mes "Please type your message below:";
+	input .@message$;
+
+	if (.@message$ == "") {
+		mes "The message cannot be empty.";
+		close;
+	}
+
+	// Page 4: Confirmation
+	next;
+	mes "[Megaphone Broadcaster]";
+	mes "Are you sure you want to broadcast this?";
+	mes "^777777-------------------------^000000";
+	mes .@message$;
+	mes "^777777-------------------------^000000";
+	next;
+
+	if (select("Yes, send it!", "Cancel") == 2) {
+		mes "Broadcast cancelled.";
+		close;
+	}
+
+	// Execution
+	delitem .@megaphone_id, .@megaphone_count;
+	Zeny -= .@zeny_cost;
+	
+	// Set Cooldown
+	#CUS_Megaphone_Cooldown = gettimetick(2) + .@cooldown;
+	
+	announce "[Megaphone] " + strcharinfo(0) + ": " + .@message$, bc_all, 0xFF8C00;
+
+	mes "[Megaphone Broadcaster]";
+	mes "Message sent successfully!";
+	close;
+}

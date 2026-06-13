@@ -1,0 +1,79 @@
+//============================================================
+//= GM Add MVP Shop Point
+//= GM Level 99 only
+//= Add point ikut MVP Ladder / MVP Shop system
+//= Command:
+//= @addmvpshop 500
+//= @addmvpshopcid <char_id> 500
+//============================================================
+
+-	script	GM_Add_MVP_Shop_Point	-1,{
+
+OnInit:
+	bindatcmd "addmvpshop", strnpcinfo(3)+"::OnAddSelf", 99, 99;
+	bindatcmd "addmvpshopcid", strnpcinfo(3)+"::OnAddByCID", 99, 99;
+	end;
+
+OnAddSelf:
+	if (.@atcmd_numparameters < 1) {
+		dispbottom "Usage: @addmvpshop <amount>";
+		end;
+	}
+
+	.@amount = atoi(.@atcmd_parameters$[0]);
+
+	if (.@amount <= 0) {
+		dispbottom "Amount must be more than 0.";
+		end;
+	}
+
+	#MVPPOINTS += .@amount;
+
+	query_sql "SELECT `char_id` FROM `mvp_rank` WHERE `char_id`='"+getcharid(0)+"'", .@cid;
+
+	if (getarraysize(.@cid)) {
+		query_sql "UPDATE `mvp_rank` SET `mvp_shop_points`='"+#MVPPOINTS+"' WHERE `char_id`='"+getcharid(0)+"'";
+	}
+	else {
+		query_sql "INSERT INTO `mvp_rank` (`char_id`,`char_name`,`mvp_points`,`mvp_weekly`,`mvp_monthly`,`mvp_shop_points`,`week_key`,`month_key`) VALUES "
+			+ "('"+getcharid(0)+"','"+escape_sql(strcharinfo(0))+"',0,0,0,'"+#MVPPOINTS+"','','')";
+	}
+
+	dispbottom "Added " + .@amount + " MVP Shop Point to yourself.";
+	dispbottom "Current MVP Shop Point: " + #MVPPOINTS;
+	end;
+
+OnAddByCID:
+	if (.@atcmd_numparameters < 2) {
+		dispbottom "Usage: @addmvpshopcid <char_id> <amount>";
+		end;
+	}
+
+	.@char_id = atoi(.@atcmd_parameters$[0]);
+	.@amount = atoi(.@atcmd_parameters$[1]);
+
+	if (.@char_id <= 0 || .@amount <= 0) {
+		dispbottom "Invalid Char ID or amount.";
+		end;
+	}
+
+	query_sql "SELECT `name` FROM `char` WHERE `char_id`='"+.@char_id+"'", .@name$;
+
+	if (!getarraysize(.@name$)) {
+		dispbottom "Char ID not found.";
+		end;
+	}
+
+	query_sql "SELECT `char_id` FROM `mvp_rank` WHERE `char_id`='"+.@char_id+"'", .@cid;
+
+	if (getarraysize(.@cid)) {
+		query_sql "UPDATE `mvp_rank` SET `mvp_shop_points`=`mvp_shop_points`+"+.@amount+" WHERE `char_id`='"+.@char_id+"'";
+	}
+	else {
+		query_sql "INSERT INTO `mvp_rank` (`char_id`,`char_name`,`mvp_points`,`mvp_weekly`,`mvp_monthly`,`mvp_shop_points`,`week_key`,`month_key`) VALUES "
+			+ "('"+.@char_id+"','"+escape_sql(.@name$[0])+"',0,0,0,'"+.@amount+"','','')";
+	}
+
+	dispbottom "Added " + .@amount + " MVP Shop Point to " + .@name$[0] + ".";
+	end;
+}

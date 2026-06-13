@@ -1,0 +1,50 @@
+function	script	F_Tower_Settings	{
+
+	setarray $@beginner_mode_variables	, 50			//hp_rate
+										, 30			//dmg_rate
+										, -20			//damagetaken
+										, 30			//def
+										, 30			//mdef
+										, 30			//hit
+										, 30;		//flee
+									
+	setarray $@divine_mode_variables, 200		//hp_rate
+									, 150		//dmg_rate
+									, -50		//damagetaken
+									, 150		//def
+									, 150		//mdef
+									, 150		//hit
+									, 150;		//flee
+									
+
+	// Bonus EXP / Level requirement reference
+	// Index 1 = Beginner
+	// Index 5 = Divine
+	setarray $@bonus_exp[1], 255, 0, 0, 0, 255;
+
+
+	// Instance Points
+	// Index 1 = Beginner
+	// Index 5 = Divine
+	setarray $@instance_points[1], 90, 0, 0, 0, 160;
+
+
+	// Monster Name Prefix
+	// Index 1 = Beginner
+	// Index 5 = Divine
+	setarray $@monster_alias$[1], "", "", "", "", "Divine ";
+
+
+	// Difficulty Name
+	// Index 1 = Beginner
+	// Index 5 = Divine
+	setarray $@difficulty_mode$[1], "Beginner Mode", "", "", "", "Divine Mode";
+
+
+	// Point Variable Name
+	// Index 1 = Beginner
+	// Index 5 = Divine
+	setarray $@var_names$[1], "ETOWER_BEGINNER", "", "", "", "ETOWER_DIVINE";
+
+	return;
+}

@@ -1,0 +1,25 @@
+-	script	ServerOnlinePeak	-1,{
+
+OnPCLoginEvent:
+//OnPCLogoutEvent:
+	query_sql( "SELECT `OnlinePeak` FROM server_peak WHERE `ID` = '1' ", .ServerOnlinePeak );
+	
+	if( .ServerOnlinePeak == 0 ){
+		query_sql "INSERT INTO `server_peak` (`ID`, `OnlinePeak`, `Date`, `Time`) VALUES (1, '1', '', '');";
+		end;
+	}else if( getusers(1) > .ServerOnlinePeak  ){
+		query_sql("UPDATE `server_peak` SET `OnlinePeak` = '"+getusers(1)+"', `Date` = '"+gettime(6)+"/"+gettime(5)+"/"+gettime(7)+"', `Time` = '"+gettime(3)+":"+gettime(2)+":"+gettime(1)+"' WHERE `ID` = '1'");
+		sleep 1000;
+		announce "["+.ServerName$+"] : Hey Everyone! We have reached a new player peak in Nostalgic Ragnarok Online!",bc_all;
+		sleep 2000;
+		announce "["+.ServerName$+"] : There are "+getusers(1)+" players currently online!",bc_all;
+		end;
+	}
+	
+OnInit:
+	query_sql "CREATE TABLE IF NOT EXISTS `server_peak` ( `ID` int(11) unsigned NOT NULL DEFAULT '0', `OnlinePeak` varchar(255) NOT NULL, `Date` varchar(255) NOT NULL, `Time` varchar(255) NOT NULL, PRIMARY KEY (`ID`) ) ENGINE=MyISAM";
+	query_sql "ALTER TABLE `server_peak` MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT";
+	.ServerName$ = "Server News";
+	end;
+	
+}

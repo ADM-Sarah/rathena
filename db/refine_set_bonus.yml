@@ -1,0 +1,52 @@
+Header:
+  Type: JOB_BONUS
+  Version: 1
+
+Body:
+#   For all jobs
+  - Id: 1
+    Job: All
+    Script: |
+      fstatus(getcharid(0),2030,0,1);
+      .@refine = 8;
+      if (getequiprefinerycnt(EQI_HEAD_TOP) == .@refine &&
+          getequiprefinerycnt(EQI_HEAD_MID) == .@refine &&
+          getequiprefinerycnt(EQI_HAND_R) == .@refine)
+      {
+          hateffect 282, true;
+      }
+      else
+      {
+          hateffect 282, false;
+      }
+      .@refine = 9;
+      if (getequiprefinerycnt(EQI_HEAD_TOP) == .@refine &&
+          getequiprefinerycnt(EQI_HEAD_MID) == .@refine &&
+          getequiprefinerycnt(EQI_HAND_R) == .@refine)
+      {
+          hateffect 283, true;
+      }
+      else
+      {
+          hateffect 283, false;
+      }
+      .@refine = 10;
+      if (getequiprefinerycnt(EQI_HEAD_TOP) == .@refine &&
+          getequiprefinerycnt(EQI_HEAD_MID) == .@refine &&
+          getequiprefinerycnt(EQI_HAND_R) == .@refine)
+      {
+          bonus bAllStats,1;
+          bonus bAddMaxWeight,5000;
+          bonus bAtkRate,2;
+          bonus bMatkRate,2;
+          bonus2 bDropAddRace,RC_All,2;
+          bonus bMaxHPRate,5;
+          hateffect 286, true;
+          fstatus(getcharid(0),2036,0,1);
+          fstatus(getcharid(0),2030,0,0);
+      }
+      else
+      {
+          hateffect 286, false;
+          fstatus(getcharid(0),2036,0,0);
+      }

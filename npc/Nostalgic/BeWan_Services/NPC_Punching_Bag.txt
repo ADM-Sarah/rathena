@@ -1,0 +1,447 @@
+payon,242,297,5	script	Punch Bag Owner#0	4_M_REBELLION,{
+function get_size_name;
+function get_race_name;
+function get_ele_name;
+	mes "[ Punch Bag Owner ]"; 
+	mes "Hi, I can set Punching Bag based on parameter you want.";
+	next;
+	menu "Show info", M1, "Set param", M2, "^777777Cancel", M3;
+
+M1: .@dupid = atoi(strnpcinfo(2));
+	getunitdata .gid[.@dupid], .@data;
+	.@size$ = get_size_name(.@data[UMOB_SIZE]);
+	mes "^777777Size : ^000000"+ .@size$;
+	mes "^777777Level : ^000000"+ .@data[UMOB_LEVEL];
+	.@race$ = get_race_name(.@data[UMOB_RACE]);
+	mes "^777777Race : ^000000"+ .@race$;
+	.@ele$ = get_ele_name(.@data[UMOB_ELETYPE]);
+	mes "^777777Ele type : ^000000"+ .@ele$;
+	mes "^777777Ele level : ^000000"+ .@data[UMOB_ELELEVEL];
+	//mes "^777777HP : ^000000"+ .@data[UMOB_HP]; // disabled || uncomment to enable
+	mes "^777777Str : ^000000"+ .@data[UMOB_STR];
+	mes "^777777Agi : ^000000"+ .@data[UMOB_AGI];
+	mes "^777777Vit : ^000000"+ .@data[UMOB_VIT];
+	mes "^777777Int : ^000000"+ .@data[UMOB_INT];
+	mes "^777777Dex : ^000000"+ .@data[UMOB_DEX];
+	mes "^777777Luk : ^000000"+ .@data[UMOB_LUK];
+	mes "^777777Def : ^000000"+ .@data[UMOB_DEF];
+	mes "^777777Mdef : ^000000"+ .@data[UMOB_MDEF];
+	//mes "^777777Hit : ^000000"+ .@data[UMOB_HIT]; // disabled || uncomment to enable
+	mes "^777777Flee : ^000000"+ .@data[UMOB_FLEE];
+	mes "^777777Pdodge : ^000000"+ .@data[UMOB_PDODGE];
+	close;
+	
+M2:	setarray .menu$,
+		// Structure : <menu name>|<UMOB_DATA>|<min value>|<max value>
+		"Size|UMOB_SIZE|0|2",
+		"Level|UMOB_LEVEL|1|99",
+		"Race|UMOB_RACE|0|10",
+        "Ele type|UMOB_ELETYPE|0|9",
+		"Ele level|UMOB_ELELEVEL|1|4",
+		//"Hp|UMOB_HP|1|99999999", // disabled = why need to set hp data? || uncomment to enable
+        "Str|UMOB_STR|1|999",
+		"Agi|UMOB_AGI|1|999",
+		"Vit|UMOB_VIT|1|999",
+		"Int|UMOB_INT|1|999",
+        "Dex|UMOB_DEX|1|999",
+		"Luk|UMOB_LUK|1|999",
+		"Def|UMOB_DEF|1|999",
+		"Mdef|UMOB_MDEF|1|999",
+		//"Hit|UMOB_HIT|1|999", // disabled = why need to set hit data? || uncomment to enable
+        "Flee|UMOB_FLEE|1|999",
+		"Pdodge|UMOB_PDODGE|1|999";
+	
+	for(.@i = 0; .@i < getarraysize(.menu$); .@i++) {
+		explode(.@n$, .menu$[.@i], "|");
+		.@menu$ += .@n$[0]+":";
+	}
+	.@s = select(.@menu$)-1;
+	explode(.data$, .menu$[.@s], "|");
+	mes "^777777Param to set :^000000 ^ff0000"+ .data$[0] +"^000000";
+	if ( .data$[0] == "Size" ) .@val$ = get_size_name(getd("."+.data$[1]));
+	else if ( .data$[0] == "Race" ) .@val$ = get_race_name(getd("."+.data$[1]));
+	else if ( .data$[0] == "Ele type" ) .@val$ = get_ele_name(getd("."+.data$[1]));
+	else .@val$ = getd("."+.data$[1]);
+	mes "^777777Current value :^000000 ^ff0000"+ .@val$ +"^000000";
+	mes "^777777Min value :^000000 ^ff0000"+ .data$[2] +"^000000";
+	mes "^777777Max value :^000000 ^ff0000"+ .data$[3] +"^000000";
+	mes "^777777---------------------^000000";
+	if ( .data$[0] == "Size" ) {
+		mes "^777777 0 - Small^000000";
+		mes "^777777 1 - Medium^000000";
+		mes "^777777 2 - Large^000000";
+	}
+	else if ( .data$[0] == "Race" ) {
+		mes "^777777 0 - Formless^000000";
+		mes "^777777 1 - Undead^000000";
+		mes "^777777 2 - Brute^000000";
+		mes "^777777 3 - Plant^000000";
+		mes "^777777 4 - Insect^000000";
+		mes "^777777 5 - Fish^000000";
+		mes "^777777 6 - Demon^000000";
+		mes "^777777 7 - Demi-Human^000000";
+		mes "^777777 8 - Angel^000000";
+		mes "^777777 9 - Dragon^000000";
+		mes "^777777 10 - Player(default race for player)^000000";
+	}
+	else if ( .data$[0] == "Ele type" ) {
+		mes "^777777 0 - Neutral^000000";
+		mes "^777777 1 - Water^000000";
+		mes "^777777 2 - Earth^000000";
+		mes "^777777 3 - Fire^000000";
+		mes "^777777 4 - Wind^000000";
+		mes "^777777 5 - Poison^000000";
+		mes "^777777 6 - Holy^000000";
+		mes "^777777 7 - Shadow^000000";
+		mes "^777777 8 - Ghost^000000";
+		mes "^777777 9 - Undead^000000";
+	}
+	else
+		mes "^777777 Enter a value between min and max ^000000";
+	next;
+	input .@val;
+	if ( .data$[0] == "Size" ) .@size$ = get_size_name(.@val);
+	else if ( .data$[0] == "Race" ) .@race$ = get_race_name(.@val);
+	else if ( .data$[0] == "Ele type" ) .@ele$ = get_ele_name(.@val);
+	mes "Do you want to set ^ff0000"+.data$[0]+"^000000 to ^ff0000"+((.data$[0] == "Size") ? .@size$:((.data$[0] == "Race") ? .@race$:((.data$[0] == "Ele type") ? .@ele$:.@val)))+"^000000?";
+	mes "^777777---------------------^000000";
+	next;
+	select("Yes");
+	mes "Respawning Punching Bag..";
+	close2;
+	setd "."+.data$[1], .@val;
+	killmonster strnpcinfo(4),strnpcinfo(0)+"::OnMyMobDead";
+	donpcevent strnpcinfo(0)+"::OnMyMobDead";
+	end;
+
+M3: close;
+
+OnInit:
+	// Mob ID
+	.mob_id = 1905;
+	// Default values on initial spawn
+	.UMOB_SIZE = 1;
+	.UMOB_LEVEL = 50;
+	.UMOB_RACE = 7;
+	.UMOB_ELETYPE = 0;
+	.UMOB_ELELEVEL = 1;
+	//.UMOB_HP = 99999999; // disabled || uncomment to enable
+	.UMOB_STR = 10;
+	.UMOB_AGI = 10;
+	.UMOB_VIT = 10;
+	.UMOB_INT = 10;
+	.UMOB_DEX = 10;
+	.UMOB_LUK = 10;
+	.UMOB_DEF = 20;
+	.UMOB_MDEF = 20;
+	//.UMOB_HIT = 99; // disabled || uncomment to enable
+	.UMOB_FLEE = 10;
+	.UMOB_PDODGE = 10;
+	setmapflag( "prontera",mf_monster_noteleport );
+
+OnMyMobDead:
+	getunitdata(getnpcid(0), .@d);
+	monster strnpcinfo(4),.@d[UNPC_X]+10,.@d[UNPC_Y]-8,"Punching Bag",.mob_id,1,strnpcinfo(0)+"::OnMyMobDead";
+	.@dupid = atoi(strnpcinfo(2));
+	.gid[.@dupid] = $@mobid[0];
+	.mhp[.@dupid] = strmobinfo(4,.mob_id);
+	setunitdata .gid[.@dupid],UMOB_MODE,.@d[UMOB_MODE]|0x4000000|0x0200000; // Set MD_STATUS_IMMUNE (0x4000000) because EDP/burn/%MHP based status can skew the DPS counter so much.
+	setunitdata .gid[.@dupid], UMOB_SIZE, .UMOB_SIZE;
+	setunitdata .gid[.@dupid], UMOB_LEVEL, .UMOB_LEVEL;
+	setunitdata .gid[.@dupid], UMOB_RACE, .UMOB_RACE;
+	setunitdata .gid[.@dupid], UMOB_ELETYPE, .UMOB_ELETYPE;
+	setunitdata .gid[.@dupid], UMOB_ELELEVEL, .UMOB_ELELEVEL;
+	//setunitdata .gid[.@dupid], UMOB_HP, .UMOB_HP;  // disabled || uncomment to enable
+	setunitdata .gid[.@dupid], UMOB_STR, .UMOB_STR;
+	setunitdata .gid[.@dupid], UMOB_AGI, .UMOB_AGI;
+	setunitdata .gid[.@dupid], UMOB_VIT, .UMOB_VIT;
+	setunitdata .gid[.@dupid], UMOB_INT, .UMOB_INT;
+	setunitdata .gid[.@dupid], UMOB_DEX, .UMOB_DEX;
+	setunitdata .gid[.@dupid], UMOB_LUK, .UMOB_LUK;
+	setunitdata .gid[.@dupid], UMOB_DEF, .UMOB_DEF;
+	setunitdata .gid[.@dupid], UMOB_MDEF, .UMOB_MDEF;
+	//setunitdata .gid[.@dupid], UMOB_HIT, .UMOB_HIT; // disabled || uncomment to enable
+	setunitdata .gid[.@dupid], UMOB_FLEE, .UMOB_FLEE;
+	setunitdata .gid[.@dupid], UMOB_PDODGE, .UMOB_PDODGE;
+	initnpctimer;
+	end;
+	
+OnTimer5000:
+	.@dupid = atoi(strnpcinfo(2));
+	if(unitexists(.gid[.@dupid])){
+		getunitdata(.gid[.@dupid],.@d);
+		.@diff = (.mhp[.@dupid] - .@d[UMOB_HP]);
+		if(.@diff > 0){
+			unittalk .gid[.@dupid], "Punching Bag has taken " + (.@diff/5) + " DPS in last 5 seconds.";
+			//npctalk "Punching Bag has taken " + (.@diff/5) + " DPS in last 5 seconds.";
+			setunitdata .gid[.@dupid],UMOB_HP,.mhp[.@dupid];
+		}
+	}
+	initnpctimer;
+	
+	function	get_size_name	{
+		switch ( getarg(0) ) {
+			case 0 : .@val$ = "Small"; break;
+			case 1 : .@val$ = "Medium"; break;
+			case 2 : .@val$ = "Large"; break;
+		}
+		return .@val$;
+	}
+	
+	function	get_race_name	{
+		switch ( getarg(0) ) {
+			case 0: .@val$ = "Formless"; break;
+			case 1: .@val$ = "Undead"; break;
+			case 2: .@val$ = "Brute"; break;
+			case 3: .@val$ = "Plant"; break;
+			case 4: .@val$ = "Insect"; break;
+			case 5: .@val$ = "Fish"; break;
+			case 6: .@val$ = "Demon"; break;
+			case 7: .@val$ = "Demi-Human"; break;
+			case 8: .@val$ = "Angel"; break;
+			case 9: .@val$ = "Dragon"; break;
+			case 10: .@val$ = "Player"; break;
+		}
+		return .@val$;
+	}
+	
+	function	get_ele_name	{
+		switch ( getarg(0) ) {
+			case 0: .@val$ = "Neutral"; break;
+			case 1: .@val$ = "Water"; break;
+			case 2: .@val$ = "Earth"; break;
+			case 3: .@val$ = "Fire"; break;
+			case 4: .@val$ = "Wind"; break;
+			case 5: .@val$ = "Poison"; break;
+			case 6: .@val$ = "Holy"; break;
+			case 7: .@val$ = "Shadow"; break;
+			case 8: .@val$ = "Ghost"; break;
+			case 9: .@val$ = "Undead"; break;
+		}
+		return .@val$;
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//prontera,182,168,5	script	Punch Bag Owner#1	4_M_REBELLION,{
+function get_size_name;
+function get_race_name;
+function get_ele_name;
+	mes "[ Punch Bag Owner ]"; 
+	mes "Hi, I can set Punching Bag based on parameter you want.";
+	next;
+	menu "Show info", M1, "Set param", M2, "^777777Cancel", M3;
+
+M1: .@dupid = atoi(strnpcinfo(2));
+	getunitdata .gid[.@dupid], .@data;
+	.@size$ = get_size_name(.@data[UMOB_SIZE]);
+	mes "^777777Size : ^000000"+ .@size$;
+	mes "^777777Level : ^000000"+ .@data[UMOB_LEVEL];
+	.@race$ = get_race_name(.@data[UMOB_RACE]);
+	mes "^777777Race : ^000000"+ .@race$;
+	.@ele$ = get_ele_name(.@data[UMOB_ELETYPE]);
+	mes "^777777Ele type : ^000000"+ .@ele$;
+	mes "^777777Ele level : ^000000"+ .@data[UMOB_ELELEVEL];
+	//mes "^777777HP : ^000000"+ .@data[UMOB_HP]; // disabled || uncomment to enable
+	mes "^777777Str : ^000000"+ .@data[UMOB_STR];
+	mes "^777777Agi : ^000000"+ .@data[UMOB_AGI];
+	mes "^777777Vit : ^000000"+ .@data[UMOB_VIT];
+	mes "^777777Int : ^000000"+ .@data[UMOB_INT];
+	mes "^777777Dex : ^000000"+ .@data[UMOB_DEX];
+	mes "^777777Luk : ^000000"+ .@data[UMOB_LUK];
+	mes "^777777Def : ^000000"+ .@data[UMOB_DEF];
+	mes "^777777Mdef : ^000000"+ .@data[UMOB_MDEF];
+	//mes "^777777Hit : ^000000"+ .@data[UMOB_HIT]; // disabled || uncomment to enable
+	mes "^777777Flee : ^000000"+ .@data[UMOB_FLEE];
+	mes "^777777Pdodge : ^000000"+ .@data[UMOB_PDODGE];
+	close;
+	
+M2:	setarray .menu$,
+		// Structure : <menu name>|<UMOB_DATA>|<min value>|<max value>
+		"Size|UMOB_SIZE|0|2",
+		"Level|UMOB_LEVEL|1|99",
+		"Race|UMOB_RACE|0|10",
+        "Ele type|UMOB_ELETYPE|0|9",
+		"Ele level|UMOB_ELELEVEL|1|4",
+		//"Hp|UMOB_HP|1|99999999", // disabled = why need to set hp data? || uncomment to enable
+        "Str|UMOB_STR|1|999",
+		"Agi|UMOB_AGI|1|999",
+		"Vit|UMOB_VIT|1|999",
+		"Int|UMOB_INT|1|999",
+        "Dex|UMOB_DEX|1|999",
+		"Luk|UMOB_LUK|1|999",
+		"Def|UMOB_DEF|1|999",
+		"Mdef|UMOB_MDEF|1|999",
+		//"Hit|UMOB_HIT|1|999", // disabled = why need to set hit data? || uncomment to enable
+        "Flee|UMOB_FLEE|1|999",
+		"Pdodge|UMOB_PDODGE|1|999";
+	
+	for(.@i = 0; .@i < getarraysize(.menu$); .@i++) {
+		explode(.@n$, .menu$[.@i], "|");
+		.@menu$ += .@n$[0]+":";
+	}
+	.@s = select(.@menu$)-1;
+	explode(.data$, .menu$[.@s], "|");
+	mes "^777777Param to set :^000000 ^ff0000"+ .data$[0] +"^000000";
+	if ( .data$[0] == "Size" ) .@val$ = get_size_name(getd("."+.data$[1]));
+	else if ( .data$[0] == "Race" ) .@val$ = get_race_name(getd("."+.data$[1]));
+	else if ( .data$[0] == "Ele type" ) .@val$ = get_ele_name(getd("."+.data$[1]));
+	else .@val$ = getd("."+.data$[1]);
+	mes "^777777Current value :^000000 ^ff0000"+ .@val$ +"^000000";
+	mes "^777777Min value :^000000 ^ff0000"+ .data$[2] +"^000000";
+	mes "^777777Max value :^000000 ^ff0000"+ .data$[3] +"^000000";
+	mes "^777777---------------------^000000";
+	if ( .data$[0] == "Size" ) {
+		mes "^777777 0 - Small^000000";
+		mes "^777777 1 - Medium^000000";
+		mes "^777777 2 - Large^000000";
+	}
+	else if ( .data$[0] == "Race" ) {
+		mes "^777777 0 - Formless^000000";
+		mes "^777777 1 - Undead^000000";
+		mes "^777777 2 - Brute^000000";
+		mes "^777777 3 - Plant^000000";
+		mes "^777777 4 - Insect^000000";
+		mes "^777777 5 - Fish^000000";
+		mes "^777777 6 - Demon^000000";
+		mes "^777777 7 - Demi-Human^000000";
+		mes "^777777 8 - Angel^000000";
+		mes "^777777 9 - Dragon^000000";
+		mes "^777777 10 - Player(default race for player)^000000";
+	}
+	else if ( .data$[0] == "Ele type" ) {
+		mes "^777777 0 - Neutral^000000";
+		mes "^777777 1 - Water^000000";
+		mes "^777777 2 - Earth^000000";
+		mes "^777777 3 - Fire^000000";
+		mes "^777777 4 - Wind^000000";
+		mes "^777777 5 - Poison^000000";
+		mes "^777777 6 - Holy^000000";
+		mes "^777777 7 - Shadow^000000";
+		mes "^777777 8 - Ghost^000000";
+		mes "^777777 9 - Undead^000000";
+	}
+	else
+		mes "^777777 Enter a value between min and max ^000000";
+	next;
+	input .@val;
+	if ( .data$[0] == "Size" ) .@size$ = get_size_name(.@val);
+	else if ( .data$[0] == "Race" ) .@race$ = get_race_name(.@val);
+	else if ( .data$[0] == "Ele type" ) .@ele$ = get_ele_name(.@val);
+	mes "Do you want to set ^ff0000"+.data$[0]+"^000000 to ^ff0000"+((.data$[0] == "Size") ? .@size$:((.data$[0] == "Race") ? .@race$:((.data$[0] == "Ele type") ? .@ele$:.@val)))+"^000000?";
+	mes "^777777---------------------^000000";
+	next;
+	select("Yes");
+	mes "Respawning Punching Bag..";
+	close2;
+	setd "."+.data$[1], .@val;
+	killmonster strnpcinfo(4),strnpcinfo(0)+"::OnMyMobDead";
+	donpcevent strnpcinfo(0)+"::OnMyMobDead";
+	end;
+
+M3: close;
+
+OnInit:
+	// Mob ID
+	.mob_id = 1905;
+	// Default values on initial spawn
+	.UMOB_SIZE = 1;
+	.UMOB_LEVEL = 50;
+	.UMOB_RACE = 7;
+	.UMOB_ELETYPE = 0;
+	.UMOB_ELELEVEL = 1;
+	//.UMOB_HP = 99999999; // disabled || uncomment to enable
+	.UMOB_STR = 10;
+	.UMOB_AGI = 10;
+	.UMOB_VIT = 10;
+	.UMOB_INT = 10;
+	.UMOB_DEX = 10;
+	.UMOB_LUK = 10;
+	.UMOB_DEF = 20;
+	.UMOB_MDEF = 20;
+	//.UMOB_HIT = 99; // disabled || uncomment to enable
+	.UMOB_FLEE = 10;
+	.UMOB_PDODGE = 10;
+OnMyMobDead:
+	getunitdata(getnpcid(0), .@d);
+	monster strnpcinfo(4),.@d[UNPC_X]+11,.@d[UNPC_Y]-3,"Punching Bag",.mob_id,1,strnpcinfo(0)+"::OnMyMobDead";
+	.@dupid = atoi(strnpcinfo(2));
+	.gid[.@dupid] = $@mobid[0];
+	.mhp[.@dupid] = strmobinfo(4,.mob_id);
+	setunitdata .gid[.@dupid],UMOB_MODE,.@d[UMOB_MODE]|0x4000000|0x0200000; // Set MD_STATUS_IMMUNE (0x4000000) because EDP/burn/%MHP based status can skew the DPS counter so much.
+	setunitdata .gid[.@dupid], UMOB_SIZE, .UMOB_SIZE;
+	setunitdata .gid[.@dupid], UMOB_LEVEL, .UMOB_LEVEL;
+	setunitdata .gid[.@dupid], UMOB_RACE, .UMOB_RACE;
+	setunitdata .gid[.@dupid], UMOB_ELETYPE, .UMOB_ELETYPE;
+	setunitdata .gid[.@dupid], UMOB_ELELEVEL, .UMOB_ELELEVEL;
+	//setunitdata .gid[.@dupid], UMOB_HP, .UMOB_HP;  // disabled || uncomment to enable
+	setunitdata .gid[.@dupid], UMOB_STR, .UMOB_STR;
+	setunitdata .gid[.@dupid], UMOB_AGI, .UMOB_AGI;
+	setunitdata .gid[.@dupid], UMOB_VIT, .UMOB_VIT;
+	setunitdata .gid[.@dupid], UMOB_INT, .UMOB_INT;
+	setunitdata .gid[.@dupid], UMOB_DEX, .UMOB_DEX;
+	setunitdata .gid[.@dupid], UMOB_LUK, .UMOB_LUK;
+	setunitdata .gid[.@dupid], UMOB_DEF, .UMOB_DEF;
+	setunitdata .gid[.@dupid], UMOB_MDEF, .UMOB_MDEF;
+	//setunitdata .gid[.@dupid], UMOB_HIT, .UMOB_HIT; // disabled || uncomment to enable
+	setunitdata .gid[.@dupid], UMOB_FLEE, .UMOB_FLEE;
+	setunitdata .gid[.@dupid], UMOB_PDODGE, .UMOB_PDODGE;
+	initnpctimer;
+	end;
+	
+OnTimer5000:
+	.@dupid = atoi(strnpcinfo(2));
+	if(unitexists(.gid[.@dupid])){
+		getunitdata(.gid[.@dupid],.@d);
+		.@diff = (.mhp[.@dupid] - .@d[UMOB_HP]);
+		if(.@diff > 0){
+			unittalk .gid[.@dupid], "Punching Bag has taken " + (.@diff/5) + " DPS in last 5 seconds.";
+			//npctalk "Punching Bag has taken " + (.@diff/5) + " DPS in last 5 seconds.";
+			setunitdata .gid[.@dupid],UMOB_HP,.mhp[.@dupid];
+		}
+	}
+	initnpctimer;
+	
+	function	get_size_name	{
+		switch ( getarg(0) ) {
+			case 0 : .@val$ = "Small"; break;
+			case 1 : .@val$ = "Medium"; break;
+			case 2 : .@val$ = "Large"; break;
+		}
+		return .@val$;
+	}
+	
+	function	get_race_name	{
+		switch ( getarg(0) ) {
+			case 0: .@val$ = "Formless"; break;
+			case 1: .@val$ = "Undead"; break;
+			case 2: .@val$ = "Brute"; break;
+			case 3: .@val$ = "Plant"; break;
+			case 4: .@val$ = "Insect"; break;
+			case 5: .@val$ = "Fish"; break;
+			case 6: .@val$ = "Demon"; break;
+			case 7: .@val$ = "Demi-Human"; break;
+			case 8: .@val$ = "Angel"; break;
+			case 9: .@val$ = "Dragon"; break;
+			case 10: .@val$ = "Player"; break;
+		}
+		return .@val$;
+	}
+	
+	function	get_ele_name	{
+		switch ( getarg(0) ) {
+			case 0: .@val$ = "Neutral"; break;
+			case 1: .@val$ = "Water"; break;
+			case 2: .@val$ = "Earth"; break;
+			case 3: .@val$ = "Fire"; break;
+			case 4: .@val$ = "Wind"; break;
+			case 5: .@val$ = "Poison"; break;
+			case 6: .@val$ = "Holy"; break;
+			case 7: .@val$ = "Shadow"; break;
+			case 8: .@val$ = "Ghost"; break;
+			case 9: .@val$ = "Undead"; break;
+		}
+		return .@val$;
+	}
+}

@@ -1,0 +1,174 @@
+//=========================== KafraShop.net ===============================
+//=        _    _       ____                   _         
+//=       | |  / /     /  __\                 / \
+//=       | |_/ / ___ _| |____ ___ ___ _  ____| |___  _____ _____
+//=       |  _  \/ _ ' |  __/ '__/  _ ' |/ ___|  _  \/  _  \  __ \
+//=       | | \ | |_|  | |  | |  | |_|  | ___ | | | |  |_| | |_| |
+//=       \_/  \ \__,|_| |  \_/   \__,|_|\____/_| | |\____/| .___/
+//=             \_/    \_/                        \_/      | |
+//=                                                        \_/
+//=========================================================================
+//= Mini-Games : Disguise
+//================= Description ===========================================
+//= An NPC will disguise as a monster and the player must
+//= answer what monster it is.
+//================= Current Version =======================================
+//= 1.0
+//================= Changelogs ============================================
+//= 1.0 - Implementation
+//=========================================================================
+
+disguise_ev,99,99,4	script	Polymorpher	4_NFWISP,{
+	end;
+}
+
+disguise_ev,99,99,4	script	MG_Disguise	HIDDEN_WARP_NPC,{
+	end;
+
+OnInit:
+	.evtName$ = "Disguise";
+	.wait = 0;
+	.winner = 0;
+	.cntReset = 0;
+
+	if (!$EVT_DISGUISE_RULE) $EVT_DISGUISE_RULE = 1;
+	if (!$EVT_DISGUISE_ROUND) $EVT_DISGUISE_ROUND = 10;
+
+	setarray .MVP[0],
+						1038, 1039, 1046, 1059, 1086,
+						1087, 1112, 1115, 1147, 1150,
+						1157, 1159, 1190, 1251, 1252,
+						1272, 1312, 1373, 1389, 1418,
+						1492, 1511, 1583, 1623, 1630,
+						1646, 1647, 1648, 1649, 1650,
+						1651, 1658, 1685, 1688, 1708,
+						1719, 1734, 1751;
+
+	.blackList$ = ",1003,1006,1017,1021,1022,1027,1043,1075,1136,1137,1168," +
+		"1171,1172,1173,1181,1187,1210,1217,1218,1222,1223,1224,1225,1226,1227,1228," +
+		"1233,1284,1407,1411,1414,1495,1501,1900,1996,2000,2001,2002,2003,2004," +
+		"2005,2006,2007,2011,2012,2025,2028,2029,2030,2031,2032,2033,2034,2035," +
+		"2036,2037,2038,2039,2040,2041,2042,2043,2044,2045,2046,2047,2048,2049," +
+		"2050,2051,2052,2053,2054,2055,2056,2057,2058,2059,2060,2061,2062,2063," +
+		"2064,2065,2066,2067,2075,2076,2077,2078,2079,2080,2081,2083,2084,2085," +
+		"2086,2087,2088,2089,2090,2091,2092,2093,2094,2095,2096,2097,2098,2099," +
+		"2100,2101,2012,2103,2104,2105,2106,2107,2108,2109,2110,2111,2112,2113," +
+		"2114,2115,2116,2117,2118,2119,2120,2121,2123,2124,2125,1496,";
+
+	if ($EVT_DISGUISE)
+		donpcevent(strnpcinfo(0)+"::OnStart");
+	end;
+
+OnStart:
+	$EVT_DISGUISE = 1;
+	.wait = 1;
+	.cntReset++;
+	initnpctimer();
+	if (getarraysize($EVT_DISGUISE_WINNER$))
+		deletearray($EVT_DISGUISE_WINNER$);
+	end;
+
+OnTimer10000:
+	if (.change) end;
+	.wait = 0;
+	donpcevent(strnpcinfo(0)+"::OnTransform");
+	end;
+
+OnTimer30000:
+	.change = 0;
+	setnpcdisplay("Polymorpher", 4_NFWISP);
+	npctalk("You took too long to guest what I was. Please wait for 10 seconds while I transform again.", "Polymorpher");
+	specialeffect(EF_DETECT2, "Polymorpher");
+	.mobName$ = "";
+	deletepset(1);
+	stopnpctimer();
+	setnpctimer(0);
+	++.rndCnt;
+	if (.rndCnt >= $EVT_DISGUISE_ROUND) {
+		donpcevent(strnpcinfo(0)+"::OnStop");
+		end;
+	}
+	initnpctimer();
+	end;
+
+OnTransform:
+	.winner = 0;
+	if ($EVT_DISGUISE_RULE == 1) {
+		.@monster = rand(1001, 1767);
+		if (compare(.blackList$, sprintf(",%d,", .@monster))) goto OnTransform;
+		if (getmonsterinfo(.@monster, MOB_NAME) == "null") goto OnTransform;
+		if (compare(getmonsterinfo(.@monster, MOB_NAME), "Treasure")) goto OnTransform;
+		if (.@monster == .lastMonster) goto OnTransform;
+		.lastMonster = .@monster;
+		.mobName$ = getmonsterinfo(.@monster, MOB_NAME);
+	}
+	if ($EVT_DISGUISE_RULE == 2) {
+		.@monster = .MVP[rand(getarraysize(.MVP))];
+		if (getmonsterinfo(.@monster, MOB_NAME) == "null") goto OnTransform;
+		if (.@monster == .lastMonster) goto OnTransform;
+		.lastMonster = .@monster;
+		.mobName$ = getmonsterinfo(.@monster, MOB_NAME);
+	}
+	deletepset(1);
+	defpattern(1,"([^:]+):.\\s*"+.mobName$+".*", "OnCorrectAnswer");
+	activatepset(1);
+	setnpcdisplay("Polymorpher", .@monster);
+	.change = 1;
+	setnpctimer(0);
+	end;
+
+OnCorrectAnswer:
+	if (.winner) {
+		dispbottom(sprintf("[%s] Someone has already won this round.", .evtName$));
+		end;
+	}
+	.winner = 1;
+	.rndCnt++;
+	deletepset(1);
+	activatepset(1);
+	mapannounce("disguise_ev", sprintf("[%s] %s is correct! I was disguised as: %s.", .evtName$, strcharinfo(0), .mobName$), bc_map|bc_blue);
+	setarray $EVT_DISGUISE_WINNER$[getarraysize($EVT_DISGUISE_WINNER$)], strcharinfo(0);
+	if (getarraysize($EVT_DISGUISE_ITEM) > 1) {
+		for (.@i=0; .@i<getarraysize($EVT_DISGUISE_ITEM); .@i+=2)
+			getitem($EVT_DISGUISE_ITEM[.@i], $EVT_DISGUISE_ITEM[.@i+1]);
+	}
+	if ($EVT_DISGUISE_POINT > 0) {
+		F_PointGain(0, $EVT_DISGUISE_POINT, .evtName$);
+		F_ShowCurrency("#EVENTPOINT", "Event", $EVT_DISGUISE_POINT);
+		EVENTWINS += $EVT_DISGUISE_POINT;
+		EVENTWINS_DISGUISE += $EVT_DISGUISE_POINT;
+	}
+	if (.rndCnt >= $EVT_DISGUISE_ROUND)
+		donpcevent(strnpcinfo(0)+"::OnStop");
+	setnpcdisplay("Polymorpher", 4_NFWISP);
+	.change = 0;
+	setnpctimer(0);
+	end;
+
+OnStop:
+	stopnpctimer();
+	setnpctimer(0);
+	.mobName$ = "";
+	setnpcdisplay("Polymorpher", 4_NFWISP);
+	$EVT_DISGUISE = 0;
+	.rndCnt = .change = 0;
+	deletepset(1);
+	npctalk("Thank you all for joining. That was the last round of the Disguise Event. Come play again later.", "Polymorpher");
+	sleep(2000);
+	mapwarp("disguise_ev", "prontera", 149, 156);
+	end;
+}
+
+//disguise_ev	mapflag	macprotect
+disguise_ev	mapflag	nobranch
+disguise_ev	mapflag	nodrop
+disguise_ev	mapflag	noexp
+disguise_ev	mapflag	noicewall
+disguise_ev	mapflag	noloot
+disguise_ev	mapflag	nomemo
+disguise_ev	mapflag	nosave	SavePoint
+disguise_ev	mapflag	noskill
+disguise_ev	mapflag	noteleport
+disguise_ev	mapflag	nowarp
+disguise_ev	mapflag	nowarpto
+disguise_ev	mapflag	pvp	off

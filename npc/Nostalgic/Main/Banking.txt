@@ -1,0 +1,146 @@
+//===== rAthena Script =======================================
+//= Banker Script - Nostalgic Bank
+//============================================================
+
+valmorra,191,123,4	script	Banker	109,{
+
+	mes "[^336699Banker^000000]";
+	mes "Welcome to the ^BBA14FNostalgic Bank^000000.";
+	mes "How can I help you today?";
+	mes "";
+	mes "Current Balance: ^00AA00" + callfunc("F_InsertComma", #bankstorage) + "^000000 Zeny";
+	next;
+
+	switch(select("^00AA00Deposit Zeny^000000:^FF6600Withdraw Zeny^000000:^3366CCCheck Balance^000000:^999999Cancel^000000")) {
+
+	case 1:
+		mes "[^336699Banker^000000]";
+		mes "How much Zeny would you like to deposit?";
+		mes "";
+		mes "Maximum deposit per transaction:";
+		mes "^BBA14F" + callfunc("F_InsertComma", .MaxDeposit) + "^000000 Zeny";
+		mes "^99999910000000000 (10B)^000000";
+		next;
+
+		input .@amount, 1, .MaxDeposit;
+
+		if (.@amount <= 0) {
+			mes "[^336699Banker^000000]";
+			mes "^FF0000Invalid amount.^000000";
+			close;
+		}
+
+		if (.@amount > .MaxDeposit) {
+			mes "[^336699Banker^000000]";
+			mes "^FF0000You can only deposit up to " + callfunc("F_InsertComma", .MaxDeposit) + " Zeny at once.^000000";
+			close;
+		}
+
+		if (Zeny < (.@amount + .Fee)) {
+			mes "[^336699Banker^000000]";
+			mes "^FF0000You do not have enough Zeny.^000000";
+			close;
+		}
+
+		if ((#bankstorage + .@amount) > .MaxBankStorage) {
+			mes "[^336699Banker^000000]";
+			mes "^FF0000Your bank storage cannot hold that much Zeny.^000000";
+			mes "Maximum bank storage:";
+			mes "^BBA14F" + callfunc("F_InsertComma", .MaxBankStorage) + "^000000 Zeny";
+			close;
+		}
+
+		Zeny -= (.@amount + .Fee);
+		#bankstorage += .@amount;
+
+		mes "[^336699Banker^000000]";
+		mes "Deposit successful!";
+		mes "";
+		mes "Deposited: ^00AA00" + callfunc("F_InsertComma", .@amount) + "^000000 Zeny";
+		mes "New Balance: ^BBA14F" + callfunc("F_InsertComma", #bankstorage) + "^000000 Zeny";
+		close;
+
+	case 2:
+		mes "[^336699Banker^000000]";
+		mes "How much Zeny would you like to withdraw?";
+		mes "";
+		mes "Maximum withdrawal per transaction:";
+		mes "^BBA14F" + callfunc("F_InsertComma", .MaxWithdraw) + "^000000 Zeny";
+		mes "Your Bank Balance:";
+		mes "^00AA00" + callfunc("F_InsertComma", #bankstorage) + "^000000 Zeny";
+		next;
+
+		input .@amount, 1, .MaxWithdraw;
+
+		if (.@amount <= 0) {
+			mes "[^336699Banker^000000]";
+			mes "^FF0000Invalid amount.^000000";
+			close;
+		}
+
+		if (.@amount > .MaxWithdraw) {
+			mes "[^336699Banker^000000]";
+			mes "^FF0000You can only withdraw up to " + callfunc("F_InsertComma", .MaxWithdraw) + " Zeny at once.^000000";
+			close;
+		}
+
+		if (#bankstorage < .@amount) {
+			mes "[^336699Banker^000000]";
+			mes "^FF0000You do not have enough Zeny in your bank.^000000";
+			close;
+		}
+
+		if ((Zeny + .@amount) > .MaxZeny) {
+			mes "[^336699Banker^000000]";
+			mes "^FF0000You cannot withdraw that much Zeny.^000000";
+			mes "It will exceed your character Zeny limit.";
+			close;
+		}
+
+		if (Zeny < .Fee) {
+			mes "[^336699Banker^000000]";
+			mes "^FF0000You need " + callfunc("F_InsertComma", .Fee) + " Zeny for the transaction fee.^000000";
+			close;
+		}
+
+		Zeny -= .Fee;
+		Zeny += .@amount;
+		#bankstorage -= .@amount;
+
+		mes "[^336699Banker^000000]";
+		mes "Withdrawal successful!";
+		mes "";
+		mes "Withdrawn: ^00AA00" + callfunc("F_InsertComma", .@amount) + "^000000 Zeny";
+		mes "Remaining Balance: ^BBA14F" + callfunc("F_InsertComma", #bankstorage) + "^000000 Zeny";
+		close;
+
+	case 3:
+		mes "[^336699Banker^000000]";
+		mes "Your current bank balance is:";
+		mes "";
+		mes "^BBA14F" + callfunc("F_InsertComma", #bankstorage) + "^000000 Zeny";
+		close;
+
+	case 4:
+		mes "[^336699Banker^000000]";
+		mes "Thank you for using Nostalgic Bank.";
+		close;
+	}
+
+OnInit:
+	.Fee = 0;
+
+	// Max deposit sekali transaksi: 10000000000 (10B)
+	.MaxDeposit = 10000000000;
+
+	// Max withdraw sekali transaksi: 1500000000 (1.5B)
+	.MaxWithdraw = 1500000000;
+
+	// Max zeny dalam character.
+	.MaxZeny = 2000000000;
+
+	// Max storage bank: 50000000000 (50B)
+	.MaxBankStorage = 50000000000;
+
+	end;
+}

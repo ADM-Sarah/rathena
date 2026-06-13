@@ -1,0 +1,187 @@
+//============================================================
+// MVP Point Shop - Popup Shop Style
+// Requirement: MVP Points ONLY
+// NPC: valmorra,183,165
+//============================================================
+
+valmorra,183,165,4	script	MVP Point Shop	10999,{
+
+OnClick:
+	goto OnMenu;
+
+OnInit:
+	freeloop(1);
+
+	.DialogW = 360;
+	.DialogH = 300;
+	.MaxStack = 100;
+	.ignore_secure_npctimeout = 1;
+
+	.ShopName$ = "mvppointshop";
+
+	// Format: ItemID, Amount, MVP Point Cost, Max Buy
+	callsub S_Add,51005,1,35,100;		// Nostalgic MVP Ticket
+	callsub S_Add,55809,1,2000,10;
+	callsub S_Add,55810,1,2000,10;
+	callsub S_Add,7040,1,25,100;
+
+	npcshopdelitem .ShopName$,909;
+
+	for (.@i = 0; .@i < getarraysize(.ItemID); .@i++)
+		npcshopadditem .ShopName$, .ItemID[.@i], 0;
+
+	freeloop(0);
+	end;
+
+OnMenu:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 1;
+
+	callsub S_LoadPoint;
+
+	setdialogsize(.DialogW,.DialogH);
+	setdialogalign(DIALOG_ALIGN_CENTER);
+
+	mes "<b>^000000[ ^0000FFMVP Point Shop^000000 ]</b>";
+	mes "^000000Welcome to the ^0000FFMVP Point Shop^000000.";
+	mes "^000000Your current ^0055FFMVP Points^000000: ^1E90FF" + #MVPPOINTS + "^000000";
+	mes "^000000This shop only requires ^FF0000MVP Points^000000.";
+	mes callsub(S_Line);
+	next;
+
+	switch(select("^0000FFMVP POINT SHOP^000000:^FF0000Cancel^000000")) {
+	case 1:
+		dispbottom "Your current MVP Points: " + #MVPPOINTS;
+		dispbottom "Select one item at a time.";
+		close2;
+		callshop .ShopName$,1;
+		npcshopattach .ShopName$;
+		end;
+
+	case 2:
+		close;
+	}
+
+OnBuyItem:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 1;
+
+	callsub S_LoadPoint;
+
+	setdialogsize(.DialogW,.DialogH);
+	setdialogalign(DIALOG_ALIGN_CENTER);
+
+	.@item = @bought_nameid[0];
+	.@qty = @bought_quantity[0];
+
+	if (.@qty < 1)
+		end;
+
+	.@index = -1;
+
+	for (.@i = 0; .@i < getarraysize(.ItemID); .@i++) {
+		if (.ItemID[.@i] == .@item) {
+			.@index = .@i;
+			break;
+		}
+	}
+
+	if (.@index < 0) {
+		message strcharinfo(0), "This item is not available in the MVP Point Shop.";
+		end;
+	}
+
+	if (.@qty > .MaxBuy[.@index])
+		.@qty = .MaxBuy[.@index];
+
+	.@amount = .Amount[.@index] * .@qty;
+	.@cost = .Cost[.@index] * .@qty;
+
+	mes "<b>^000000[ ^0000FFMVP Point Shop^000000 ]</b>";
+	mes "^000000Your current ^0055FFMVP Points^000000: ^1E90FF" + #MVPPOINTS + "^000000";
+	mes callsub(S_Line);
+	mes "<b>^000000Reward:^000000</b> ^0055FF" + .@amount + "x ^i[" + .@item + "] " + getitemname(.@item) + "^000000";
+	mes " ";
+	mes "<b>^000000Requirement:^000000</b>";
+	mes "^3CB371»^000000 " + callsub(S_Chk,#MVPPOINTS,.@cost) + .@cost + " MVP Points^000000";
+	mes "   ^777777(" + #MVPPOINTS + "/" + .@cost + ")^000000";
+	next;
+
+	if (@mvp_shop_missing) {
+		mes "<b>^000000[ ^0000FFMVP Point Shop^000000 ]</b>";
+		mes "^FF0000You don't have enough MVP Points.^000000";
+		close;
+	}
+
+	if (select("^3CB371Purchase Item^000000:^FF0000Cancel^000000") == 2)
+		close;
+
+	callsub S_LoadPoint;
+
+	if (#MVPPOINTS < .@cost) {
+		mes "<b>^000000[ ^0000FFMVP Point Shop^000000 ]</b>";
+		mes "^FF0000You don't have enough MVP Points.^000000";
+		close;
+	}
+
+	if (!checkweight(.@item,.@amount)) {
+		mes "<b>^000000[ ^0000FFMVP Point Shop^000000 ]</b>";
+		mes "^FF0000You are overweight or your inventory is full.^000000";
+		close;
+	}
+
+	#MVPPOINTS -= .@cost;
+	callsub S_SavePoint;
+
+	getitem .@item,.@amount;
+	specialeffect2 EF_FLOWERLEAF;
+
+	mes "<b>^000000[ ^0000FFMVP Point Shop^000000 ]</b>";
+	mes "^1E90FFPurchase completed successfully!^000000";
+	mes "^000000You received:^000000 ^0055FF" + .@amount + "x ^i[" + .@item + "] " + getitemname(.@item) + "^000000";
+	mes "^000000Remaining ^0055FFMVP Points^000000: ^1E90FF" + #MVPPOINTS + "^000000";
+	close;
+
+OnEnd:
+	if (.ignore_secure_npctimeout)
+		ignoretimeout 0;
+	end;
+
+S_LoadPoint:
+	query_sql "SELECT `mvp_shop_points` FROM `mvp_rank` WHERE `char_id`='"+getcharid(0)+"'", .@p;
+	#MVPPOINTS = getarraysize(.@p) ? .@p[0] : 0;
+	return;
+
+S_SavePoint:
+	query_sql "SELECT `char_id` FROM `mvp_rank` WHERE `char_id`='"+getcharid(0)+"'", .@cid;
+	if (getarraysize(.@cid)) {
+		query_sql "UPDATE `mvp_rank` SET `mvp_shop_points`='"+#MVPPOINTS+"' WHERE `char_id`='"+getcharid(0)+"'";
+	} else {
+		query_sql "INSERT INTO `mvp_rank` (`char_id`,`char_name`,`mvp_points`,`mvp_weekly`,`mvp_monthly`,`mvp_shop_points`,`week_key`,`month_key`) VALUES "
+			+ "('"+getcharid(0)+"','"+escape_sql(strcharinfo(0))+"',0,0,0,'"+#MVPPOINTS+"','','')";
+	}
+	return;
+
+S_Add:
+	.@size = getarraysize(.ItemID);
+	.ItemID[.@size] = getarg(0);
+	.Amount[.@size] = getarg(1);
+	.Cost[.@size] = getarg(2);
+	.MaxBuy[.@size] = getarg(3);
+	return;
+
+S_Chk:
+	deletearray @mvp_shop_missing[0],1;
+	if (getarg(0) < getarg(1)) {
+		@mvp_shop_missing = 1;
+		return "^FF0000";
+	}
+	return "^00BFFF";
+
+S_Line:
+	return "^777777--------------------------------------------------^000000";
+}
+
+// Dummy shop data
+//============================================================
+-	shop	mvppointshop	-1,909:-1

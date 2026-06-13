@@ -1,0 +1,97 @@
+//===== rAthena Script =======================================
+//= GuildPack NPC with Gepard Function Supported
+//===== By: ==================================================
+//= BeWan
+//https://rathena.org/board/profile/62232-bewan/
+//===== Current Version: =====================================
+//= 2.0
+//===== Description: =========================================
+//= GuildPack NPC supported of gepard function " unique_id "
+//= Minimum of 10 members online
+//= Guild Leader and Member Reward Supported
+//= Guild leader claim limit to 1 to avoid exploit.
+//============================================================
+
+prontera,188,209,3	script	GuildPack NPC	10191,{
+
+	.@unique_id$ = get_unique_id();
+	
+	if( !getcharid(2) ){
+		mes "You Don't Have Guild.";
+		close;
+	}
+
+	mes "[ BeWan ]";
+	mes "Good day!";
+	mes "Do you want to claim Guild-Pack?!";
+	mes " ";
+	mes "Must have atleast 10 members to claim for Guild Package.";
+	mes "Take note! NostalgicRO Staff are not responsible of the items lost ";
+	mes "provided in the guild pack if you left the guild.";
+	next;
+	menu "Yes Please",yes,"Nope",no;
+
+yes:
+	query_sql "SELECT `guild_id`, COUNT(`online`) FROM `char` WHERE `guild_id` = '"+getcharid(2)+"' AND `online` = '1'", .@Gid, .@online;
+	query_sql "SELECT `GID` FROM `data_gpack` WHERE `GID` = '"+getcharid(2)+"'", .@GuildID;
+	getinventorylist;
+	.@weight = 100 * Weight / MaxWeight;
+	if ( .@online < 10 ) {
+		mes "[ BeWan ]";
+		mes "Sorry not enough online members";
+		mes "You must have 10 members online to claim Guild-Pack";
+		close;
+	}else if ( @inventorylist_count > 30 ) {
+		mes "[ BeWan ]";
+		mes "You have 30 different items in your inventory.";
+		close;
+	}else if((.@weight) > 50){
+		mes "[ BeWan ]";
+		mes "^FF0000You must atleast have 50 percent extra weight to receive guildpack.^000000";
+		mes " ";
+		mes "You are currently at " + .@weight + " percent of your maximum weight.";
+		close;
+	}else if(getd("$GpackID_" + .@unique_id$) > 0 || #GuildPackReward > 0){
+		mes "[ BeWan ]";
+		mes "You have already claimed your GuildPack.";
+		close;
+	}else{
+		mes "[ BeWan ]";
+		mes "Hello Guild Member.";
+		next;
+		mes "Here's your GuildPack. Have a nice day!";
+		
+		setd "$GpackID_" + .@unique_id$,1;
+		#GuildPackReward = 1;
+		/////GuildMember REWARD
+			getitembound 33061,1,Bound_Guild;
+			getitembound2 1502,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 1505,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 1802,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 1951,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 1902,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 1550,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 13102,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 13302,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 1108,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 1117,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 1408,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 1208,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 1309,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 1352,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 1705,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 1602,1,1,10,0,0,0,0,0,Bound_Guild;
+			getitembound2 1251,1,1,10,0,0,0,0,0,Bound_Guild;
+		////
+		end;
+	}
+no:
+	mes "Well Okay";
+	close;
+	
+OnInit:
+	query_sql "CREATE TABLE IF NOT EXISTS `data_gpack` ( `ID` int(11) unsigned NOT NULL DEFAULT '0', `GID` int(11) NOT NULL, PRIMARY KEY (`ID`) ) ENGINE=MyISAM";
+	query_sql "ALTER TABLE `data_gpack` MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT";
+	//waitingroom "Guildpack!",0;
+	end;
+}

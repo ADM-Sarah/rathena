@@ -1,0 +1,29 @@
+-	script	block_atcmd	-1,{
+end;
+
+OnInit:
+	bindatcmd("item2",strnpcinfo(0)+"::OnCommandBlock",99,99);
+	bindatcmd("produce",strnpcinfo(0)+"::OnCommandBlock",99,99);
+   
+	bindatcmd("statall",strnpcinfo(0)+"::OnCommandBlock",99,99);
+	bindatcmd("statsall",strnpcinfo(0)+"::OnCommandBlock",99,99);
+	bindatcmd("allstats",strnpcinfo(0)+"::OnCommandBlock",99,99);
+	bindatcmd("allstat",strnpcinfo(0)+"::OnCommandBlock",99,99);
+   
+	bindatcmd("stpoint",strnpcinfo(0)+"::OnCommandBlock",99,99);
+   
+	bindatcmd("str",strnpcinfo(0)+"::OnCommandBlock",99,99);
+	bindatcmd("agi",strnpcinfo(0)+"::OnCommandBlock",99,99);
+	bindatcmd("vit",strnpcinfo(0)+"::OnCommandBlock",99,99);
+	bindatcmd("int",strnpcinfo(0)+"::OnCommandBlock",99,99);
+	bindatcmd("dex",strnpcinfo(0)+"::OnCommandBlock",99,99);
+	bindatcmd("luk",strnpcinfo(0)+"::OnCommandBlock",99,99);
+
+	bindatcmd("adjgroup",strnpcinfo(0)+"::OnCommandBlock",99,99);
+end;
+
+OnCommandBlock:
+	message strcharinfo(0),"This command is disabled.";
+end;
+
+}

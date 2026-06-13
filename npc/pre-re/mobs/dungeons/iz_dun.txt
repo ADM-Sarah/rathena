@@ -112,3 +112,4 @@ iz_dun04,103,231,10,10	monster	Merman	1264,3,150000
 iz_dun04,160,231,10,10	monster	Merman	1264,3,170000
 iz_dun04,95,147,10,10	monster	Merman	1264,3,150000
 iz_dun04,130,216,15,15	monster	Merman	1264,3,160000
+iz_dun04,0,0,0,0	boss_monster	Bakonawa	3532,1,7200000,0,0

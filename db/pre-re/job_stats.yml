@@ -1629,7 +1629,7 @@ Body:
   - Jobs:
       High_Wizard: true
     MaxWeight: 24000
-    HpFactor: 55
+    HpFactor: 65
     SpIncrease: 900
     BonusStats:
       - Level: 1

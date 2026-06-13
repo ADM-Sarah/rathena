@@ -327,6 +327,23 @@ private:
 extern MapDropDatabase map_drop_db;
 extern std::unordered_map<uint16, std::vector<spawn_info>> mob_spawn_data;
 
+struct s_vip_drop_excluded {
+	t_itemid nameid;
+};
+
+class VIPDropExcludedDatabase : public TypesafeYamlDatabase<t_itemid, s_vip_drop_excluded> {
+public:
+	VIPDropExcludedDatabase()
+	: TypesafeYamlDatabase("VIP_DROP_EXCLUDED",1) {
+
+	}
+
+	const std::string getDefaultLocation() override;
+	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+};
+
+extern VIPDropExcludedDatabase vip_drop_excluded_db;
+
 struct s_dmglog{
 	int32 id; //char id
 	int64 dmg;

@@ -1,0 +1,250 @@
+//==================================================
+// Gold Room System (MAP: goldroom) - RANDOM BOOST GOLD VERSION
+//==================================================
+
+//==================================================
+// Entrance NPC
+//==================================================
+valmorra,179,116,3	script	Gold Room#goldroom	10996,{
+	donpcevent "gold_room_main::OnCheckBoostExpire";
+
+	.@map$ = "goldroom";
+	.@zeny_cost = 500000;
+
+	mes "[Gold Room]";
+	mes "^0000FF[BOOST INFO]^000000";
+	mes "^0000FFNormal time: Gold follows monster DB drop only. Please enable @autoloot to receive normal mob drops.^000000";
+	mes "^0000FFBoost time: every kill gives random ^FF0000Gold x2 to x5^0000FF directly to your inventory.^000000";
+	mes " ";
+	mes "Boost Status: " + ($GOLDROOM_ACTIVE ? "^00CC00ACTIVE^000000" : "^FF0000INACTIVE^000000");
+	mes "Boost Time: ^0000FF01:00 AM^000000, ^0000FF03:00 AM^000000, ^0000FF01:00 PM^000000, ^0000FF07:00 PM^000000, ^0000FF11:00 PM^000000";
+
+	if ($GOLDROOM_ACTIVE) {
+		.@remain = $GOLDROOM_END - gettimetick(2);
+		if (.@remain < 0) .@remain = 0;
+
+		.@h = .@remain / 3600;
+		.@m = (.@remain % 3600) / 60;
+		.@s = .@remain % 60;
+
+		mes "Time Remaining: ^FF0000" + sprintf("%02d:%02d:%02d", .@h, .@m, .@s) + "^000000";
+	}
+
+	mes " ";
+	mes "Do you want to enter the Gold Room?";
+	if (.@zeny_cost > 0)
+		mes "Entrance Fee: ^0000FF" + F_InsertComma(.@zeny_cost) + " Zeny^000000";
+	next;
+
+	switch(select("Enter Gold Room:Cancel")) {
+		case 1:
+			if (Zeny < .@zeny_cost) {
+				mes "[Gold Room]";
+				mes "You do not have enough Zeny.";
+				close;
+			}
+			Zeny -= .@zeny_cost;
+			warp .@map$,0,0;
+			close;
+
+		default:
+			close;
+	}
+}
+
+//==================================================
+// Exit warps back to town
+//==================================================
+goldroom,10,10,0	warp	gold_room_back_prt#1	1,1,valmorra,172,128
+goldroom,12,10,0	warp	gold_room_back_prt#2	1,1,valmorra,172,128
+
+//==================================================
+// Exit NPC
+//==================================================
+goldroom,15,15,3	script	Exit#GR	4_M_JOB_KNIGHT1,{
+	mes "[Gold Room Exit]";
+	mes "Do you want to leave the Gold Room now?";
+	next;
+
+	switch(select("Yes:No")) {
+		case 1:
+			warp "SavePoint",0,0;
+			close;
+
+		default:
+			mes "[Gold Room Exit]";
+			mes "Come back anytime.";
+			close;
+	}
+}
+
+//==================================================
+// Main Controller
+//==================================================
+-	script	gold_room_main	-1,{
+
+OnInit:
+	.map$ = "goldroom";
+	.gold_item = 969;
+	.boost_min = 2;
+	.boost_max = 5;
+	.boost_duration = 3600;
+
+	setmapflag .map$,mf_nomemo;
+	setmapflag .map$,mf_nobranch;
+	setmapflag .map$,mf_noexp;
+	setmapflag .map$,mf_nochat;
+	setmapflag .map$,mf_novending;
+	setmapflag .map$,mf_nowarpto;
+	setmapflag .map$,mf_nopenalty;
+	setmapflag .map$,mf_noskill;
+	bindatcmd "gron",   strnpcinfo(3)+"::OnGoldCommand",     1,99;
+	bindatcmd "groff",  strnpcinfo(3)+"::OnGoldOffCommand",  1,99;
+	bindatcmd "grtime", strnpcinfo(3)+"::OnGoldTimeCommand", 1,99;
+	
+	donpcevent strnpcinfo(3)+"::OnRecoverBoostState";
+	end;
+
+OnCheckBoostExpire:
+	if (!$GOLDROOM_ACTIVE)
+		end;
+
+	.@now = gettimetick(2);
+
+	if ($GOLDROOM_END <= 0 || .@now >= $GOLDROOM_END) {
+		$GOLDROOM_ACTIVE = 0;
+		$GOLDROOM_START = 0;
+		$GOLDROOM_END = 0;
+		announce "Gold Boost has ended. Gold Room is back to normal.", bc_all, 0xFFA500;
+	}
+	end;
+
+OnRecoverBoostState:
+	if (!$GOLDROOM_ACTIVE)
+		end;
+
+	.@now = gettimetick(2);
+
+	if ($GOLDROOM_START <= 0 || $GOLDROOM_END <= 0) {
+		$GOLDROOM_ACTIVE = 0;
+		$GOLDROOM_START = 0;
+		$GOLDROOM_END = 0;
+		end;
+	}
+
+	if (.@now >= $GOLDROOM_END) {
+		$GOLDROOM_ACTIVE = 0;
+		$GOLDROOM_START = 0;
+		$GOLDROOM_END = 0;
+		end;
+	}
+
+	.@remain = $GOLDROOM_END - .@now;
+	.@h = .@remain / 3600;
+	.@m = (.@remain % 3600) / 60;
+	.@s = .@remain % 60;
+
+	announce "Gold Boost is still active after server restart/reload! Remaining time: " + sprintf("%02d hour(s) %02d minute(s) %02d second(s)", .@h, .@m, .@s), bc_all, 0xFFA500;
+	end;
+
+OnClock0100:
+OnClock0300:
+OnClock1300:
+OnClock1900:
+OnClock2300:
+	donpcevent strnpcinfo(3)+"::OnCheckBoostExpire";
+
+	if ($GOLDROOM_ACTIVE)
+		end;
+
+	donpcevent strnpcinfo(3)+"::OnAutoBoostStart";
+	end;
+
+OnAutoBoostStart:
+	if ($GOLDROOM_ACTIVE)
+		end;
+
+	$GOLDROOM_ACTIVE = 1;
+	$GOLDROOM_START = gettimetick(2);
+	$GOLDROOM_END = $GOLDROOM_START + .boost_duration;
+
+	announce "Gold Boost has started for 1 hour! Every kill now gives random bonus Gold x2~x5!", bc_all, 0xFFA500;
+	end;
+
+OnGoldKill:
+	donpcevent strnpcinfo(3)+"::OnCheckBoostExpire";
+
+	if (strcharinfo(3) != .map$)
+		end;
+
+	if (!$GOLDROOM_ACTIVE)
+		end;
+
+	.@amount = rand(.boost_min, .boost_max);
+	if (!checkweight(.gold_item, .@amount)) {
+		dispbottom "[Gold Room] Your inventory is full or overweight. Gold Boost reward was not added.";
+		dispbottom "[Gold Room] Please clear your inventory or reduce weight first.";
+		end;
+	}
+
+	getitem .gold_item, .@amount;
+	dispbottom "Gold Boost reward: Gold x" + .@amount;
+	end;
+
+OnGoldCommand:
+	donpcevent strnpcinfo(3)+"::OnCheckBoostExpire";
+
+	if ($GOLDROOM_ACTIVE) {
+		dispbottom "Gold Room boost is already active.";
+		end;
+	}
+
+	$GOLDROOM_ACTIVE = 1;
+	$GOLDROOM_START = gettimetick(2);
+	$GOLDROOM_END = $GOLDROOM_START + .boost_duration;
+	announce "GM " + strcharinfo(0) + " has activated Gold Boost for 1 hour! Every kill now gives random bonus Gold x2~x5!", bc_all, 0xFFA500;
+	dispbottom "Gold Room boost started manually for 1 hour.";
+	end;
+
+OnGoldOffCommand:
+	donpcevent strnpcinfo(3)+"::OnCheckBoostExpire";
+	if (!$GOLDROOM_ACTIVE) {
+		dispbottom "Gold Room boost is not active.";
+		end;
+	}
+
+	$GOLDROOM_ACTIVE = 0;
+	$GOLDROOM_START = 0;
+	$GOLDROOM_END = 0;
+	announce "GM " + strcharinfo(0) + " has ended Gold Boost manually. Gold Room is back to normal.", bc_all, 0xFFA500;
+	end;
+
+OnGoldTimeCommand:
+	donpcevent strnpcinfo(3)+"::OnCheckBoostExpire";
+
+	if ($GOLDROOM_ACTIVE) {
+		.@remain = $GOLDROOM_END - gettimetick(2);
+		if (.@remain < 0) .@remain = 0;
+		.@h = .@remain / 3600;
+		.@m = (.@remain % 3600) / 60;
+		.@s = .@remain % 60;
+		dispbottom "Gold Boost status: ACTIVE";
+		dispbottom "Time remaining: " + sprintf("%02d hour(s) %02d minute(s) %02d second(s)", .@h, .@m, .@s);
+		dispbottom "Boost reward: random Gold x2~x5 per kill";
+		dispbottom "Normal reward: monster DB drop only";
+		dispbottom "Fixed boost times: 01:00, 03:00, 13:00, 19:00, 23:00";
+		end;
+	}
+
+	dispbottom "Gold Boost status: INACTIVE";
+	dispbottom "Normal reward: monster DB drop only";
+	dispbottom "Boost reward: random Gold x2~x5 per kill";
+	dispbottom "Fixed boost times: 01:00, 03:00, 13:00, 19:00, 23:00";
+	end;
+}
+
+//==================================================
+// NATIVE MAP SPAWNS (High Density: 500 Each Type)
+//==================================================
+goldroom,0,0,0,0	monster	Dokebi Gold	28009,500,1000,2000,gold_room_main::OnGoldKill
+goldroom,0,0,0,0	monster	Peco Gold	28010,500,1000,2000,gold_room_main::OnGoldKill

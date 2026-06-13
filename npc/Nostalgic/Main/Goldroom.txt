@@ -1,0 +1,385 @@
+//==================================================
+// Gold Room System - CLUSTER SPAWN + RANDOM BOOST GOLD
+//==================================================
+
+// Entrance NPC
+valmorra,179,116,3	script	Gold Room#goldroom	10996,{
+	donpcevent "gold_room_main::OnCheckBoostExpire";
+
+	.@map$ = "ordeal_3-1";
+	.@zeny_cost = 500000;
+
+	mes "[Gold Room]";
+	mes "^0000FF[BOOST INFO]^000000";
+	mes "^0000FFNormal time: Gold follows monster DB drop only. Please enable @autoloot.^000000";
+	mes "^0000FFBoost time: every kill gives random ^FF0000Gold x2 to x5^0000FF directly to your inventory.^000000";
+	mes "^FF0000[SECURITY]^000000 Max ^0000FF5 IDs^000000 only can enter this Gold Room.";
+	mes " ";
+	mes "Boost Status: " + ($GOLDROOM_ACTIVE ? "^00CC00ACTIVE^000000" : "^FF0000INACTIVE^000000");
+	mes "Boost Time: ^0000FF01:00 AM^000000, ^0000FF03:00 AM^000000, ^0000FF01:00 PM^000000, ^0000FF07:00 PM^000000, ^0000FF11:00 PM^000000";
+
+	if ($GOLDROOM_ACTIVE) {
+		.@remain = $GOLDROOM_END - gettimetick(2);
+		if (.@remain < 0) .@remain = 0;
+		mes "Time Remaining: ^FF0000" + sprintf("%02d:%02d:%02d", .@remain / 3600, (.@remain % 3600) / 60, .@remain % 60) + "^000000";
+	}
+
+	mes " ";
+	mes "Do you want to enter the Gold Room?";
+	mes "Entrance Fee: ^0000FF" + F_InsertComma(.@zeny_cost) + " Zeny^000000";
+	next;
+
+	if (select("Enter Gold Room:Cancel") == 1) {
+		callfunc "F_GoldRoom_DeviceIPLimit", 0;
+
+		if (Zeny < .@zeny_cost) {
+			mes "[Gold Room]";
+			mes "You do not have enough Zeny.";
+			close;
+		}
+		Zeny -= .@zeny_cost;
+		warp .@map$,149,150;
+	}
+	close;
+}
+
+// Exit warps
+ordeal_3-1,47,218,0	warp	gold_room_back_prt#1	1,1,valmorra,172,128
+ordeal_3-1,51,15,0	warp	gold_room_back_prt#2	1,1,valmorra,172,128
+
+// Exit NPC
+ordeal_3-1,144,155,3	script	Exit#GR	4_M_JOB_KNIGHT1,{
+	mes "[Gold Room Exit]";
+	mes "Do you want to leave the Gold Room now?";
+	next;
+	if (select("Yes:No") == 1)
+		warp "SavePoint",0,0;
+	close;
+}
+
+//==================================================
+// Monster Spawns - KEKAL DARI SCRIPT PERTAMA
+//==================================================
+ordeal_3-1,219,153,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,237,153,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,258,141,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,273,141,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,275,158,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+
+ordeal_3-1,197,109,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,212,94,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,226,80,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,238,71,10,10	monster	Peco Gold	28010,15,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,228,60,10,10	monster	Peco Gold	28010,30,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,237,45,10,10	monster	Peco Gold	28010,15,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,252,60,10,10	monster	Peco Gold	28010,30,1000,2000,"gold_room_main::OnGoldKill"
+
+ordeal_3-1,213,154,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,231,154,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,249,154,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,257,139,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,273,139,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,273,160,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+
+ordeal_3-1,193,198,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,205,212,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,220,228,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,236,227,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,250,238,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,237,252,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+
+ordeal_3-1,146,212,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,145,232,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,146,248,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,158,257,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,160,273,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,140,272,10,10	monster	Peco Gold	28010,5,1000,2000,"gold_room_main::OnGoldKill"
+
+ordeal_3-1,101,191,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,87,204,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,74,218,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,61,228,10,10	monster	Peco Gold	28010,15,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,48,238,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,63,250,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+
+ordeal_3-1,86,145,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,72,145,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,54,146,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,43,157,10,10	monster	Peco Gold	28010,15,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,26,160,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,28,140,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+
+ordeal_3-1,110,102,10,10	monster	Peco Gold	28010,15,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,97,90,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,81,76,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,59,70,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,59,51,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+
+ordeal_3-1,153,84,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,153,64,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,152,55,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,142,42,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,139,29,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,157,27,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+
+ordeal_3-1,147,168,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,137,162,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,132,154,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,134,143,10,10	monster	Peco Gold	28010,5,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,141,133,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,150,147,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,150,133,10,10	monster	Peco Gold	28010,5,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,163,136,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,167,147,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,167,158,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,161,163,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+ordeal_3-1,147,159,10,10	monster	Peco Gold	28010,10,1000,2000,"gold_room_main::OnGoldKill"
+
+//==================================================
+// Main Controller
+//==================================================
+-	script	gold_room_main	-1,{
+
+OnInit:
+	.map$ = "ordeal_3-1";
+	.gold_item = 969;
+	.boost_min = 2;
+	.boost_max = 5;
+	.boost_duration = 3600;
+
+	query_sql "CREATE TABLE IF NOT EXISTS `goldroom_device_ip_limit` (`account_id` INT(11) NOT NULL, `char_id` INT(11) NOT NULL, `ip_address` VARCHAR(64) NOT NULL, `unique_id` VARCHAR(64) NOT NULL, `updated` INT(11) NOT NULL DEFAULT '0', PRIMARY KEY (`char_id`), KEY `ip_address` (`ip_address`), KEY `unique_id` (`unique_id`)) ENGINE=MyISAM";
+
+	setmapflag .map$,mf_nosave;
+	setmapflag .map$,mf_nomemo;
+	setmapflag .map$,mf_nobranch;
+	setmapflag .map$,mf_noexp;
+	setmapflag .map$,mf_nochat;
+	setmapflag .map$,mf_novending;
+	setmapflag .map$,mf_nowarpto;
+	setmapflag .map$,mf_noreturn;
+	setmapflag .map$,mf_nopenalty;
+	setmapflag .map$,mf_noskill;
+	setmapflag .map$,mf_loadevent;
+
+	bindatcmd "gron",   strnpcinfo(0)+"::OnGoldCommand",     1,99;
+	bindatcmd "groff",  strnpcinfo(0)+"::OnGoldOffCommand",  1,99;
+	bindatcmd "grtime", strnpcinfo(0)+"::OnGoldTimeCommand", 1,99;
+
+	donpcevent strnpcinfo(0)+"::OnRecoverBoostState";
+	end;
+
+OnPCLoadMapEvent:
+	if (strcharinfo(3) != .map$) end;
+
+	// GM 99 bypass
+	if (getgroupid() >= 99) end;
+
+	// If player somehow enters through warp/command, re-check inside map.
+	callfunc "F_GoldRoom_DeviceIPLimit", 1;
+	end;
+
+OnCheckBoostExpire:
+	if (!$GOLDROOM_ACTIVE) end;
+
+	.@now = gettimetick(2);
+	if ($GOLDROOM_END <= 0 || .@now >= $GOLDROOM_END) {
+		$GOLDROOM_ACTIVE = 0;
+		$GOLDROOM_START = 0;
+		$GOLDROOM_END = 0;
+		announce "Gold Boost has ended. Gold Room is back to normal.", bc_all, 0xFFA500;
+	}
+	end;
+
+OnRecoverBoostState:
+	if (!$GOLDROOM_ACTIVE) end;
+
+	.@now = gettimetick(2);
+	if ($GOLDROOM_START <= 0 || $GOLDROOM_END <= 0 || .@now >= $GOLDROOM_END) {
+		$GOLDROOM_ACTIVE = 0;
+		$GOLDROOM_START = 0;
+		$GOLDROOM_END = 0;
+		end;
+	}
+
+	.@remain = $GOLDROOM_END - .@now;
+	announce "Gold Boost is still active after server restart/reload! Remaining time: "
+		+ sprintf("%02d hour(s) %02d minute(s) %02d second(s)", .@remain / 3600, (.@remain % 3600) / 60, .@remain % 60), bc_all, 0xFFA500;
+	end;
+
+OnClock0100:
+OnClock0300:
+OnClock1300:
+OnClock1900:
+OnClock2300:
+	donpcevent strnpcinfo(0)+"::OnCheckBoostExpire";
+	if ($GOLDROOM_ACTIVE) end;
+	donpcevent strnpcinfo(0)+"::OnAutoBoostStart";
+	end;
+
+OnAutoBoostStart:
+	if ($GOLDROOM_ACTIVE) end;
+
+	$GOLDROOM_ACTIVE = 1;
+	$GOLDROOM_START = gettimetick(2);
+	$GOLDROOM_END = $GOLDROOM_START + .boost_duration;
+
+	announce "Gold Boost has started for 1 hour! Every kill now gives random bonus Gold x2~x5!", bc_all, 0xFFA500;
+	end;
+
+OnGoldKill:
+	donpcevent strnpcinfo(0)+"::OnCheckBoostExpire";
+
+	if (strcharinfo(3) != .map$) end;
+	if (!$GOLDROOM_ACTIVE) end;
+
+	.@amount = rand(.boost_min, .boost_max);
+
+	if (!checkweight(.gold_item, .@amount)) {
+		dispbottom "[Gold Room] Your inventory is full or overweight. Gold Boost reward was not added.";
+		dispbottom "[Gold Room] Please clear your inventory or reduce weight first.";
+		end;
+	}
+
+	getitem .gold_item, .@amount;
+	dispbottom "Gold Boost reward: Gold x" + .@amount;
+	end;
+
+OnGoldCommand:
+	donpcevent strnpcinfo(0)+"::OnCheckBoostExpire";
+
+	if ($GOLDROOM_ACTIVE) {
+		dispbottom "Gold Room boost is already active.";
+		end;
+	}
+
+	$GOLDROOM_ACTIVE = 1;
+	$GOLDROOM_START = gettimetick(2);
+	$GOLDROOM_END = $GOLDROOM_START + .boost_duration;
+
+	announce "GM " + strcharinfo(0) + " has activated Gold Boost for 1 hour! Every kill now gives random bonus Gold x2~x5!", bc_all, 0xFFA500;
+	dispbottom "Gold Room boost started manually for 1 hour.";
+	end;
+
+OnGoldOffCommand:
+	donpcevent strnpcinfo(0)+"::OnCheckBoostExpire";
+
+	if (!$GOLDROOM_ACTIVE) {
+		dispbottom "Gold Room boost is not active.";
+		end;
+	}
+
+	$GOLDROOM_ACTIVE = 0;
+	$GOLDROOM_START = 0;
+	$GOLDROOM_END = 0;
+
+	announce "GM " + strcharinfo(0) + " has ended Gold Boost manually. Gold Room is back to normal.", bc_all, 0xFFA500;
+	end;
+
+OnGoldTimeCommand:
+	donpcevent strnpcinfo(0)+"::OnCheckBoostExpire";
+
+	if ($GOLDROOM_ACTIVE) {
+		.@remain = $GOLDROOM_END - gettimetick(2);
+		if (.@remain < 0) .@remain = 0;
+
+		dispbottom "Gold Boost status: ACTIVE";
+		dispbottom "Time remaining: " + sprintf("%02d hour(s) %02d minute(s) %02d second(s)", .@remain / 3600, (.@remain % 3600) / 60, .@remain % 60);
+		dispbottom "Boost reward: random Gold x2~x5 per kill";
+		dispbottom "Normal reward: monster DB drop only";
+		dispbottom "Fixed boost times: 01:00, 03:00, 13:00, 19:00, 23:00";
+		end;
+	}
+
+	dispbottom "Gold Boost status: INACTIVE";
+	dispbottom "Normal reward: monster DB drop only";
+	dispbottom "Boost reward: random Gold x2~x5 per kill";
+	dispbottom "Fixed boost times: 01:00, 03:00, 13:00, 19:00, 23:00";
+	end;
+}
+
+//==================================================
+// Gold Room IP + Device Limit - SQL Safe Version
+// - Max 5 IDs/characters per same IP Address
+// - Max 5 IDs/characters per same Gepard Unique ID / Device
+// - Helps reduce VPN bypass because device Unique ID is also checked
+// - No getunits command used, suitable for older rAthena
+// - Mode 0: check before entering Gold Room
+// - Mode 1: check after loading Gold Room map, reject if over limit
+//==================================================
+function	script	F_GoldRoom_DeviceIPLimit	{
+	.@mode = getarg(0,0); // 0 = before warp, 1 = inside map load
+	.@map$ = "ordeal_3-1";
+	.@limit = 5;
+
+	// GM 99 bypass
+	if (getgroupid() >= 99)
+		return;
+
+	.@my_aid = getcharid(3);
+	.@my_cid = getcharid(0);
+	.@my_ip$ = getcharip();
+	.@my_uid$ = get_unique_id();
+
+	if (.@my_ip$ == "") {
+		if (.@mode == 0) {
+			mes "[Gold Room]";
+			mes "^FF0000IP Address not detected.^000000";
+			mes "Please relog and try again.";
+			close;
+		}
+		dispbottom "[Gold Room] IP Address not detected. Please relog and try again.";
+		warp "SavePoint",0,0;
+		end;
+	}
+
+	if (.@my_uid$ == "") {
+		if (.@mode == 0) {
+			mes "[Gold Room]";
+			mes "^FF0000Device ID not detected.^000000";
+			mes "Please relog and try again.";
+			close;
+		}
+		dispbottom "[Gold Room] Device ID not detected. Please relog and try again.";
+		warp "SavePoint",0,0;
+		end;
+	}
+
+	// Clean old records that are no longer online or no longer inside Gold Room.
+	query_sql "DELETE gr FROM `goldroom_device_ip_limit` gr LEFT JOIN `char` c ON gr.`char_id` = c.`char_id` WHERE c.`char_id` IS NULL OR c.`online` = '0' OR c.`last_map` <> '"+.@map$+"'";
+
+	// Count current same IP inside Gold Room.
+	query_sql "SELECT COUNT(*) FROM `goldroom_device_ip_limit` gr INNER JOIN `char` c ON gr.`char_id` = c.`char_id` WHERE gr.`ip_address` = '"+escape_sql(.@my_ip$)+"' AND c.`online` = '1' AND c.`last_map` = '"+.@map$+"'", .@ip_count;
+
+	// Count current same Device / Gepard Unique ID inside Gold Room.
+	query_sql "SELECT COUNT(*) FROM `goldroom_device_ip_limit` gr INNER JOIN `char` c ON gr.`char_id` = c.`char_id` WHERE gr.`unique_id` = '"+escape_sql(.@my_uid$)+"' AND c.`online` = '1' AND c.`last_map` = '"+.@map$+"'", .@uid_count;
+
+	// Before warp: block if same IP or same Device already has 5 inside.
+	if (.@mode == 0 && (.@ip_count >= .@limit || .@uid_count >= .@limit)) {
+		mes "[Gold Room]";
+		mes "^FF0000Gold Room Security Limit^000000";
+		mes "Max ^0000FF5 IDs^000000 only can enter this Gold Room.";
+		mes "Please leave with one of your characters first before entering again.";
+		close;
+	}
+
+	// Inside map load: register current character first.
+	if (.@mode == 1) {
+		query_sql "REPLACE INTO `goldroom_device_ip_limit` (`account_id`, `char_id`, `ip_address`, `unique_id`, `updated`) VALUES ('"+.@my_aid+"', '"+.@my_cid+"', '"+escape_sql(.@my_ip$)+"', '"+escape_sql(.@my_uid$)+"', '"+gettimetick(2)+"')";
+
+		query_sql "DELETE gr FROM `goldroom_device_ip_limit` gr LEFT JOIN `char` c ON gr.`char_id` = c.`char_id` WHERE c.`char_id` IS NULL OR c.`online` = '0' OR c.`last_map` <> '"+.@map$+"'";
+
+		query_sql "SELECT COUNT(*) FROM `goldroom_device_ip_limit` gr INNER JOIN `char` c ON gr.`char_id` = c.`char_id` WHERE gr.`ip_address` = '"+escape_sql(.@my_ip$)+"' AND c.`online` = '1' AND c.`last_map` = '"+.@map$+"'", .@ip_count;
+
+		query_sql "SELECT COUNT(*) FROM `goldroom_device_ip_limit` gr INNER JOIN `char` c ON gr.`char_id` = c.`char_id` WHERE gr.`unique_id` = '"+escape_sql(.@my_uid$)+"' AND c.`online` = '1' AND c.`last_map` = '"+.@map$+"'", .@uid_count;
+
+		if (.@ip_count > .@limit || .@uid_count > .@limit) {
+			query_sql "DELETE FROM `goldroom_device_ip_limit` WHERE `char_id` = '"+.@my_cid+"'";
+			dispbottom "[Gold Room] Max 5 IDs only can enter this Gold Room.";
+			dispbottom "[Gold Room] You have been moved out because the limit has been reached.";
+			warp "SavePoint",0,0;
+			end;
+		}
+	}
+
+	return;
+}

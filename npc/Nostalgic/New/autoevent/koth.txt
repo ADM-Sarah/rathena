@@ -1,0 +1,182 @@
+//=========================== KafraShop.net ===============================
+//=        _    _       ____                   _         
+//=       | |  / /     /  __\                 / \
+//=       | |_/ / ___ _| |____ ___ ___ _  ____| |___  _____ _____
+//=       |  _  \/ _ ' |  __/ '__/  _ ' |/ ___|  _  \/  _  \  __ \
+//=       | | \ | |_|  | |  | |  | |_|  | ___ | | | |  |_| | |_| |
+//=       \_/  \ \__,|_| |  \_/   \__,|_|\____/_| | |\____/| .___/
+//=             \_/    \_/                        \_/      | |
+//=                                                        \_/
+//=========================================================================
+//= Mini-Games : King of the Hill
+//================= Description ===========================================
+//= Reach the top of the hill.
+//================= Current Version =======================================
+//= 1.0
+//================= Changelogs ============================================
+//= 1.0 - Implementation
+//=========================================================================
+
+-	script	MG_KOTH	FAKE_NPC,{
+
+OnInit:
+	.evtName$ = "King of the Hill";
+	setwall("koth_ev", 245, 92, 9, DIR_EAST, false, "#kothWallA");
+	setwall("koth_ev", 245, 93, 9, DIR_EAST, false, "#kothWallB");
+	setwall("koth_ev", 243, 99, 12, DIR_NORTH, false, "#kothWallC");
+	setwall("koth_ev", 242, 99, 12, DIR_NORTH, false, "#kothWallD");
+	end;
+
+OnStart:
+	donpcevent(strnpcinfo(0)+"::OnKOTHInstruct");
+	end;
+
+OnKOTHInstruct:
+	$EVT_KOTH = 2;
+	sleep(2000);
+	mapannounce("koth_ev", "["+.evtName$+"] Here is the only rule for this event.", bc_npc|bc_blue);
+	sleep(2000);
+	mapannounce("koth_ev", "["+.evtName$+"] The first player who will reach the bridge at the end will win!", bc_npc|bc_blue);
+	sleep(2000);
+	mapannounce("koth_ev", "["+.evtName$+"] Let's begin the event...", bc_npc|bc_blue);
+	sleep(2000);
+	donpcevent(strnpcinfo(0)+"::OnKOTHCountdown");
+	end;
+
+OnKOTHCountdown:
+	areamonster("koth_ev", 224, 130, 244, 170, "Dead King", 1015, 5);
+	areamonster("koth_ev", 180, 165, 205, 190, "Dead King", 1015, 5);
+	areamonster("koth_ev", 150, 100, 165, 170, "Dead King", 1015, 5);
+	areamonster("koth_ev", 185, 140, 195, 155, "Dead King", 1015, 3);
+	setnpctimer(300000);
+	startnpctimer();
+	mapwarp("koth_ev", "koth_ev", 246, 105);
+	mapannounce("koth_ev", "["+.evtName$+"] The event will start in 10 seconds.",bc_npc|bc_blue);
+	end;
+
+OnTimer305000:
+	mapannounce("koth_ev", "----- 5 -----", bc_npc|bc_blue, 0x00ffff, FW_BOLD, 12);
+	end;
+
+OnTimer306000:
+	mapannounce("koth_ev", "----- 4 -----", bc_npc|bc_blue, 0x00ffff, FW_BOLD, 14);
+	end;
+
+OnTimer307000:
+	mapannounce("koth_ev", "----- 3 -----", bc_npc|bc_blue, 0x00ffff, FW_BOLD, 16);
+	end;
+
+OnTimer308000:
+	mapannounce("koth_ev", "----- 2 -----", bc_npc|bc_blue, 0x00ffff, FW_BOLD, 18);
+	end;
+
+OnTimer309000:
+	mapannounce("koth_ev", "----- 1 -----", bc_npc|bc_blue, 0x00ffff, FW_BOLD, 20);
+	end;
+
+OnTimer310000:
+	stopnpctimer();
+	delwall("#kothWallC");
+	delwall("#kothWallD");
+	mapannounce("koth_ev", "----- GO! -----", bc_npc|bc_blue, 0x00ffff, FW_BOLD, 20);
+	donpcevent(strnpcinfo(0)+"::OnFreePlayers");
+	end;
+
+OnFreePlayers:
+	for(.@i=0; .@i<getarraysize(.koth); .@i++) {
+		if (attachrid(.koth[.@i])) {
+			setpcblock(PCBLOCK_MOVE|PCBLOCK_IMMUNE, false);
+			if ($EVT_KOTH == 2) message(strcharinfo(0), "Start Running!");
+		}
+		detachrid;
+	}
+	end;
+
+OnStop:
+	stopnpctimer;
+	donpcevent(strnpcinfo(0)+"::OnFreePlayers");
+	.@cnt = getmapunits(BL_PC, "koth_ev", .@units[0]);
+	for (.@i=0; .@i<.@cnt; .@i++) {
+		if (attachrid(.@units[.@i])) {
+			if (@EVT_KOTH_WIN) @EVT_KOTH_WIN = 0;
+			else {
+				if ($EVT_KOTH_CONSO_POINT > 0) {
+					F_PointGain(1, $EVT_KOTH_CONSO_POINT, .evtName$);
+					F_ShowCurrency("#EVENTPOINT", "Event", $EVT_KOTH_CONSO_POINT);
+					EVENTWINS += $EVT_KOTH_CONSO_POINT;
+					EVENTWINS_KOTH += $EVT_KOTH_CONSO_POINT;
+				}
+			}
+		}
+		detachrid();
+	}
+	if (getmapusers("koth_ev") > 0)
+		mapwarp("koth_ev", "prontera", 149, 156);
+	deletearray .koth;
+	$EVT_KOTH = 0;
+	killmonsterall("koth_ev");
+	setwall("koth_ev", 243, 99, 12, DIR_NORTH, false, "#kothWallC");
+	setwall("koth_ev", 242, 99, 12, DIR_NORTH, false, "#kothWallD");
+	end;
+
+OnArrayStore:
+	for(.@i=0; .@i<getarraysize(.koth); .@i++) {
+		if (.koth[.@i] == getcharid(3))
+			deletearray(.koth[.@i], 1);
+	}
+	setarray .koth[getarraysize(.koth)], getcharid(3);
+	end;
+	
+OnRemovePlayer:
+	if (strcharinfo(3) != "koth_ev") end;
+	.@idx = inarray(.koth, getcharid(3));
+	if (.@idx == -1) end;
+	deletearray(.koth[.@idx], 1);
+	end;
+}
+
+koth_ev,212,140,5	script	Finish_Line	HIDDEN_WARP_NPC,4,7,{
+
+OnTouch:
+	if ($EVT_KOTH < 1) end;
+	if ($EVT_KOTH == 2) {
+		announce("[King of the Hill] "+strcharinfo(0)+" is the event winner!", bc_all|bc_blue);
+		@EVT_KOTH_WIN++;
+		$EVT_KOTH_WINNER$ = strcharinfo(0);
+		if (getarraysize($EVT_KOTH_ITEM) > 1) {
+			for (.@i=0; .@i<getarraysize($EVT_KOTH_ITEM); .@i+=2)
+				getitem($EVT_KOTH_ITEM[.@i], $EVT_KOTH_ITEM[.@i+1]);
+		}
+		if ($EVT_KOTH_POINT > 0) {
+			F_PointGain(0, $EVT_KOTH_POINT, getvariableofnpc(.evtName$, "MG_KOTH"));
+			F_ShowCurrency("#EVENTPOINT", "Event", $EVT_KOTH_POINT);
+			EVENTWINS += $EVT_KOTH_POINT;
+			EVENTWINS_KOTH += $EVT_KOTH_POINT;
+		}
+	}
+	sleep(250);
+	donpcevent("MG_KOTH::OnStop");
+	end;
+}
+
+koth_ev,241,88,5	script	King of the Hill#Exit	4_M_RUSKING,{
+	if (select("I want to leave this place!","I will stay and participate.") == 1){
+		doevent("MG_KOTH::OnRemovePlayer");
+		warp("prontera", 149, 156);
+	}
+	end;
+}
+
+koth_ev	mapflag	nobranch
+//koth_ev	mapflag	noconsume
+koth_ev	mapflag	nodrop
+//koth_ev	mapflag	noequip
+koth_ev	mapflag	noexp
+koth_ev	mapflag	noicewall
+koth_ev	mapflag	noloot
+koth_ev	mapflag	nomemo
+koth_ev	mapflag	nosave	SavePoint
+koth_ev	mapflag	noteleport
+koth_ev	mapflag	nowarp
+koth_ev	mapflag	nowarpto
+koth_ev	mapflag	pvp	off

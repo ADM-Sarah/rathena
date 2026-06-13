@@ -1,0 +1,708 @@
+//==============================================================
+// Streamer Giveaway Center
+// GM99 Register Streamer / Code / Reward / Approve Giveaway
+// Streamer submit 3 winners
+// Player claim with Streamer Code
+// Location: valmorra,190,116
+//==============================================================
+
+function	script	F_SG_IsGM	{
+	return (getgmlevel() >= 99);
+}
+
+function	script	F_SG_TodayKey	{
+	return gettime(DT_YEAR) * 10000 + gettime(DT_MONTH) * 100 + gettime(DT_DAYOFMONTH);
+}
+
+function	script	F_SG_IsStreamer	{
+	.@aid = getcharid(3);
+	query_sql("SELECT `account_id` FROM `streamer_giveaway_members` WHERE `account_id` = " + .@aid + " AND `active` = 1 LIMIT 1", .@check);
+	return (.@check > 0 || callfunc("F_SG_IsGM"));
+}
+
+function	script	F_SG_GetStreamerCodeMenu	{
+	.@aid = getcharid(3);
+
+	.@rows = query_sql(
+		"SELECT `code` FROM `streamer_giveaway_codes` WHERE `streamer_account_id` = " + .@aid + " AND `active` = 1 ORDER BY `code` ASC",
+		.@code$
+	);
+
+	if (.@rows <= 0)
+		return "";
+
+	.@menu$ = "";
+	for (.@i = 0; .@i < .@rows; .@i++)
+		.@menu$ += .@code$[.@i] + ":";
+
+	return .@menu$;
+}
+
+function	script	F_SG_ShowRewardList	{
+	.@rows = query_sql(
+		"SELECT `id`, `item_id`, `amount` FROM `streamer_giveaway_rewards` ORDER BY `id` ASC",
+		.@id, .@item, .@amt
+	);
+
+	mes "^0055FF[Giveaway Reward List]^000000";
+
+	if (.@rows <= 0) {
+		mes "^FF0000No reward has been configured yet.^000000";
+		return;
+	}
+
+	for (.@i = 0; .@i < .@rows; .@i++)
+		mes "^777777" + (.@i + 1) + ".^000000 " + getitemname(.@item[.@i]) + " x" + .@amt[.@i];
+
+	return;
+}
+
+function	script	F_SG_RegisterStreamer	{
+	mes "^FF0000[GM Panel]^000000";
+	mes "Enter streamer exact IGN:";
+	next;
+	input .@name$;
+
+	if (.@name$ == "") {
+		mes "^FF0000Invalid IGN.^000000";
+		return;
+	}
+
+	.@rows = query_sql(
+		"SELECT `char_id`, `account_id`, `name` FROM `char` WHERE `name` = '" + escape_sql(.@name$) + "' LIMIT 1",
+		.@cid, .@aid, .@real$
+	);
+
+	if (.@rows <= 0) {
+		mes "^FF0000Character not found.^000000";
+		return;
+	}
+
+	query_sql(
+		"INSERT INTO `streamer_giveaway_members` " +
+		"(`account_id`,`char_id`,`name`,`active`,`registered_by`,`registered_at`) VALUES (" +
+		.@aid + "," + .@cid + ",'" + escape_sql(.@real$) + "',1,'" + escape_sql(strcharinfo(0)) + "',NOW()) " +
+		"ON DUPLICATE KEY UPDATE `char_id`=VALUES(`char_id`),`name`=VALUES(`name`),`active`=1,`registered_by`=VALUES(`registered_by`),`registered_at`=NOW()"
+	);
+
+	mes "^00AA00Streamer registered successfully.^000000";
+	mes "Streamer: ^0055FF" + .@real$ + "^000000";
+	return;
+}
+
+function	script	F_SG_CreateCode	{
+	mes "^FF0000[GM Panel]^000000";
+	mes "Enter streamer exact IGN:";
+	next;
+	input .@name$;
+
+	.@rows = query_sql(
+		"SELECT `char_id`, `account_id`, `name` FROM `char` WHERE `name` = '" + escape_sql(.@name$) + "' LIMIT 1",
+		.@cid, .@aid, .@real$
+	);
+
+	if (.@rows <= 0) {
+		mes "^FF0000Character not found.^000000";
+		return;
+	}
+
+	mes "Enter streamer code:";
+	mes "Example: ^00AA00BALUGATV^000000";
+	next;
+	input .@code$;
+
+	if (.@code$ == "") {
+		mes "^FF0000Invalid code.^000000";
+		return;
+	}
+
+	.@code$ = strtoupper(.@code$);
+
+	.@exist = query_sql(
+		"SELECT `id` FROM `streamer_giveaway_codes` WHERE `code` = '" + escape_sql(.@code$) + "' LIMIT 1",
+		.@exist_id
+	);
+
+	if (.@exist > 0) {
+		mes "^FF0000This code already exists.^000000";
+		return;
+	}
+
+	query_sql(
+		"INSERT INTO `streamer_giveaway_codes` " +
+		"(`streamer_account_id`,`streamer_char_id`,`streamer_name`,`code`,`active`,`created_by`,`created_at`) VALUES (" +
+		.@aid + "," + .@cid + ",'" + escape_sql(.@real$) + "','" + escape_sql(.@code$) + "',1,'" + escape_sql(strcharinfo(0)) + "',NOW())"
+	);
+
+	mes "^00AA00Streamer code created successfully.^000000";
+	mes "Streamer: ^0055FF" + .@real$ + "^000000";
+	mes "Code: ^00AA00" + .@code$ + "^000000";
+	return;
+}
+
+function	script	F_SG_ShowStreamerList	{
+	.@rows = query_sql(
+		"SELECT `name`, `account_id`, `char_id`, `active` FROM `streamer_giveaway_members` ORDER BY `name` ASC",
+		.@name$, .@aid, .@cid, .@active
+	);
+
+	mes "^0055FF[Registered Streamers]^000000";
+
+	if (.@rows <= 0) {
+		mes "^FF0000No streamer registered yet.^000000";
+		return;
+	}
+
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		mes "^777777" + (.@i + 1) + ".^000000 " + .@name$[.@i];
+		mes "AID: " + .@aid[.@i] + " | CID: " + .@cid[.@i];
+		mes "Status: " + ((.@active[.@i]) ? "^00AA00Active^000000" : "^FF0000Disabled^000000");
+	}
+	return;
+}
+
+function	script	F_SG_ShowCodeList	{
+	.@rows = query_sql(
+		"SELECT `streamer_name`, `code`, `active` FROM `streamer_giveaway_codes` ORDER BY `streamer_name` ASC",
+		.@name$, .@code$, .@active
+	);
+
+	mes "^0055FF[Streamer Code List]^000000";
+
+	if (.@rows <= 0) {
+		mes "^FF0000No streamer code found.^000000";
+		return;
+	}
+
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		mes "^777777" + (.@i + 1) + ".^000000 " + .@name$[.@i];
+		mes "Code: ^00AA00" + .@code$[.@i] + "^000000";
+		mes "Status: " + ((.@active[.@i]) ? "^00AA00Active^000000" : "^FF0000Disabled^000000");
+	}
+	return;
+}
+
+function	script	F_SG_AddReward	{
+	mes "^FF0000[GM Panel]^000000";
+	mes "Enter reward Item ID:";
+	next;
+	input .@item;
+
+	if (getitemname(.@item) == "null") {
+		mes "^FF0000Invalid item ID.^000000";
+		return;
+	}
+
+	mes "Enter amount:";
+	next;
+	input .@amount;
+
+	if (.@amount <= 0) {
+		mes "^FF0000Invalid amount.^000000";
+		return;
+	}
+
+	query_sql(
+		"INSERT INTO `streamer_giveaway_rewards` (`item_id`,`amount`,`created_by`,`created_at`) VALUES (" +
+		.@item + "," + .@amount + ",'" + escape_sql(strcharinfo(0)) + "',NOW())"
+	);
+
+	mes "^00AA00Reward added successfully.^000000";
+	mes getitemname(.@item) + " x" + .@amount;
+	return;
+}
+
+function	script	F_SG_RemoveReward	{
+	.@rows = query_sql(
+		"SELECT `id`, `item_id`, `amount` FROM `streamer_giveaway_rewards` ORDER BY `id` ASC",
+		.@id, .@item, .@amt
+	);
+
+	if (.@rows <= 0) {
+		mes "^FF0000No reward found.^000000";
+		return;
+	}
+
+	.@menu$ = "";
+	for (.@i = 0; .@i < .@rows; .@i++)
+		.@menu$ += getitemname(.@item[.@i]) + " x" + .@amt[.@i] + ":";
+
+	.@menu$ += "Cancel";
+
+	mes "^FF0000[GM Panel]^000000";
+	mes "Select reward to remove:";
+	next;
+
+	.@sel = select(.@menu$);
+
+	if (.@sel == .@rows + 1)
+		return;
+
+	.@idx = .@sel - 1;
+
+	query_sql("DELETE FROM `streamer_giveaway_rewards` WHERE `id` = " + .@id[.@idx] + " LIMIT 1");
+
+	mes "^00AA00Reward removed successfully.^000000";
+	return;
+}
+
+function	script	F_SG_SubmitGiveaway	{
+	.@aid = getcharid(3);
+
+	.@code_menu$ = callfunc("F_SG_GetStreamerCodeMenu");
+
+	if (.@code_menu$ == "") {
+		mes "^FF0000You do not have active streamer code.^000000";
+		mes "Please contact GM.";
+		return;
+	}
+
+	.@reward_check = query_sql("SELECT `id` FROM `streamer_giveaway_rewards` LIMIT 1", .@dummy);
+
+	if (.@reward_check <= 0) {
+		mes "^FF0000Giveaway reward has not been configured yet.^000000";
+		mes "Please contact GM.";
+		return;
+	}
+
+	mes "^0055FF[Streamer Giveaway]^000000";
+	mes "Please select your streamer code.";
+	next;
+
+	.@code_sel = select(.@code_menu$);
+	explode(.@codes$[0], .@code_menu$, ":");
+	.@code$ = .@codes$[.@code_sel - 1];
+
+	mes "^0055FF[Streamer Giveaway]^000000";
+	mes "Enter giveaway title:";
+	mes "Example: Live Giveaway";
+	next;
+	input .@event$;
+
+	if (.@event$ == "")
+		.@event$ = "Streamer Live Giveaway";
+
+	deletearray .@winner_cid[0], 3;
+	deletearray .@winner_aid[0], 3;
+	deletearray .@winner_name$[0], 3;
+
+	for (.@i = 0; .@i < 3; .@i++) {
+		mes "^0055FF[Streamer Giveaway]^000000";
+		mes "Enter winner IGN #" + (.@i + 1) + ".";
+		next;
+		input .@name$;
+
+		if (.@name$ == "") {
+			mes "^FF0000Invalid IGN.^000000";
+			.@i--;
+			continue;
+		}
+
+		.@rows = query_sql(
+			"SELECT `char_id`, `account_id`, `name` FROM `char` WHERE `name` = '" + escape_sql(.@name$) + "' LIMIT 1",
+			.@cid, .@waid, .@real$
+		);
+
+		if (.@rows <= 0) {
+			mes "^FF0000IGN not found: " + .@name$ + "^000000";
+			.@i--;
+			continue;
+		}
+
+		.@dup = 0;
+		for (.@j = 0; .@j < .@count; .@j++) {
+			if (.@winner_cid[.@j] == .@cid)
+				.@dup = 1;
+		}
+
+		if (.@dup) {
+			mes "^FF0000This winner already added.^000000";
+			.@i--;
+			continue;
+		}
+
+		.@winner_cid[.@count] = .@cid;
+		.@winner_aid[.@count] = .@waid;
+		.@winner_name$[.@count] = .@real$;
+		.@count++;
+	}
+
+	mes "^0055FF[Streamer Giveaway]^000000";
+	mes "Code: ^00AA00" + .@code$ + "^000000";
+	mes "Total Winners: ^FF9900" + .@count + "^000000";
+	mes "Submit to GM approval?";
+	next;
+
+	if (select("Submit:Cancel") == 2)
+		return;
+
+	query_sql(
+		"SELECT `streamer_char_id`, `streamer_name` FROM `streamer_giveaway_codes` WHERE `code` = '" + escape_sql(.@code$) + "' LIMIT 1",
+		.@scid, .@sname$
+	);
+
+	for (.@i = 0; .@i < .@count; .@i++) {
+		query_sql(
+			"INSERT INTO `streamer_giveaway_entries` " +
+			"(`event_name`,`streamer_account_id`,`streamer_char_id`,`streamer_name`,`streamer_code`,`winner_account_id`,`winner_char_id`,`winner_name`,`status`,`created_at`) VALUES (" +
+			"'" + escape_sql(.@event$) + "'," + .@aid + "," + .@scid + ",'" + escape_sql(.@sname$) + "','" + escape_sql(.@code$) + "'," +
+			.@winner_aid[.@i] + "," + .@winner_cid[.@i] + ",'" + escape_sql(.@winner_name$[.@i]) + "',0,NOW())"
+		);
+	}
+
+	announce "[Streamer Giveaway] " + .@sname$ + " submitted giveaway winners. Waiting for GM approval.", bc_all;
+
+	mes "^00AA00Giveaway submitted successfully.^000000";
+	mes "Please wait for GM approval.";
+	return;
+}
+
+function	script	F_SG_ApproveGiveaway	{
+	.@rows = query_sql(
+		"SELECT `id`,`event_name`,`streamer_name`,`streamer_code`,`winner_name` FROM `streamer_giveaway_entries` WHERE `status` = 0 ORDER BY `id` ASC LIMIT 50",
+		.@id, .@event$, .@sname$, .@code$, .@winner$
+	);
+
+	if (.@rows <= 0) {
+		mes "^FF0000No pending giveaway approval.^000000";
+		return;
+	}
+
+	.@menu$ = "";
+	for (.@i = 0; .@i < .@rows; .@i++)
+		.@menu$ += "#" + .@id[.@i] + " " + .@winner$[.@i] + " [" + .@code$[.@i] + "]:";
+
+	.@menu$ += "Cancel";
+
+	mes "^FF0000[GM Approval]^000000";
+	mes "Select pending giveaway:";
+	next;
+
+	.@sel = select(.@menu$);
+
+	if (.@sel == .@rows + 1)
+		return;
+
+	.@idx = .@sel - 1;
+
+	mes "^FF0000[GM Approval]^000000";
+	mes "Event: ^0055FF" + .@event$[.@idx] + "^000000";
+	mes "Streamer: ^00AA00" + .@sname$[.@idx] + "^000000";
+	mes "Code: ^FF9900" + .@code$[.@idx] + "^000000";
+	mes "Winner: ^0055FF" + .@winner$[.@idx] + "^000000";
+	next;
+
+	.@action = select("Approve:Reject:Cancel");
+
+	if (.@action == 3)
+		return;
+
+	if (.@action == 2) {
+		query_sql(
+			"UPDATE `streamer_giveaway_entries` SET `status` = 2, `approved_by` = '" + escape_sql(strcharinfo(0)) + "', `approved_at` = NOW() WHERE `id` = " + .@id[.@idx] + " LIMIT 1"
+		);
+		mes "^FF0000Giveaway rejected.^000000";
+		return;
+	}
+
+	query_sql(
+		"UPDATE `streamer_giveaway_entries` SET `status` = 1, `approved_by` = '" + escape_sql(strcharinfo(0)) + "', `approved_at` = NOW() WHERE `id` = " + .@id[.@idx] + " LIMIT 1"
+	);
+
+	announce "[Streamer Giveaway] Giveaway reward for " + .@winner$[.@idx] + " has been approved!", bc_all;
+
+	mes "^00AA00Giveaway approved.^000000";
+	mes "Player must enter streamer code to claim reward.";
+	return;
+}
+
+function	script	F_SG_PlayerClaim	{
+	.@cid = getcharid(0);
+	.@aid = getcharid(3);
+	.@today = callfunc("F_SG_TodayKey");
+
+	mes "^0055FF[Streamer Giveaway]^000000";
+	mes "Enter streamer code to claim your reward:";
+	next;
+	input .@code$;
+
+	if (.@code$ == "") {
+		mes "^FF0000Invalid code.^000000";
+		return;
+	}
+
+	.@code$ = strtoupper(.@code$);
+
+	.@rows = query_sql(
+		"SELECT `id`,`streamer_name`,`event_name` FROM `streamer_giveaway_entries` WHERE `winner_char_id` = " + .@cid + " AND `streamer_code` = '" + escape_sql(.@code$) + "' AND `status` = 1 ORDER BY `id` ASC",
+		.@gid, .@sname$, .@event$
+	);
+
+	if (.@rows <= 0) {
+		mes "^FF0000No approved giveaway reward found with this code.^000000";
+		mes "Please check the code given by the streamer.";
+		return;
+	}
+
+	.@reward_rows = query_sql(
+		"SELECT `item_id`,`amount` FROM `streamer_giveaway_rewards` ORDER BY `id` ASC",
+		.@item, .@amt
+	);
+
+	if (.@reward_rows <= 0) {
+		mes "^FF0000No giveaway reward has been configured.^000000";
+		mes "Please contact GM.";
+		return;
+	}
+
+	for (.@g = 0; .@g < .@rows; .@g++) {
+		for (.@i = 0; .@i < .@reward_rows; .@i++) {
+			if (!checkweight(.@item[.@i], .@amt[.@i])) {
+				mes "^FF0000You are overweight.^000000";
+				mes "Please make inventory space first.";
+				return;
+			}
+		}
+	}
+
+	for (.@g = 0; .@g < .@rows; .@g++) {
+		for (.@i = 0; .@i < .@reward_rows; .@i++)
+			getitem .@item[.@i], .@amt[.@i];
+
+		query_sql(
+			"UPDATE `streamer_giveaway_entries` SET `status` = 3, `claimed_at` = NOW() WHERE `id` = " + .@gid[.@g] + " LIMIT 1"
+		);
+
+		query_sql(
+			"INSERT INTO `streamer_giveaway_claim_logs` " +
+			"(`entry_id`,`account_id`,`char_id`,`player_name`,`streamer_name`,`streamer_code`,`claim_date`,`claimed_at`) VALUES (" +
+			.@gid[.@g] + "," + .@aid + "," + .@cid + ",'" + escape_sql(strcharinfo(0)) + "','" + escape_sql(.@sname$[.@g]) + "','" + escape_sql(.@code$) + "'," + .@today + ",NOW())"
+		);
+	}
+
+	announce "[Streamer Giveaway] " + strcharinfo(0) + " claimed giveaway rewards from " + .@sname$[0] + "!", bc_all;
+
+	mes "^00AA00Congratulations!^000000";
+	mes "You have claimed your giveaway reward.";
+	callfunc("F_SG_ShowRewardList");
+	return;
+}
+
+function	script	F_SG_ClaimHistoryToday	{
+	.@today = callfunc("F_SG_TodayKey");
+
+	.@rows = query_sql(
+		"SELECT `player_name`,`streamer_name`,`streamer_code`,DATE_FORMAT(`claimed_at`, '%Y-%m-%d %H:%i:%s') FROM `streamer_giveaway_claim_logs` WHERE `claim_date` = " + .@today + " ORDER BY `id` DESC LIMIT 50",
+		.@pname$, .@sname$, .@code$, .@date$
+	);
+
+	mes "^FF0000[Claim History Today]^000000";
+	mes "Based on server time.";
+	mes "@servertime date key: ^FF9900" + .@today + "^000000";
+
+	if (.@rows <= 0) {
+		mes "^777777No claim history today.^000000";
+		return;
+	}
+
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		mes "^777777" + (.@i + 1) + ".^000000 Player: ^0055FF" + .@pname$[.@i] + "^000000";
+		mes "Streamer: ^00AA00" + .@sname$[.@i] + "^000000";
+		mes "Code: ^FF9900" + .@code$[.@i] + "^000000";
+		mes "Time: " + .@date$[.@i];
+	}
+	return;
+}
+
+//==============================================================
+// NPC
+//==============================================================
+
+valmorra,190,116,3	script	Streamer Giveaway Center	4_F_KAFRA1,{
+
+	mes "^0055FF[Streamer Giveaway Center]^000000";
+	mes "Welcome to the official Streamer Giveaway Center.";
+	next;
+
+	if (callfunc("F_SG_IsGM")) {
+		switch(select(
+			"^00AA00Claim Giveaway Reward^000000",
+			"^0055FFSubmit Live Giveaway Winners^000000",
+			"^FF0000GM Admin Panel^000000",
+			"Cancel"
+		)) {
+		case 1:
+			callfunc("F_SG_PlayerClaim");
+			close;
+		case 2:
+			callfunc("F_SG_SubmitGiveaway");
+			close;
+		case 3:
+			goto L_GMMenu;
+		default:
+			close;
+		}
+	}
+
+	if (callfunc("F_SG_IsStreamer")) {
+		switch(select(
+			"^00AA00Claim Giveaway Reward^000000",
+			"^0055FFSubmit Live Giveaway Winners^000000",
+			"Cancel"
+		)) {
+		case 1:
+			callfunc("F_SG_PlayerClaim");
+			close;
+		case 2:
+			callfunc("F_SG_SubmitGiveaway");
+			close;
+		default:
+			close;
+		}
+	}
+
+	switch(select(
+		"^00AA00Claim Giveaway Reward^000000",
+		"Cancel"
+	)) {
+	case 1:
+		callfunc("F_SG_PlayerClaim");
+		close;
+	default:
+		close;
+	}
+
+L_GMMenu:
+	mes "^FF0000[GM Admin Panel]^000000";
+	mes "Please select an option.";
+	next;
+
+	switch(select(
+		"^00AA00Register Streamer^000000",
+		"^00AA00Register Streamer Code^000000",
+		"^0055FFView Streamer List^000000",
+		"^0055FFView Streamer Code List^000000",
+		"^FF9900Approve Giveaway Winners^000000",
+		"^00AA00Add Giveaway Reward^000000",
+		"^FF0000Remove Giveaway Reward^000000",
+		"^0055FFShow Giveaway Reward List^000000",
+		"^FF9900View Claim History Today^000000",
+		"Exit"
+	)) {
+	case 1:
+		callfunc("F_SG_RegisterStreamer");
+		close;
+	case 2:
+		callfunc("F_SG_CreateCode");
+		close;
+	case 3:
+		callfunc("F_SG_ShowStreamerList");
+		close;
+	case 4:
+		callfunc("F_SG_ShowCodeList");
+		close;
+	case 5:
+		callfunc("F_SG_ApproveGiveaway");
+		close;
+	case 6:
+		callfunc("F_SG_AddReward");
+		close;
+	case 7:
+		callfunc("F_SG_RemoveReward");
+		close;
+	case 8:
+		callfunc("F_SG_ShowRewardList");
+		close;
+	case 9:
+		callfunc("F_SG_ClaimHistoryToday");
+		close;
+	default:
+		close;
+	}
+
+OnPCLoginEvent:
+	query_sql("SELECT COUNT(*) FROM `streamer_giveaway_entries` WHERE `winner_char_id` = " + getcharid(0) + " AND `status` = 1", .@pending);
+
+	if (.@pending > 0)
+		dispbottom "[Streamer Giveaway] You have approved giveaway reward. Claim it at Streamer Giveaway Center using the streamer code.";
+
+	end;
+
+OnInit:
+
+	query_sql(
+		"CREATE TABLE IF NOT EXISTS `streamer_giveaway_members` (" +
+		"`account_id` INT(11) NOT NULL," +
+		"`char_id` INT(11) NOT NULL," +
+		"`name` VARCHAR(30) NOT NULL," +
+		"`active` TINYINT(1) NOT NULL DEFAULT 1," +
+		"`registered_by` VARCHAR(30) DEFAULT NULL," +
+		"`registered_at` DATETIME DEFAULT NULL," +
+		"PRIMARY KEY (`account_id`)" +
+		") ENGINE=MyISAM DEFAULT CHARSET=utf8"
+	);
+
+	query_sql(
+		"CREATE TABLE IF NOT EXISTS `streamer_giveaway_codes` (" +
+		"`id` INT(11) NOT NULL AUTO_INCREMENT," +
+		"`streamer_account_id` INT(11) NOT NULL," +
+		"`streamer_char_id` INT(11) NOT NULL," +
+		"`streamer_name` VARCHAR(30) NOT NULL," +
+		"`code` VARCHAR(50) NOT NULL," +
+		"`active` TINYINT(1) NOT NULL DEFAULT 1," +
+		"`created_by` VARCHAR(30) DEFAULT NULL," +
+		"`created_at` DATETIME DEFAULT NULL," +
+		"PRIMARY KEY (`id`)," +
+		"UNIQUE KEY `code` (`code`)" +
+		") ENGINE=MyISAM DEFAULT CHARSET=utf8"
+	);
+
+	query_sql(
+		"CREATE TABLE IF NOT EXISTS `streamer_giveaway_rewards` (" +
+		"`id` INT(11) NOT NULL AUTO_INCREMENT," +
+		"`item_id` INT(11) NOT NULL," +
+		"`amount` INT(11) NOT NULL DEFAULT 1," +
+		"`created_by` VARCHAR(30) DEFAULT NULL," +
+		"`created_at` DATETIME DEFAULT NULL," +
+		"PRIMARY KEY (`id`)" +
+		") ENGINE=MyISAM DEFAULT CHARSET=utf8"
+	);
+
+	query_sql(
+		"CREATE TABLE IF NOT EXISTS `streamer_giveaway_entries` (" +
+		"`id` INT(11) NOT NULL AUTO_INCREMENT," +
+		"`event_name` VARCHAR(100) NOT NULL," +
+		"`streamer_account_id` INT(11) NOT NULL," +
+		"`streamer_char_id` INT(11) NOT NULL," +
+		"`streamer_name` VARCHAR(30) NOT NULL," +
+		"`streamer_code` VARCHAR(50) NOT NULL," +
+		"`winner_account_id` INT(11) NOT NULL," +
+		"`winner_char_id` INT(11) NOT NULL," +
+		"`winner_name` VARCHAR(30) NOT NULL," +
+		"`status` TINYINT(1) NOT NULL DEFAULT 0," +
+		"`approved_by` VARCHAR(30) DEFAULT NULL," +
+		"`created_at` DATETIME DEFAULT NULL," +
+		"`approved_at` DATETIME DEFAULT NULL," +
+		"`claimed_at` DATETIME DEFAULT NULL," +
+		"PRIMARY KEY (`id`)" +
+		") ENGINE=MyISAM DEFAULT CHARSET=utf8"
+	);
+
+	query_sql(
+		"CREATE TABLE IF NOT EXISTS `streamer_giveaway_claim_logs` (" +
+		"`id` INT(11) NOT NULL AUTO_INCREMENT," +
+		"`entry_id` INT(11) NOT NULL," +
+		"`account_id` INT(11) NOT NULL," +
+		"`char_id` INT(11) NOT NULL," +
+		"`player_name` VARCHAR(30) NOT NULL," +
+		"`streamer_name` VARCHAR(30) NOT NULL," +
+		"`streamer_code` VARCHAR(50) NOT NULL," +
+		"`claim_date` INT(11) NOT NULL," +
+		"`claimed_at` DATETIME DEFAULT NULL," +
+		"PRIMARY KEY (`id`)" +
+		") ENGINE=MyISAM DEFAULT CHARSET=utf8"
+	);
+
+	waitingroom "Streamer Giveaway",0;
+	end;
+}

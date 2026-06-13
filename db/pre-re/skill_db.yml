@@ -226,37 +226,37 @@ Body:
     Name: SM_PROVOKE
     Description: Provoke
     MaxLevel: 10
-    TargetType: Attack
-    DamageFlags:
-      NoDamage: true
-    Range: 9
-    Hit: Single
-    HitCount: 1
-    Duration1: 30000
-    Cooldown: 1000
-    Requires:
-      SpCost:
-        - Level: 1
-          Amount: 4
-        - Level: 2
-          Amount: 5
-        - Level: 3
-          Amount: 6
-        - Level: 4
-          Amount: 7
-        - Level: 5
-          Amount: 8
-        - Level: 6
-          Amount: 9
-        - Level: 7
-          Amount: 10
-        - Level: 8
-          Amount: 11
-        - Level: 9
-          Amount: 12
-        - Level: 10
-          Amount: 13
-    Status: Provoke
+    # TargetType: Attack
+    # DamageFlags:
+    #   NoDamage: true
+    # Range: 9
+    # Hit: Single
+    # HitCount: 1
+    # Duration1: 30000
+    # Cooldown: 1000
+    # Requires:
+    #   SpCost:
+    #     - Level: 1
+    #       Amount: 4
+    #     - Level: 2
+    #       Amount: 5
+    #     - Level: 3
+    #       Amount: 6
+    #     - Level: 4
+    #       Amount: 7
+    #     - Level: 5
+    #       Amount: 8
+    #     - Level: 6
+    #       Amount: 9
+    #     - Level: 7
+    #       Amount: 10
+    #     - Level: 8
+    #       Amount: 11
+    #     - Level: 9
+    #       Amount: 12
+    #     - Level: 10
+    #       Amount: 13
+    # Status: Provoke
   - Id: 7
     Name: SM_MAGNUM
     Description: Magnum Break
@@ -2288,7 +2288,7 @@ Body:
       Skill:
         Plagiarism: true
         Reproduce: true
-    CastTime: 700
+    CastTime: 500
     Requires:
       SpCost:
         - Level: 1
@@ -3033,6 +3033,10 @@ Body:
           Amount: 53
       Status:
         Sight: true
+  - Id: 82
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL1
+    MaxLevel: 1
   - Id: 83
     Name: WZ_METEOR
     Description: Meteor Storm
@@ -6641,6 +6645,22 @@ Body:
     MaxLevel: 1
     Flags:
       IsQuest: true
+  - Id: 239
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL2
+    MaxLevel: 1
+  - Id: 240
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL3
+    MaxLevel: 1
+  - Id: 241
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL4
+    MaxLevel: 1
+  - Id: 242
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL5
+    MaxLevel: 1
   - Id: 243
     Name: AM_CALLHOMUN
     Description: Call Homunculus
@@ -6663,6 +6683,14 @@ Body:
       NoDamage: true
     Requires:
       SpCost: 50
+  - Id: 245
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL6
+    MaxLevel: 1
+  - Id: 246
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL7
+    MaxLevel: 1
   - Id: 247
     Name: AM_RESURRECTHOMUN
     Description: Homunculus Resurrection
@@ -7325,17 +7353,17 @@ Body:
         Time: 2500
       - Level: 5
         Time: 2000
-    AfterCastActDelay:
-      - Level: 1
-        Time: 3000
-      - Level: 2
-        Time: 2500
-      - Level: 3
-        Time: 2000
-      - Level: 4
-        Time: 1500
-      - Level: 5
-        Time: 1000
+    # AfterCastActDelay:
+    #   - Level: 1
+    #     Time: 3000
+    #   - Level: 2
+    #     Time: 2500
+    #   - Level: 3
+    #     Time: 2000
+    #   - Level: 4
+    #     Time: 1500
+    #   - Level: 5
+    #     Time: 1000
     Duration1: 300000
     Requires:
       SpCost: 1
@@ -8150,7 +8178,7 @@ Body:
       AllowWhenPerforming: true
     Hit: Single
     HitCount: 1
-    Duration2: 5000
+    Duration2: 0
     Requires:
       SpCost: 1
   - Id: 305
@@ -8405,6 +8433,10 @@ Body:
       Flag:
         Ensemble: true
     Status: Siegfried
+  - Id: 314
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL8
+    MaxLevel: 1
   - Id: 315
     Name: BA_MUSICALLESSON
     Description: Music Lessons
@@ -9610,15 +9642,15 @@ Body:
         Time: 1500
     Duration1:
       - Level: 1
-        Time: 20000
+        Time: 35000
       - Level: 2
-        Time: 40000
+        Time: 35000
       - Level: 3
-        Time: 60000
+        Time: 35000
       - Level: 4
-        Time: 80000
+        Time: 35000
       - Level: 5
-        Time: 100000
+        Time: 35000
     Requires:
       SpCost:
         - Level: 1
@@ -9863,45 +9895,45 @@ Body:
     Description: Battle Chant
     MaxLevel: 10
     Type: Misc
-    TargetType: Self
-    DamageFlags:
-      NoDamage: true
-      IgnoreFlee: true
-    Flags:
-      Toggleable: true
-    Hit: Single
-    HitCount: 1
-    Duration1: 60000
-    Duration2: 60000
-    Requires:
-      SpCost:
-        - Level: 1
-          Amount: 80
-        - Level: 2
-          Amount: 80
-        - Level: 3
-          Amount: 80
-        - Level: 4
-          Amount: 80
-        - Level: 5
-          Amount: 80
-        - Level: 6
-          Amount: 100
-        - Level: 7
-          Amount: 100
-        - Level: 8
-          Amount: 100
-        - Level: 9
-          Amount: 100
-        - Level: 10
-          Amount: 100
-    Unit:
-      Id: Gospel
-      Layout: -1
-      Interval: 10000
-      Flag:
-        NoOverlap: true
-    Status: Gospel
+    # TargetType: Self
+    # DamageFlags:
+    #   NoDamage: true
+    #   IgnoreFlee: true
+    # Flags:
+    #   Toggleable: true
+    # Hit: Single
+    # HitCount: 1
+    # Duration1: 60000
+    # Duration2: 60000
+    # Requires:
+    #   SpCost:
+    #     - Level: 1
+    #       Amount: 80
+    #     - Level: 2
+    #       Amount: 80
+    #     - Level: 3
+    #       Amount: 80
+    #     - Level: 4
+    #       Amount: 80
+    #     - Level: 5
+    #       Amount: 80
+    #     - Level: 6
+    #       Amount: 100
+    #     - Level: 7
+    #       Amount: 100
+    #     - Level: 8
+    #       Amount: 100
+    #     - Level: 9
+    #       Amount: 100
+    #     - Level: 10
+    #       Amount: 100
+    # Unit:
+    #   Id: Gospel
+    #   Layout: -1
+    #   Interval: 10000
+    #   Flag:
+    #     NoOverlap: true
+    # Status: Gospel
   - Id: 370
     Name: CH_PALMSTRIKE
     Description: Raging Palm Strike
@@ -10121,6 +10153,10 @@ Body:
     DamageFlags:
       NoDamage: true
     HitCount: 1
+  - Id: 377
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
   - Id: 378
     Name: ASC_EDP
     Description: Enchant Deadly Poison
@@ -10560,6 +10596,10 @@ Body:
         - Level: 5
           Amount: 30
     Status: RejectSword
+  - Id: 391
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
   - Id: 392
     Name: CR_ALCHEMY
     Description: Alchemy
@@ -10908,37 +10948,37 @@ Body:
     Name: PF_MINDBREAKER
     Description: Mind Breaker
     MaxLevel: 5
-    TargetType: Attack
-    DamageFlags:
-      NoDamage: true
-    Range: 9
-    Hit: Single
-    HitCount: 1
-    AfterCastActDelay:
-      - Level: 1
-        Time: 800
-      - Level: 2
-        Time: 900
-      - Level: 3
-        Time: 1000
-      - Level: 4
-        Time: 1100
-      - Level: 5
-        Time: 1200
-    Duration1: 30000
-    Requires:
-      SpCost:
-        - Level: 1
-          Amount: 12
-        - Level: 2
-          Amount: 15
-        - Level: 3
-          Amount: 18
-        - Level: 4
-          Amount: 21
-        - Level: 5
-          Amount: 24
-    Status: MindBreaker
+    # TargetType: Attack
+    # DamageFlags:
+    #   NoDamage: true
+    # Range: 9
+    # Hit: Single
+    # HitCount: 1
+    # AfterCastActDelay:
+    #   - Level: 1
+    #     Time: 800
+    #   - Level: 2
+    #     Time: 900
+    #   - Level: 3
+    #     Time: 1000
+    #   - Level: 4
+    #     Time: 1100
+    #   - Level: 5
+    #     Time: 1200
+    # Duration1: 30000
+    # Requires:
+    #   SpCost:
+    #     - Level: 1
+    #       Amount: 12
+    #     - Level: 2
+    #       Amount: 15
+    #     - Level: 3
+    #       Amount: 18
+    #     - Level: 4
+    #       Amount: 21
+    #     - Level: 5
+    #       Amount: 24
+    # Status: MindBreaker
   - Id: 403
     Name: PF_MEMORIZE
     Description: Foresight
@@ -11025,8 +11065,8 @@ Body:
     HitCount: 1
     Element: Weapon
     SplashArea: 2
-    CastTime: 500
-    AfterCastActDelay: 500
+    CastTime: 0
+    AfterCastActDelay: 0
     Duration2:
       - Level: 1
         Time: 30000
@@ -14495,6 +14535,7 @@ Body:
       NoDamage: true
     Flags:
       AllowWhenHidden: true
+    AfterCastActDelay: 1000
     Range:
       - Level: 1
         Size: 5
@@ -14512,7 +14553,6 @@ Body:
       Skill:
         Plagiarism: true
         Reproduce: true
-    AfterCastActDelay: 1000
     Requires:
       SpCost: 10
       Status:
@@ -15354,6 +15394,114 @@ Body:
           Amount: 95
         - Level: 10
           Amount: 100
+  - Id: 545
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 546
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 547
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 548
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 549
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 550
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 551
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 552
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 553
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 554
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 555
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 556
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 557
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 558
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 559
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 560
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 561
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 562
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 563
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 564
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 565
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 566
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 567
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 568
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 569
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 570
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 571
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
   - Id: 572
     Name: SL_DEATHKNIGHT
     Description: SL_DEATHKNIGHT
@@ -15392,6 +15540,15 @@ Body:
     Name: SL_NINJA
     Description: SL_NINJA
     MaxLevel: 5
+    Type: Magic
+    TargetType: Support
+    DamageFlags:
+      NoDamage: true
+    Flags:
+      NoTargetSelf: true
+    Range: 9
+    Hit: Single
+    HitCount: 1
     CastTime: 1000
     AfterCastActDelay: 500
     Duration1:
@@ -15405,10 +15562,32 @@ Body:
         Time: 300000
       - Level: 5
         Time: 350000
+    Requires:
+      SpCost:
+        - Level: 1
+          Amount: 460
+        - Level: 2
+          Amount: 360
+        - Level: 3
+          Amount: 260
+        - Level: 4
+          Amount: 160
+        - Level: 5
+          Amount: 60
+    Status: Spirit
   - Id: 575
     Name: SL_GUNNER
     Description: SL_GUNNER
     MaxLevel: 5
+    Type: Magic
+    TargetType: Support
+    DamageFlags:
+      NoDamage: true
+    Flags:
+      NoTargetSelf: true
+    Range: 9
+    Hit: Single
+    HitCount: 1
     CastTime: 1000
     AfterCastActDelay: 500
     Duration1:
@@ -15422,6 +15601,327 @@ Body:
         Time: 300000
       - Level: 5
         Time: 350000
+    Requires:
+      SpCost:
+        - Level: 1
+          Amount: 460
+        - Level: 2
+          Amount: 360
+        - Level: 3
+          Amount: 260
+        - Level: 4
+          Amount: 160
+        - Level: 5
+          Amount: 60
+    Status: Spirit
+  - Id: 576
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 577
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 578
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 579
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 580
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 581
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 582
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 583
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 584
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 585
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 586
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 587
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 588
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 589
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 590
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 591
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 592
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 593
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 594
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 595
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 596
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 597
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 598
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 599
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 600
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 601
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 602
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 603
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 604
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 605
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 606
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 607
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 608
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 609
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 610
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 611
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 612
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 613
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 614
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 615
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 616
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 617
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 618
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 619
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 620
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 621
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 622
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 623
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 624
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 625
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 626
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 627
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 628
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 629
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 630
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 631
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 632
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 633
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 634
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 635
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 636
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 637
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 638
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 639
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 640
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 641
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 642
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 643
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 644
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 645
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 646
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 647
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 648
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 649
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 650
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 651
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 652
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
   - Id: 653
     Name: NPC_EARTHQUAKE
     Description: Earthquake
@@ -16372,6 +16872,10 @@ Body:
     SplashArea: -1
     Cooldown: 300000
     Status: PartyFlee
+  - Id: 694
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
   - Id: 695
     Name: ALL_DREAM_SUMMERNIGHT
     Description: Summer Night Dream
@@ -16379,6 +16883,10 @@ Body:
     Flags:
       IsNpc: true
     AfterCastActDelay: 12000
+  - Id: 696
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
   - Id: 697
     Name: ALL_REVERSEORCISH
     Description: Reverse Orcish
@@ -16407,6 +16915,34 @@ Body:
     AfterCastActDelay: 20000
     Requires:
       SpCost: 1
+  - Id: 699
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 700
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 701
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 702
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 703
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 704
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 705
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
   - Id: 706
     Name: NPC_VENOMFOG
     Description: Venom Fog
@@ -16439,6 +16975,18 @@ Body:
     MaxLevel: 1
     Flags:
       ShowScale: true
+  - Id: 709
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 710
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 711
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
   - Id: 712
     Name: NPC_PULSESTRIKE2
     Description: Pulse Strike 2
@@ -16450,6 +16998,10 @@ Body:
   - Id: 714
     Name: NPC_DANCINGBLADE_ATK
     Description: Dancing Blade Attack
+    MaxLevel: 1
+  - Id: 715
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
     MaxLevel: 1
   - Id: 716
     Name: NPC_MAXPAIN
@@ -16479,6 +17031,14 @@ Body:
     Hit: Single
     HitCount: 1
     SplashArea: 18
+  - Id: 718
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 719
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
   - Id: 720
     Name: NPC_JACKFROST
     Description: Jack Frost 2
@@ -16768,6 +17328,233 @@ Body:
       Flag:
         NoReiteration: true
         NoOverlap: true
+  - Id: 746
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 747
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 748
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 749
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 750
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 751
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 752
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 753
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 754
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 755
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 756
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 757
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 758
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 759
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 760
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 761
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 762
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 763
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 764
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 765
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 766
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 767
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 768
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 769
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 770
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 771
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 772
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 773
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 774
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 775
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 776
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 777
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 778
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 779
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 780
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 781
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 782
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 783
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 784
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 785
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 786
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 787
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 788
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 789
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 790
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 791
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 792
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 793
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 794
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 795
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 796
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 797
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 798
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 799
+    Name: UNT_DUMMYSKILL
+    Description: DUMMYSKILL
+    MaxLevel: 1
+  - Id: 800
+    Name: NV_AUTOATTACK
+    Description: Auto Attack
+    MaxLevel: 1
+    TargetType: Self
+    DamageFlags:
+      NoDamage: true
+    Flags:
+      IsQuest: true
+    Hit: Single
+    HitCount: 1
   - Id: 1001
     Name: KN_CHARGEATK
     Description: Charge Attack

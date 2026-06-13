@@ -1,0 +1,119 @@
+payon,187,294,4	script	Supply Exchanger	820,{
+
+	mes "[ ^00AA00Supply Exchanger^000000 ]";
+	mes "Hello adventurer!";
+	mes "You can exchange your supplies here.";
+	mes "";
+	mes "^00AA00Information:^000000";
+	mes "Exchange rate is ^FF0000100 supplies^000000";
+	mes "to ^0000FF1 supply box^000000.";
+	next;
+
+	mes "[ ^00AA00Supply Exchanger^000000 ]";
+	mes "Available Exchange:";
+	mes "^00AA00100x^000000 Yggberry > ^00AA001x^000000 Yggberry Box (100)";
+	mes "^00AA00100x^000000 Yggseed > ^00AA001x^000000 Yggseed Box (100)";
+	mes "^00AA00100x^000000 Aloevera > ^00AA001x^000000 Aloevera Box (100)";
+	mes "^00AA00100x^000000 Resentment > ^00AA001x^000000 Resentment Box (100)";
+	next;
+
+	switch(select(
+		"^00AA00[ - ]^000000 100x Yggberry ^FF0000>^000000 1x Yggberry Box (100)",
+		"^00AA00[ - ]^000000 100x Yggseed ^FF0000>^000000 1x Yggseed Box (100)",
+		"^00AA00[ - ]^000000 100x Aloevera ^FF0000>^000000 1x Aloevera Box (100)",
+		"^00AA00[ - ]^000000 100x Resentment ^FF0000>^000000 1x Resentment Box (100)"
+	)){
+		case 1:
+			callsub S_Exchange, .ItemA1, .ItemA2;
+			close;
+
+		case 2:
+			callsub S_Exchange, .ItemB1, .ItemB2;
+			close;
+
+		case 3:
+			callsub S_Exchange, .ItemC1, .ItemC2;
+			close;
+
+		case 4:
+			callsub S_Exchange, .ItemD1, .ItemD2;
+			close;
+	}
+
+S_Exchange:
+	.@item_from = getarg(0);
+	.@item_to = getarg(1);
+
+	mes "[ ^00AA00Supply Exchanger^000000 ]";
+	mes "Exchange Rate:";
+	mes "^FF0000100x^000000 "+getitemname(.@item_from);
+	mes "to";
+	mes "^0000FF1x^000000 "+getitemname(.@item_to);
+	next;
+
+	mes "[ ^00AA00Supply Exchanger^000000 ]";
+	mes "How many ^0000FF"+getitemname(.@item_to)+"^000000 do you want?";
+	input .@count;
+
+	.@trade = .@count * 100;
+
+	if (.@count <= 0) {
+		next;
+		mes "[ ^00AA00Supply Exchanger^000000 ]";
+		mes "Please enter more than ^FF00000^000000.";
+		close;
+	}
+
+	if (countitem(.@item_to) >= 5000) {
+		next;
+		mes "[ ^00AA00Supply Exchanger^000000 ]";
+		mes "Your "+getitemname(.@item_to)+" is more than ^FF00005,000^000000.";
+		mes "Please put some in storage first.";
+		close;
+	}
+
+	if (countitem(.@item_from) < .@trade) {
+		next;
+		mes "[ ^00AA00Supply Exchanger^000000 ]";
+		mes "You don't have enough item.";
+		mes "Required: ^FF0000"+.@trade+"x^000000 "+getitemname(.@item_from);
+		close;
+	}
+
+	next;
+	mes "[ ^00AA00Supply Exchanger^000000 ]";
+	mes "Exchange Confirmation:";
+	mes "^FF0000"+.@trade+"x^000000 "+getitemname(.@item_from);
+	mes "to";
+	mes "^0000FF"+.@count+"x^000000 "+getitemname(.@item_to);
+	next;
+
+	if (select("Confirm Exchange:Cancel") == 2) {
+		mes "[ ^00AA00Supply Exchanger^000000 ]";
+		mes "Exchange cancelled.";
+		close;
+	}
+
+	delitem .@item_from, .@trade;
+	getitem .@item_to, .@count;
+
+	mes "[ ^00AA00Supply Exchanger^000000 ]";
+	mes "Exchange successful!";
+	close;
+
+OnInit:
+	.ItemA1 = 607;
+	.ItemA2 = 33021;
+
+	.ItemB1 = 608;
+	.ItemB2 = 33022;
+
+	.ItemC1 = 606;
+	.ItemC2 = 33023;
+
+	.ItemD1 = 12030;
+	.ItemD2 = 33024;
+
+	waitingroom "Supply Exchanger",0;
+	end;
+}

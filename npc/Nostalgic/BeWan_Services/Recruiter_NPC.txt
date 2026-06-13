@@ -1,0 +1,53 @@
+prontera,183,214,4	script	Recruiter NPC	743,{
+
+if(#RecruiterTime > gettimetick(2)){
+	mes "[ Recruiter Manager ]";
+	mes "Sorry you have to wait for ^FF0000"+Time2Str(#RecruiterTime)+"^000000";
+	close;
+}else{
+	switch(select("~ Looking for a party", "~ Looking for party members", "~ Looking for a guild", "~ Recruiting guild members")){
+		case 1:
+			set #RecruiterTime, gettimetick(2)+300;
+			announce "Player "+strcharinfo(0)+" ("+BaseLevel+"/"+JobLevel+" "+jobname(Class)+") is looking for a party.",BC_ALL,0xD2B4DE;
+			end;
+			
+		case 2:
+			switch(select("~ Support", "~ Hitter", "~ Greeder")){
+				case 1:
+					set #RecruiterTime, gettimetick(2)+300;
+					announce "Player "+strcharinfo(0)+" ("+BaseLevel+"/"+JobLevel+" "+jobname(Class)+") is looking for a party member (Support).",BC_ALL,0xD2B4DE;
+					end;
+					
+				case 2:
+					set #RecruiterTime, gettimetick(2)+300;
+					announce "Player "+strcharinfo(0)+" ("+BaseLevel+"/"+JobLevel+" "+jobname(Class)+") is looking for a party member (Hitter).",BC_ALL,0xD2B4DE;
+					end;
+					
+				case 3:
+					set #RecruiterTime, gettimetick(2)+300;
+					announce "Player "+strcharinfo(0)+" ("+BaseLevel+"/"+JobLevel+" "+jobname(Class)+") is looking for a party member (Greeder).",BC_ALL,0xD2B4DE;
+					end;
+			}
+			
+		case 3:
+			set #RecruiterTime, gettimetick(2)+300;
+			announce "Player "+strcharinfo(0)+" ("+BaseLevel+"/"+JobLevel+" "+jobname(Class)+") is looking for a guild.",BC_ALL,0xD2B4DE;
+			end;
+			
+		case 4:
+			switch(select("~ Support", "~ Hitter")){
+				case 1:
+					set #RecruiterTime, gettimetick(2)+300;
+					announce "Player "+strcharinfo(0)+" ("+BaseLevel+"/"+JobLevel+" "+jobname(Class)+") is looking for a guild member (Support).",BC_ALL,0xD2B4DE;
+					end;
+					
+				case 2:
+					set #RecruiterTime, gettimetick(2)+300;
+					announce "Player "+strcharinfo(0)+" ("+BaseLevel+"/"+JobLevel+" "+jobname(Class)+") is looking for a guild member (Hitter).",BC_ALL,0xD2B4DE;
+					end;
+			}
+	}
+}
+
+
+}

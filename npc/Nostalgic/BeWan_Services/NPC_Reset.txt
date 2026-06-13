@@ -1,0 +1,106 @@
+//===== rAthena Source Modification =======================================
+//= Reset Manager
+//===== By: ==================================================
+//= BeWan
+//https://rathena.org/board/profile/62232-bewan/
+//===== Current Version: =====================================
+//= 1.0
+//===== SQL: =====================================
+/*
+CREATE TABLE `reset_data` (
+  `ID` int NOT NULL,
+  `account_id` int NOT NULL,
+  `char_id` int NOT NULL,
+  `player_name` varchar(255) NOT NULL,
+  `count` int NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+ALTER TABLE `reset_data`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `char_id` (`char_id`);
+
+ALTER TABLE `reset_data`
+  MODIFY `ID` int NOT NULL AUTO_INCREMENT;
+*/
+//=========================================================================
+
+valmorra,180,142,4	script	Reset Manager	124,{
+
+query_sql( "SELECT `char_id`, `count` FROM `reset_data` WHERE `char_id` = '"+getcharid(0)+"' ", .UserID, .Count );
+set .@Reset,1000000;
+set .@Reset2, .@Reset * .Count;
+	
+mes "[Reset Manager]";
+if(.UserID != getcharid(0)){
+	mes "Reset Status: "+ callfunc("F_InsertComma",.@Reset) +" zeny";
+	mes "Reset Skills: "+ callfunc("F_InsertComma",.@Reset) +" zeny";
+}else{
+	mes "Reset Status: "+ callfunc("F_InsertComma",.@Reset2) +" zeny";
+	mes "Reset Skills: "+ callfunc("F_InsertComma",.@Reset2) +" zeny";
+}
+next;
+switch(select("~ Cancel", "~ Reset Status", "~ Reset Skills")){
+	case 1:
+		close;
+	
+	case 2: //Reset Status
+		if(.UserID != getcharid(0)){
+			if (Zeny < .@Reset) { 
+				mes "[Reset Manager]"; 
+				mes "Sorry, you don't have enough zeny."; 
+				close; 
+			}else{
+				set Zeny, Zeny - .@Reset;
+				query_sql "INSERT INTO `reset_data` VALUE (NULL, "+ getcharid(3) +", "+ getcharid(0) +", '"+ escape_sql( strcharinfo(0) ) +"', 1 ) ON DUPLICATE KEY UPDATE `count` = `count` + 1";
+				query_sql("UPDATE `reset_data` SET `count` = '2' WHERE `char_id` = '"+getcharid(0)+"'");
+				ResetStatus;
+				mes "There you go!";
+				close;
+			}
+		}else{
+			if (Zeny < .@Reset2){
+				mes "[Reset Manager]"; 
+				mes "Sorry, you don't have enough zeny."; 
+				close;
+			}else{
+				set Zeny, Zeny - .@Reset2;
+				query_sql "INSERT INTO `reset_data` VALUE (NULL, '"+getcharid(3)+"', '"+getcharid(0)+"', '"+ escape_sql( strcharinfo(0) ) +"', 1 ) ON DUPLICATE KEY UPDATE `count` = `count` + 1";
+				ResetStatus;
+				mes "There you go!";
+				close;
+			}
+		}
+		
+
+	case 3: //Reset Skills
+		if(.UserID != getcharid(0)){
+			if (Zeny < .@Reset) { 
+				mes "[Reset Manager]"; 
+				mes "Sorry, you don't have enough zeny."; 
+				close; 
+			}else{
+				set Zeny, Zeny - .@Reset;
+				query_sql "INSERT INTO `reset_data` VALUE (NULL, "+ getcharid(3) +", "+ getcharid(0) +", '"+ escape_sql( strcharinfo(0) ) +"', 1 ) ON DUPLICATE KEY UPDATE `count` = `count` + 1";
+				query_sql("UPDATE `reset_data` SET `count` = '2' WHERE `char_id` = '"+getcharid(0)+"'");
+				sc_end_class;
+				ResetSkill;
+				mes "There you go!";
+				close;
+			}
+		}else{
+			if (Zeny < .@Reset2){
+				mes "[Reset Manager]"; 
+				mes "Sorry, you don't have enough zeny."; 
+				close;
+			}else{
+				set Zeny, Zeny - .@Reset2;
+				query_sql "INSERT INTO `reset_data` VALUE (NULL, '"+getcharid(3)+"', '"+getcharid(0)+"', '"+ escape_sql( strcharinfo(0) ) +"', 1 ) ON DUPLICATE KEY UPDATE `count` = `count` + 1";
+				sc_end_class;
+				ResetSkill;
+				mes "There you go!";
+				close;
+			}
+		}
+}
+
+}

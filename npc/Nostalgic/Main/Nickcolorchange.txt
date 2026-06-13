@@ -1,0 +1,42 @@
+//============================================================
+// Nostalgic RO - Color Nick Box Functions
+//============================================================
+
+function	script	F_ColorNickEffect	{
+	specialeffect2 568;
+	return;
+}
+
+function	script	F_WoEColorNickBox	{
+	if (rand(1,100) <= 10)
+		.@color = 0;
+	else
+		.@color = rand(1,40);
+
+	atcommand "@colornick " + .@color;
+	callfunc "F_ColorNickEffect";
+
+	if (.@color == 0)
+		dispbottom "[WoE Color Box] Your nickname color has been reset to default.";
+	else
+		dispbottom "[WoE Color Box] Your nickname color changed to Color No. " + .@color + ".";
+
+	end;
+}
+
+function	script	F_PvPColorNickBox	{
+	if (rand(1,100) <= 10)
+		.@color = 0;
+	else
+		.@color = rand(41,80);
+
+	atcommand "@colornick " + .@color;
+	callfunc "F_ColorNickEffect";
+
+	if (.@color == 0)
+		dispbottom "[PvP Color Box] Your nickname color has been reset to default.";
+	else
+		dispbottom "[PvP Color Box] Your nickname color changed to Color No. " + .@color + ".";
+
+	end;
+}

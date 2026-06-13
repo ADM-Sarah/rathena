@@ -1,0 +1,259 @@
+//==================================================
+// Dice Event - FINAL FIXED
+// Auto Schedule:
+// - 13:45
+// - 18:45
+// - 20:45
+// - 23:30
+//
+// 5-minute warning before each start
+// Join command: @dice
+// Reward:
+// - 33017 x2 (Credit)
+// - 51001 x2 (Nostalgic Pot Box)
+// Warp all losers / exits to SavePoint
+//==================================================
+
+function	script	F_DiceWarpAllToSave	{
+	.@map$ = getarg(0);
+
+	.@count = getmapunits(BL_PC, .@map$, .@aid);
+	for (.@i = 0; .@i < .@count; .@i++) {
+		if (attachrid(.@aid[.@i])) {
+			warp "SavePoint",0,0;
+			detachrid;
+		}
+	}
+	return;
+}
+
+-	script	Event_Dice	-1,{
+
+OnInit:
+	.Map$ = "quiz_02";
+	.JoinX = 55;
+	.JoinY = 76;
+
+	setarray .item,
+		33017,2,
+		51001,2;
+
+	setarray .@mapflag,
+		mf_nowarp,
+		mf_nowarpto,
+		mf_noskill,
+		mf_noteleport,
+		mf_nomemo,
+		mf_nosave,
+		mf_noicewall,
+		mf_nobranch,
+		mf_noreturn;
+
+	for ( .@i = 0; .@i < getarraysize(.@mapflag); .@i++ )
+		setmapflag .Map$, .@mapflag[.@i];
+
+	.start = 0;
+
+	for (.@i = 1; .@i <= 4; .@i++) {
+		disablenpc "Back#"+.@i;
+		disablenpc "Box "+.@i;
+	}
+
+	bindatcmd "dice", strnpcinfo(3)+"::OnAtDice", 0, 99;
+	end;
+
+OnClock1340:
+OnClock1840:
+OnClock2040:
+OnClock2325:
+	if (.start) end;
+	announce "Dice: Dice Event will start in 5 minutes!", bc_all, 0x0ceedb;
+	announce "Dice: To join, use @dice.", bc_all, 0x0ceedb;
+	end;
+
+OnClock1345:
+OnClock1845:
+OnClock2045:
+OnClock2330:
+	donpcevent strnpcinfo(3)+"::OnStart";
+	end;
+
+OnAtDice:
+	if (.start != 1) {
+		dispbottom "Dice: Registration is not open right now.";
+		end;
+	}
+
+	if (strcharinfo(3) == .Map$) {
+		dispbottom "Dice: You are already inside the event map.";
+		end;
+	}
+
+	warp .Map$, .JoinX, .JoinY;
+	dispbottom "Dice: You have joined the event. Good luck!";
+	end;
+
+OnStart:
+	if ( .start ) end;
+
+	.start = 1;
+	killmonsterall .Map$;
+
+	for(.@i = 1; .@i <= 4; .@i++) {
+		disablenpc "Back#"+.@i;
+		disablenpc "Box "+.@i;
+	}
+
+	announce "Dice: We are going to have a Dice event.",0;
+	sleep 10000;
+	announce "Dice: For those who want to join, use @dice.",0;
+	sleep 10000;
+	announce "Dice: After 1 minute the event entry will close.",0;
+	sleep 10000;
+	announce "Dice: So please if you want to join, use @dice.",0;
+	sleep 60000;
+
+	announce "Dice: The entry to the event is now closed.",bc_all,0x0ceedb;
+
+	if ( !getmapusers(.Map$) ) {
+		announce "Dice: Not enough participants.",bc_all,0x0ceedb;
+		.start = 0;
+		callfunc "F_DiceWarpAllToSave", .Map$;
+		end;
+	}
+
+	.start = 2;
+
+	sleep 3500;
+	mapannounce .Map$,"We're about to begin the event.",bc_map,0x0ceedb;
+	sleep 2500;
+	mapannounce .Map$,"The rules are simple.",bc_map,0x0ceedb;
+	sleep 2500;
+	mapannounce .Map$,"You'll have to enter one of the 4 available boxes.",bc_map,0x0ceedb;
+	sleep 2500;
+	mapannounce .Map$,"Then a four-sided dice will be thrown. The number it shows will be the safe number.",bc_map,0x0ceedb;
+	sleep 2500;
+	mapannounce .Map$,"Remember to enter the boxes!",bc_map,0x0ceedb;
+	sleep 2000;
+	mapannounce .Map$,"That's all. Let's begin.",bc_map,0x0ceedb;
+	sleep 3000;
+
+	.@end = 0;
+	.@rounds = 0;
+
+	while ( !.@end && .start && .@rounds < 5 ) {
+
+		for(.@i = 1; .@i <= 4; .@i++) {
+			enablenpc "Back#"+.@i;
+			enablenpc "Box "+.@i;
+		}
+
+		sleep 1500;
+		mapannounce .Map$,"The dice will soon be thrown. Enter the desired box by clicking the metallic number inside it.",bc_map,0x0ceedb;
+		sleep 20000;
+
+		for(.@i = 5; .@i > 0; .@i--) {
+			mapannounce .Map$, .@i+"...", bc_map, 0x0ceedb;
+			sleep 990;
+		}
+
+		for(.@i = 1; .@i <= 4; .@i++) {
+			disablenpc "Back#"+.@i;
+			disablenpc "Box "+.@i;
+		}
+
+		areawarp .Map$,32,95,79,76,"SavePoint",0,0;
+		areawarp .Map$,80,85,80,76,"SavePoint",0,0;
+		areawarp .Map$,31,85,31,76,"SavePoint",0,0;
+
+		.@n = rand(1,4);
+		mapannounce .Map$,"Time! The dice shows the number "+.@n+".",bc_map,0x0ceedb;
+
+		setarray .@cords1[0],33,41;
+		setarray .@cords2[0],45,53;
+		setarray .@cords3[0],57,65;
+		setarray .@cords4[0],69,77;
+
+		for(.@i = 1; .@i <= 4; .@i++) {
+			if ( .@i != .@n )
+				areawarp .Map$,getd(".@cords"+.@i+"[0]"),52,getd(".@cords"+.@i+"[1]"),73,"SavePoint",0,0;
+		}
+
+		sleep 3000;
+		.@players = getmapusers(.Map$);
+
+		if ( .@players <= 3 && .start && .@players ) {
+			mapannounce .Map$,"The event is now over! Winners, enjoy your prizes!",bc_map,0x0ceedb;
+
+			.@size = getmapunits(BL_PC,.Map$,.@aid);
+			.start = 0;
+
+			for(.@i = 0; .@i < .@size; .@i++) {
+				if (attachrid(.@aid[.@i])) {
+					announce strcharinfo(0)+" has won the Dice Event.",bc_all,0x0ceedb;
+
+					getitem 33017,2;
+					getitem 51001,2;
+					dispbottom "Dice: You received your reward!";
+
+					warp "SavePoint",0,0;
+					detachrid;
+				}
+			}
+			end;
+		}
+		else if ( !.@players ) {
+			.@end = 1;
+			.start = 0;
+			announce "Dice: There was no winner in the Dice Event.",bc_all,0x0ceedb;
+			callfunc "F_DiceWarpAllToSave", .Map$;
+			end;
+		}
+		else {
+			mapannounce .Map$,"There's no clear winner yet, let's roll the dice again.",bc_map,0x0ceedb;
+		}
+
+		.@rounds++;
+	}
+
+	if ( .@rounds >= 5 ) {
+		mapannounce .Map$,"There was no clear winner after all rounds. The event is now over.",bc_map,0x0ceedb;
+		.start = 0;
+		callfunc "F_DiceWarpAllToSave", .Map$;
+	}
+	end;
+}
+
+quiz_02,37,80,3	script	Box 1	HIDDEN_NPC,{
+	warp "quiz_02",rand(33,41),rand(52,73);
+	end;
+}
+
+quiz_02,49,80,3	script	Box 2	HIDDEN_NPC,{
+	warp "quiz_02",rand(45,53),rand(52,73);
+	end;
+}
+
+quiz_02,61,80,3	script	Box 3	HIDDEN_NPC,{
+	warp "quiz_02",rand(57,65),rand(52,73);
+	end;
+}
+
+quiz_02,73,80,3	script	Box 4	HIDDEN_NPC,{
+	warp "quiz_02",rand(69,77),rand(52,73);
+	end;
+}
+
+quiz_02,55,90,3	script	Back to SavePoint#dice	4_BULLETIN_BOARD2,{
+	warp "SavePoint",0,0;
+	end;
+}
+
+quiz_02,37,64,3	script	Back#1	4_BULLETIN_BOARD2,{
+	warp "quiz_02",55,76;
+	end;
+}
+
+quiz_02,49,64,3	duplicate(Back#1)	Back#2	4_BULLETIN_BOARD2
+quiz_02,61,64,3	duplicate(Back#1)	Back#3	4_BULLETIN_BOARD2
+quiz_02,73,64,3	duplicate(Back#1)	Back#4	4_BULLETIN_BOARD2

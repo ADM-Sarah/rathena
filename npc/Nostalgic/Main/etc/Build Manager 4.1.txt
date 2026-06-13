@@ -1,0 +1,189 @@
+/*
+DROP TABLE IF EXISTS `build_manager`;
+
+CREATE TABLE `build_manager` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `char_id` INT NOT NULL,
+  `build_name` VARCHAR(32) NOT NULL,
+  `str` SMALLINT NOT NULL,
+  `agi` SMALLINT NOT NULL,
+  `vit` SMALLINT NOT NULL,
+  `intt` SMALLINT NOT NULL,
+  `dex` SMALLINT NOT NULL,
+  `luk` SMALLINT NOT NULL,
+  `status_point` INT NOT NULL,
+  `created` DATETIME NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX (`char_id`)
+) ENGINE=MyISAM;
+*/
+
+valmorra,187,179,3	script	Build Manager	4_M_GUNSLINGER,{
+
+	.@max_builds = 5;
+	.@save_cost = 15000000;
+	.@load_cost = 5000000;
+	.@cid = getcharid(0);
+
+	mes "[Build Manager]";
+	mes "Welcome.";
+	mes "You may save up to "+.@max_builds+" builds.";
+	next;
+
+	switch(select("Save Build:Load Build:Delete Build:Cancel")) {
+
+	//=========================================
+	// SAVE BUILD
+	//=========================================
+	case 1:
+
+		query_sql(
+		"SELECT COUNT(*) FROM build_manager WHERE char_id='"+.@cid+"'",
+		.@count);
+
+		if (.@count >= .@max_builds) {
+			mes "[Build Manager]";
+			mes "You already reached the maximum of "+.@max_builds+" builds.";
+			close;
+		}
+
+		if (Zeny < .@save_cost) {
+			mes "[Build Manager]";
+			mes "You need "+F_InsertComma(.@save_cost)+" Zeny.";
+			close;
+		}
+
+		mes "[Build Manager]";
+		mes "Enter a build name.";
+		input .@name$;
+
+		if (.@name$ == "") {
+			mes "Invalid name.";
+			close;
+		}
+
+		if (select("Save this build?:Cancel") == 2)
+			close;
+
+		Zeny -= .@save_cost;
+
+		query_sql(
+		"INSERT INTO build_manager "
+		+"(char_id,build_name,str,agi,vit,intt,dex,luk,status_point,created)"
+		+" VALUES ("
+		+"'"+.@cid+"',"
+		+"'"+escape_sql(.@name$)+"',"
+		+"'"+readparam(bStr)+"',"
+		+"'"+readparam(bAgi)+"',"
+		+"'"+readparam(bVit)+"',"
+		+"'"+readparam(bInt)+"',"
+		+"'"+readparam(bDex)+"',"
+		+"'"+readparam(bLuk)+"',"
+		+"'"+StatusPoint+"',"
+		+"NOW())");
+
+		mes "[Build Manager]";
+		mes "Build saved successfully.";
+		specialeffect2 EF_ANGEL2;
+		close;
+
+	//=========================================
+	// LOAD BUILD
+	//=========================================
+	case 2:
+
+		query_sql(
+		"SELECT id,build_name FROM build_manager WHERE char_id='"+.@cid+"'",
+		.@id,.@name$);
+
+		if (!getarraysize(.@id)) {
+			mes "[Build Manager]";
+			mes "You have no saved builds.";
+			close;
+		}
+
+		for (.@i = 0; .@i < getarraysize(.@id); .@i++)
+			.@menu$ += .@name$[.@i] + ":";
+
+		.@sel = select(.@menu$)-1;
+
+		if (Zeny < .@load_cost) {
+			mes "[Build Manager]";
+			mes "You need "+F_InsertComma(.@load_cost)+" Zeny.";
+			close;
+		}
+
+		query_sql(
+		"SELECT str,agi,vit,intt,dex,luk,status_point "
+		+"FROM build_manager WHERE id='"+.@id[.@sel]+"'",
+		.@str,.@agi,.@vit,.@int,.@dex,.@luk,.@status);
+
+		if (Weight > 0) {
+			mes "[Build Manager]";
+			mes "Please empty your inventory before switching builds.";
+			close;
+		}
+
+		Zeny -= .@load_cost;
+
+		resetstatus;
+
+		if (readparam(bStr) < .@str)
+			statusup2 bStr,.@str-1;
+
+		if (readparam(bAgi) < .@agi)
+			statusup2 bAgi,.@agi-1;
+
+		if (readparam(bVit) < .@vit)
+			statusup2 bVit,.@vit-1;
+
+		if (readparam(bInt) < .@int)
+			statusup2 bInt,.@int-1;
+
+		if (readparam(bDex) < .@dex)
+			statusup2 bDex,.@dex-1;
+
+		if (readparam(bLuk) < .@luk)
+			statusup2 bLuk,.@luk-1;
+
+		StatusPoint = .@status;
+
+		mes "[Build Manager]";
+		mes "Build loaded successfully.";
+		specialeffect2 EF_ANGEL2;
+		close;
+
+	//=========================================
+	// DELETE BUILD
+	//=========================================
+	case 3:
+
+		query_sql(
+		"SELECT id,build_name FROM build_manager WHERE char_id='"+.@cid+"'",
+		.@id,.@name$);
+
+		if (!getarraysize(.@id)) {
+			mes "[Build Manager]";
+			mes "No builds found.";
+			close;
+		}
+
+		for (.@i = 0; .@i < getarraysize(.@id); .@i++)
+			.@menu$ += .@name$[.@i] + ":";
+
+		.@sel = select(.@menu$)-1;
+
+		if (select("Delete:Cancel") == 2)
+			close;
+
+		query_sql(
+		"DELETE FROM build_manager WHERE id='"+.@id[.@sel]+"'");
+
+		mes "[Build Manager]";
+		mes "Build deleted.";
+		close;
+
+	default:
+		close;
+	}
+}

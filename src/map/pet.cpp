@@ -647,7 +647,14 @@ void pet_set_intimate(pet_data *pd, int32 value)
 	int32 index = pet_egg_search( sd, pd->pet.pet_id );
 
 	if( pd->pet.intimate <= PET_INTIMATE_NONE ){
-		pc_delitem( sd, index, 1, 0, 0, LOG_TYPE_OTHER );
+		pet_hungry_timer_delete(pd);
+		pd->pet.intimate = 100;
+
+		if( !pet_return_egg(sd, pd) ){
+			return;
+		}
+
+		return;
 	}else{
 		// Remove everything except the rename flag
 		sd->inventory.u.items_inventory[index].card[3] &= 1;
@@ -865,6 +872,10 @@ static TIMER_FUNC(pet_hungry){
 		unit_stop_attack( pd );
 		pd->pet.hungry = PET_HUNGRY_NONE;
 		pet_set_intimate(pd, pd->pet.intimate + pet_db_ptr->hungry_intimacy_dec);
+
+		if( !sd->pd || sd->status.pet_id == 0 ){
+			return 0;
+		}
 
 		if( pd->pet.intimate <= PET_INTIMATE_NONE ) {
 			pd->status.speed = pd->get_pet_walk_speed();
@@ -1651,10 +1662,10 @@ int32 pet_food(map_session_data *sd, pet_data *pd)
 
 	if (pd->pet.hungry > PET_HUNGRY_SATISFIED) {
 		pet_set_intimate(pd, pd->pet.intimate + pet_db_ptr->r_full);
-		if (pd->pet.intimate <= PET_INTIMATE_NONE) {
-			unit_stop_attack( pd );
-			pd->status.speed = pd->get_pet_walk_speed();
-		}
+		if (!sd->pd || sd->status.pet_id == 0)
+			return 0;
+
+		pd = sd->pd;
 	}
 	else {
 		if( battle_config.pet_friendly_rate != 100 )

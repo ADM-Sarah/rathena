@@ -1,0 +1,146 @@
+prt_in,59,143,5	script	Donate Manager	10132,{
+
+OnAtDonate:
+switch(select("~ Sale", "~ Headgears", "~ Armor", "~ Weapon", "~ Limited Costumes", "~ Rentals", "~ Usables", "~ Other", "~ ^FF0000Convert Points / Coin^000000")){
+	case 1:
+		if(.Sale == 1){
+			callshop "cash_sale",1;
+			end;
+		}else{
+			mes "[Donate Manager]";
+			mes "Sorry, this is not available at the moment.";
+			close;
+		}
+	break;
+
+	case 2:
+		callshop "cash_headgear",1;
+		end;
+	break;
+
+	case 3:
+		callshop "cash_armor",1;
+		end;
+	break;
+
+	case 4:
+		callshop "cash_weapon",1;
+		end;
+	break;
+
+	case 5:
+		callshop "cash_costume",1;
+		end;
+	break;
+
+	case 6:
+		if(.Rental == 1){
+			callshop "cash_rental",1;
+			end;
+		}else{
+			mes "[Donate Manager]";
+			mes "Sorry, this is not available at the moment.";
+			close;
+		}
+
+	break;
+
+	case 7:
+		callshop "cash_usable",1;
+		end;
+	break;
+
+	case 8:
+		callshop "cash_other",1;
+		end;
+	break;
+
+	case 9:
+		switch(select(""+.CpAmount+" Cashpoint = 1x "+getitemname(.ItemID)+"", "1x "+getitemname(.ItemID)+" = "+.CpAmount+" Cashpoint")){
+			case 1:
+				mes "[Donate Manager]";
+				mes "Your current cashpoints is: "+#CASHPOINTS+".";
+    				mes "How many cashpoints do you want to exchange?";
+    				next;
+    				input .@amount;
+
+				if (.@amount <= 0) {
+    					mes "[Donate Manager]";
+    					mes "Umm, please enter your amount!";
+    					close;
+				}else if(#CASHPOINTS < .@amount){
+					mes "[Donate Manager]";
+					mes "You dont' have enough cash points.";
+					mes "You input amount is: "+.@amount+" and your cash points is: "+#CASHPOINTS+".";
+					close;
+				}else{
+					mes "[Donate Manager]";
+					mes "Here you go!";
+					set .TotalCP,.@amount * .CpAmount;
+					set #CASHPOINTS,#CASHPOINTS - .TotalCP;
+					getitem .ItemID,.TotalCP;
+					dispbottom "You got "+.TotalCP+" "+getitemname(.ItemID)+"";
+					dispbottom "Your total cash points left is: "+#CASHPOINTS+"";
+					close;
+				}
+
+			case 2:
+				mes "[Donate Manager]";
+    				mes "How many "+getitemname(.ItemID)+" do you have?";
+    				next;
+    				input .@amount;
+
+				if (.@amount <= 0) {
+    					mes "[Donate Manager]";
+    					mes "Umm, please enter your amount!";
+    					close;
+				}else if(countitem(.ItemID) < .@amount){
+					mes "[Donate Manager]";
+					mes "You dont' have enough "+getitemname(.ItemID)+"!";
+					close;
+				}else{
+					if(countitem(.ItemID) < .@amount){
+						mes "[Donate Manager]";
+						mes "You dont' have enough "+getitemname(.ItemID)+"!";
+						close;
+					}else{
+						mes "[Donate Manager]";
+						mes "Here you go!";
+						set .TotalCP,.@amount * .CpAmount;
+						set #CASHPOINTS,#CASHPOINTS + .TotalCP;
+						delitem .ItemID,.@amount;
+						dispbottom "You got "+.TotalCP+" Cash Points!";
+						dispbottom "Your total cash points is: "+#CASHPOINTS+"";
+						close;
+					}
+				}
+		}
+
+}
+end;
+
+OnInit:
+	set .Sale, 0; //0 = disable and 1 = enable
+	set .Rental, 1; //0 = disable and 1 = enable
+	set .ItemID, 33048;
+	set .CpAmount, 1; //Cashpoints amount
+	bindatcmd("donate", strnpcinfo(3)+"::OnAtDonate");
+	//waitingroom "Donate Manager",0;
+	end;
+}
+
+-	cashshop	cash_sale	-1,512:1000
+-	cashshop	cash_headgear	-1,37180:700,37179:700,37177:700,37175:700,37174:700,37173:700,37545:600,37546:600,37547:600,37549:600,37551:600,37553:600,37801:700,37802:700,37803:700,37804:700,37807:700,37808:700
+
+-	cashshop	cash_armor	-1,2383:400,2541:400,2410:400,2199:400,38186:500,38187:500,38188:500,38189:500,38190:500,38191:500
+-	cashshop	cash_weapon	-1,60022:500,60023:500,60024:500,60025:500,60026:500,60027:500,60028:500,60029:500,60030:500,60031:500,60032:500,60033:500,60034:500,60035:500,60036:500,60037:1000
+
+-	cashshop	cash_costume	-1,50476:1500,50474:1500,50343:1500,50473:1500,50472:1500
+-	cashshop	cash_rental	-1,16682:200,33059:600,33060:600
+-	cashshop	cash_usable	-1,33049:300,33050:300,33051:500,33052:500,33053:500,33054:500,33055:500
+
+-	cashshop	cash_other	-1,7619:1000,7620:1000
+
+
+//Duplicate
+//prontera,150,150,4	duplicate(Cash Shop)	Donate Shop#1	10132

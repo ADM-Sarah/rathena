@@ -1,0 +1,63 @@
+//===== rAthena Script =======================================
+//= MVP Point Giver NPC
+//===== Description: =========================================
+//= Gives 2000 MVP Points (#MVPPOINTS) to a player.
+//= Players can only claim this reward once per character.
+//= Uses a permanent character variable (MVP_PointClaimed)
+//= to prevent duplicate claims.
+//===== Compatible With: =====================================
+//= rAthena (latest as of June 2026)
+//===== Notes: ===============================================
+//= #MVPPOINTS is an account-scope variable compatible with
+//= rAthena's built-in 'pointshop' type for MVP Point shops.
+//= MVP_PointClaimed is a permanent char variable (no prefix,
+//= no @) that persists across sessions.
+//============================================================
+
+valmorra,158,159,4	script	MVP Point Giver	4_F_MAID,{
+
+	mes "[MVP Point Giver]";
+	mes "Hello, " + strcharinfo(PC_NAME) + "!";
+	mes "I can grant you ^FF0000^FF00001000 MVP Points^000000 as a one-time reward.";
+	next;
+
+	// Check if the player has already claimed their MVP Points
+	if ( MVP_PointClaimed ) {
+		mes "[MVP Point Giver]";
+		mes "I'm sorry, but you have ^FF0000already claimed^000000 your MVP Points.";
+		mes "Each character can only claim this reward ^0000FFonce^000000.";
+		close;
+	}
+
+	mes "[MVP Point Giver]";
+	mes "Would you like to claim your ^FF00001000 MVP Points^000000?";
+	mes "^777777(This can only be done once per character.)^000000";
+	next;
+
+	switch ( select( "Yes, claim my MVP Points.", "No, maybe later." ) ) {
+		case 1:
+			// Grant 1000 MVP Points
+			set #MVPPOINTS, #MVPPOINTS + 1000;
+			set MVP_PointClaimed, 1;
+
+			// Add this block to save to the database for the shop
+			query_sql "SELECT `char_id` FROM `mvp_rank` WHERE `char_id`='"+getcharid(0)+"'", .@cid;
+			if (getarraysize(.@cid)) {
+				query_sql "UPDATE `mvp_rank` SET `mvp_shop_points`='"+#MVPPOINTS+"' WHERE `char_id`='"+getcharid(0)+"'";
+			} else {
+				query_sql "INSERT INTO `mvp_rank` (`char_id`,`char_name`,`mvp_points`,`mvp_weekly`,`mvp_monthly`,`mvp_shop_points`,`week_key`,`month_key`) VALUES "
+					+ "('"+getcharid(0)+"','"+escape_sql(strcharinfo(0))+"',0,0,0,'"+#MVPPOINTS+"','','')";
+			}
+
+			mes "[MVP Point Giver]";
+			mes "Congratulations! ^FF00001000 MVP Points^000000 have been added.";
+			mes "You now have a total of ^0000FF" + #MVPPOINTS + " MVP Points^000000.";
+			close;
+
+		case 2:
+			mes "[MVP Point Giver]";
+			mes "No problem! Come back whenever you're ready.";
+			mes "Your reward will be waiting for you.";
+			close;
+	}
+}

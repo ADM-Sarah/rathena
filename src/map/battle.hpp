@@ -12,6 +12,7 @@
 
 #include "map.hpp" //ELE_MAX
 #include "skill.hpp"
+#include "mapreg.hpp"
 
 //fwd declaration
 class map_session_data;
@@ -780,6 +781,74 @@ struct Battle_Config
 	int32 trade_count_stackable;
 	int32 enable_bonus_map_drops;
 	int32 hide_cloaked_units;
+
+	int autobattle_autoheal;
+	int autobattle_autopotion;
+	int autobattle_sittorest;
+	int autobattle_attackskill;
+	int autobattle_buffskill;
+	int autobattle_buffitems;
+	int autobattle_teleport;
+	int autobattle_teleport_mvp;
+	int autobattle_pickup;
+	int autobattle_prefixname;
+	int autobattle_hateffect;
+	int autobattle_pdetection;
+	int autobattle_mselection;
+	int autobattle_mdetection;
+	int autobattle_pickup_delay;
+	int autobattle_move_min;
+	int autobattle_move_max;
+	int autobattle_movetype;
+	int autobattle_askill_delay;
+	int autobattle_bskill_delay;
+	int autobattle_drop_ratio;
+	int autobattle_exp_ratio;
+	int autobattle_allow_town;
+	int autobattle_allow_pvp;
+	int autobattle_allow_gvg;
+	int autobattle_allow_bg;
+	int autobattle_battery_system;
+	int autobattle_timer;
+	int autobattle_iplimit;
+	int autobattle_gepardlimit;
+	int autobattle_loot_range;
+	int fly_wing_ids[30];
+    int fly_wing_ids_count;
+    int fly_wing_consume_ids[30];
+    int fly_wing_consume_count;
+	int autobattle_daily_limit;
+	int autobattle_battleoffline_system;
+	int autoslave_teleport;
+	int autobattle_vip_drop_ratio;
+	int autobattle_vip_exp_ratio;
+
+	int32 sd_freeze_active;
+	int32 sd_freeze;
+	int32 sd_freeze_duration;
+	int32 ct_freeze_active;
+	int32 ct_freeze;
+	int32 ct_freeze_duration;
+
+	// MvP and Mini-Boss Card Ad and Log System [Bad]
+	int announcement_and_log_system;
+	int mvp_card_announce_system;
+	int mvp_card_announce;
+	int dropped_mvp_card_log;
+	int set_drop_announce_color;
+	int mini_boss_card_announce_system;
+	int mini_boss_card_announce;
+	int dropped_mini_boss_card_log;
+	int set_drop_card_announce_color;
+
+	int extended_vending;
+	int show_broadcast_info;
+	int show_item_vending;
+	int ex_vending_info;
+	int ex_vending_report;
+	int ex_buying_bound;
+	int item_zeny;
+	int item_cash;
 
 #include <custom/battle_config_struct.inc>
 };

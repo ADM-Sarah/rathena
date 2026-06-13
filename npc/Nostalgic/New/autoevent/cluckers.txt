@@ -1,0 +1,116 @@
+//=========================== KafraShop.net ===============================
+//=        _    _       ____                   _         
+//=       | |  / /     /  __\                 / \
+//=       | |_/ / ___ _| |____ ___ ___ _  ____| |___  _____ _____
+//=       |  _  \/ _ ' |  __/ '__/  _ ' |/ ___|  _  \/  _  \  __ \
+//=       | | \ | |_|  | |  | |  | |_|  | ___ | | | |  |_| | |_| |
+//=       \_/  \ \__,|_| |  \_/   \__,|_|\____/_| | |\____/| .___/
+//=             \_/    \_/                        \_/      | |
+//=                                                        \_/
+//=========================================================================
+//= Mini-Games : Cluckers
+//================= Description ===========================================
+//= Click the chicken and try retrieve the item at a low
+//= chance. If you fail he will nuke, freeze, stone,
+//= stun, or make you fall asleep.
+//= The prize is configurable and triggered by the NPC.
+//================= Current Version =======================================
+//= 1.0
+//================= Changelogs ============================================
+//= 1.0 - Implementation
+//=========================================================================
+
+
+prontera,156,231,4	script	Cluckers	14044,{
+	if ($EVT_CLUCKERS_CLICK == 1) {
+		specialeffect2(EF_HIT3, AREA);
+		switch(rand(15)) {
+			case 0: npctalk "CLUUUUUUCK!!!"; unitskilluseid getcharid(3),"NPC_SELFDESTRUCTION",1; emotion 23; break;
+			case 1: npctalk "Cluuuuuck!~"; break;
+			case 2: unitskilluseid getcharid(3),"NPC_SELFDESTRUCTION",1; break;
+			case 3: sc_start SC_FREEZE,10000,0; break;
+			case 4: npctalk "CLUUUUUUUUUCK!!!"; unitskilluseid getcharid(3),"NPC_SELFDESTRUCTION",1; emotion 23; break;
+			case 5: sc_start SC_SLEEP,10000,0; break;
+			case 6: sc_start SC_STONE,10000,0; emotion 29; break;
+			case 7: npctalk "CLUUUUUUCK!!!"; unitskilluseid getcharid(3),"NPC_SELFDESTRUCTION",1; emotion 23; break;
+			case 8: npctalk "Cluck! CLUUUCK!!"; unitskilluseid getcharid(3),"NPC_SELFDESTRUCTION",1; emotion 23; break;
+			case 9: sc_start SC_STUN,10000,0; break;
+			case 10: sc_start SC_SLEEP,10000,0; emotion 29; break;
+			case 11: npctalk "Cluck! Cluck!"; break;
+			case 12: sc_start SC_STUN,10000,0; break;
+			case 13: unitskilluseid getcharid(3),"NPC_SELFDESTRUCTION",1; break;
+			default:
+				if (rand(50) < 4) {
+					npctalk "WOOF!...........";
+					specialeffect2(EF_SPHERE, AREA);
+					announce("[ Cluckers ] " + strcharinfo(0) + " squeezed out the prize! Well done!", bc_all|bc_blue);
+					$EVT_CLUCKERS_WINNER$ = strcharinfo(0);
+					if (getarraysize($EVT_CLUCKERS_ITEM) > 1) {
+						for (.@i=0; .@i<getarraysize($EVT_CLUCKERS_ITEM); .@i+=2)
+							getitem($EVT_CLUCKERS_ITEM[.@i], $EVT_CLUCKERS_ITEM[.@i+1]);
+					}
+					if ($EVT_CLUCKERS_POINT > 0) {
+						F_PointGain(0, $EVT_CLUCKERS_POINT, .evtName$);
+						F_ShowCurrency("#EVENTPOINT", "Event", $EVT_CLUCKERS_POINT);
+						EVENTWINS += $EVT_CLUCKERS_POINT;
+						EVENTWINS_CLUCK += $EVT_CLUCKERS_POINT;
+					}
+					donpcevent("MG_Cluckers::OnStop");
+				} else {
+					npctalk "Cluck! CLUUUCK!!";
+					unitskilluseid getcharid(3),"NPC_SELFDESTRUCTION",1;
+				}
+				break;
+		}
+		end;
+	}
+	mes "[ Cluckers ]";
+	mes "Cluck cluck! Cluuuuuck?";
+	mes "Cluck....";
+	close;
+}
+
+-	script	MG_Cluckers	FAKE_NPC,{
+	end;
+
+OnInit:
+	if (!$EVT_CLUCKERS) {
+		disablenpc("Cluckers");
+		$EVT_CLUCKERS_CLICK = 0;
+	}
+	.evtName$ = "Cluckers";
+	end;
+
+OnStart:
+	npcwalkto rand(155,160),rand(165,170);
+	enablenpc("Cluckers");
+	initnpctimer();
+	announce("[" +.evtName$+ "] The event is about to start at Prontera!", bc_all|bc_blue);
+	end;
+
+OnTimer10000:
+	announce("[" +.evtName$+ "] Please hurry behind the fountain if you want to play with the crazy chicken!", bc_all|bc_blue);
+	end;
+
+OnTimer20000:
+	announce("[" +.evtName$+ "] Cluckers has eaten one of my items! I'm too scared to retrieve it!", bc_all|bc_blue);
+	end;
+
+OnTimer30000:
+	announce("[" +.evtName$+ "] Click the insane chicken and try squeeze out the item, if you're lucky you'll win! Are you ready?", bc_all|bc_blue);
+	end;
+
+OnTimer40000:
+	announce("[" +.evtName$+ "] GO! Click the chicken to get the prize!", bc_all|bc_blue);
+	stopnpctimer;
+	$EVT_CLUCKERS = 1;
+	$EVT_CLUCKERS_CLICK = 1;
+	end;
+
+OnStop:
+	stopnpctimer();
+	$EVT_CLUCKERS = 0;
+	$EVT_CLUCKERS_CLICK = 0;
+	disablenpc("Cluckers");
+	end;
+}

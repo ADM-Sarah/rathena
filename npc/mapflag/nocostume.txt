@@ -20,40 +20,40 @@ schg_dun01	mapflag	nocostume
 //============================================================
 // WoE:FE Castles
 //============================================================
-aldeg_cas01	mapflag	nocostume
-aldeg_cas02	mapflag	nocostume
-aldeg_cas03	mapflag	nocostume
-aldeg_cas04	mapflag	nocostume
-aldeg_cas05	mapflag	nocostume
-gefg_cas01	mapflag	nocostume
-gefg_cas02	mapflag	nocostume
-gefg_cas03	mapflag	nocostume
-gefg_cas04	mapflag	nocostume
-gefg_cas05	mapflag	nocostume
-payg_cas01	mapflag	nocostume
-payg_cas02	mapflag	nocostume
-payg_cas03	mapflag	nocostume
-payg_cas04	mapflag	nocostume
-payg_cas05	mapflag	nocostume
-prtg_cas01	mapflag	nocostume
-prtg_cas02	mapflag	nocostume
-prtg_cas03	mapflag	nocostume
-prtg_cas04	mapflag	nocostume
-prtg_cas05	mapflag	nocostume
+//aldeg_cas01	mapflag	nocostume
+//aldeg_cas02	mapflag	nocostume
+//aldeg_cas03	mapflag	nocostume
+//aldeg_cas04	mapflag	nocostume
+//aldeg_cas05	mapflag	nocostume
+//gefg_cas01	mapflag	nocostume
+//gefg_cas02	mapflag	nocostume
+//gefg_cas03	mapflag	nocostume
+//gefg_cas04	mapflag	nocostume
+//gefg_cas05	mapflag	nocostume
+//payg_cas01	mapflag	nocostume
+//payg_cas02	mapflag	nocostume
+//payg_cas03	mapflag	nocostume
+//payg_cas04	mapflag	nocostume
+//payg_cas05	mapflag	nocostume
+//prtg_cas01	mapflag	nocostume
+//prtg_cas02	mapflag	nocostume
+//prtg_cas03	mapflag	nocostume
+//prtg_cas04	mapflag	nocostume
+//prtg_cas05	mapflag	nocostume
 
 //============================================================
 // WoE:SE Castles
 //============================================================
-schg_cas01	mapflag	nocostume
-schg_cas02	mapflag	nocostume
-schg_cas03	mapflag	nocostume
-schg_cas04	mapflag	nocostume
-schg_cas05	mapflag	nocostume
-arug_cas01	mapflag	nocostume
-arug_cas02	mapflag	nocostume
-arug_cas03	mapflag	nocostume
-arug_cas04	mapflag	nocostume
-arug_cas05	mapflag	nocostume
+//schg_cas01	mapflag	nocostume
+//schg_cas02	mapflag	nocostume
+//schg_cas03	mapflag	nocostume
+//schg_cas04	mapflag	nocostume
+//schg_cas05	mapflag	nocostume
+//arug_cas01	mapflag	nocostume
+//arug_cas02	mapflag	nocostume
+//arug_cas03	mapflag	nocostume
+//arug_cas04	mapflag	nocostume
+//arug_cas05	mapflag	nocostume
 
 //============================================================
 // WoE:TE Castles

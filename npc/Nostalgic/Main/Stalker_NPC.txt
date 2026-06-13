@@ -1,0 +1,118 @@
+//===== rAthena Script =======================================
+//= Plagiarism NPC
+//===== By ===================================================
+//= [ADM]Sarah
+//===== Fixed By =============================================
+//= ChatGPT
+//===== Description ==========================================
+//= Stalker Copier Master - Fixed skill ID based on skill_db
+//============================================================
+
+valmorra,158,131,4	script	Stalker Copier Master	747,{
+
+	.mes$ = "[Plagiarism Expert]";
+
+	if (Class != Job_Rogue && Class != Job_Stalker) {
+		mes .mes$;
+		mes "I only offer my services to those who understand the art of imitation.";
+		close;
+	}
+
+	.@plag_lv = getskilllv("RG_PLAGIARISM");
+
+	if (.@plag_lv <= 0) {
+		mes .mes$;
+		mes "You must learn the ^0000FFPlagiarism^000000 skill before I can help you.";
+		close;
+	}
+
+	mes .mes$;
+	mes "For ^FF000015,000,000 Zeny^000000, I can teach you a skill of your choice.";
+	mes "The copied skill level will follow your Plagiarism level.";
+	mes "";
+	mes "Your Plagiarism Level: ^00AAFF" + .@plag_lv + "^000000";
+	next;
+
+	if (Zeny < 15000000) {
+		mes .mes$;
+		mes "You don't have enough Zeny.";
+		close;
+	}
+
+	mes .mes$;
+	mes "Please choose the skill you want to copy.";
+	next;
+
+	.@menu = select(
+		"Fire Bolt",
+		"Cold Bolt",
+		"Lightning Bolt",
+		"Lord of Vermilion",
+		"Storm Gust",
+		"Meteor Storm",
+		"Flying Kick",
+		"Kamaitachi",
+		"Crimson Fire Petal",
+		"Spear of Ice",
+		"Raging Fire Dragon",
+		"Soul Strike",
+		"Raging Trifecta Blow",
+		"Cancel"
+	);
+
+	if (.@menu == 14)
+		close;
+
+	setarray .@skill_id[1],
+		19,		// Fire Bolt
+		14,		// Cold Bolt
+		20,		// Lightning Bolt
+		85,		// Lord of Vermilion
+		89,		// Storm Gust
+		83,		// Meteor Storm
+		421,	// Flying Kick
+		542,	// Kamaitachi
+		534,	// Crimson Fire Petal
+		537,	// Spear of Ice
+		536,	// Raging Fire Dragon
+		13,		// Soul Strike
+		263;	// Raging Trifecta Blow
+
+	.@s_id = .@skill_id[.@menu];
+
+	mes .mes$;
+	mes "You selected:";
+	mes "^00AAFF" + getskillname(.@s_id) + "^000000";
+	mes "";
+	mes "Proceed with copying this skill?";
+	next;
+
+	if (select("Yes:No") == 2)
+		close;
+
+	if (Zeny < 15000000) {
+		mes .mes$;
+		mes "You don't have enough Zeny.";
+		close;
+	}
+
+	Zeny -= 15000000;
+
+	plagiarizeskillreset 1;
+	sleep2 250;
+
+	plagiarizeskill .@s_id, .@plag_lv;
+
+	specialeffect2 EF_S_RECALL;
+
+	mes .mes$;
+	mes "^00AA00Skill copied successfully!^000000";
+	mes "";
+	mes "Skill: ^00AAFF" + getskillname(.@s_id) + "^000000";
+	mes "Level: ^FF0000" + .@plag_lv + "^000000";
+	dispbottom "Plagiarism: Lv. " + .@plag_lv + " - " + getskillname(.@s_id) + " successfully copied.";
+	close;
+
+OnInit:
+	end;
+}

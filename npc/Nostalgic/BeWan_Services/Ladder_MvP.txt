@@ -1,0 +1,77 @@
+/*
+DROP TABLE IF EXISTS `mvp`;
+
+CREATE TABLE IF NOT EXISTS `mvp` (
+`char_id` int(11) unsigned NOT NULL DEFAULT '0',
+`name` varchar(30) NOT NULL DEFAULT '',
+`points` int(11) unsigned NOT NULL default '0',
+PRIMARY KEY (`char_id`)
+) ENGINE=MyISAM;
+*/
+
+prontera,165,231,4	script	MvP Rank#1	624,{
+	if (getgmlevel() <= 90){
+	query_sql "CREATE TABLE IF NOT EXISTS `mvp` (`char_id` int(11) unsigned NOT NULL default '0',`name` varchar(30) NOT NULL default '',`points` int(11) unsigned NOT NULL default '0',PRIMARY KEY (`char_id`)) ENGINE = MYISAM";
+	query_sql( "DELETE FROM `mvp` WHERE `name` NOT IN ( SELECT `name` FROM `char` )" );
+	set .@size, query_sql( "select name, points from mvp where points > 0 order by points desc limit "+ .top, .@name$, .@points );
+	mes "[^FF0000MvP ^0000FFRank ^996600Top ^FF0000" + .top +"^000000]";
+	for (set .@c, 0; .@c < .@size; set .@c, .@c + 1)
+		mes "Top ^FF0000" +(.@c + 1) +"^000000 ^0000FF" + .@name$[.@c] +"^000000 with ^FF0000" + .@points[.@c] +"^000000 MvP killed.";
+	close;
+	}
+
+	if (getgmlevel() == 99) { set .@menu$, .@menu$ + "View Ladder:Reset Ladder"; }
+	switch(select(.@menu$)) {
+	case 1:
+	query_sql "CREATE TABLE IF NOT EXISTS `mvp` (`char_id` int(11) unsigned NOT NULL default '0',`name` varchar(30) NOT NULL default '',`points` int(11) unsigned NOT NULL default '0',PRIMARY KEY (`char_id`)) ENGINE = MYISAM";
+	query_sql( "DELETE FROM `mvp` WHERE `name` NOT IN ( SELECT `name` FROM `char` )" );
+	set .@size, query_sql( "select name, points from mvp where points > 0 order by points desc limit "+ .top, .@name$, .@points );
+	mes "[^FF0000MvP ^0000FFRank ^996600Top ^FF0000" + .top +"^000000]";
+	for (set .@c, 0; .@c < .@size; set .@c, .@c + 1)
+		mes "Top ^FF0000" +(.@c + 1) +"^000000 ^0000FF" + .@name$[.@c] +"^000000 with ^FF0000" + .@points[.@c] +"^000000 MvP killed.";
+	close;
+	break;
+
+	case 2:
+		mes "Good Day! Master.";
+		next;
+		menu "Are you sure?",yess,"Nope",noo;
+		yess:
+		query_sql("TRUNCATE TABLE `ragnarok_main`.`mvp`;");
+		query_sql("TRUNCATE TABLE `ragnarok_main`.`mvplog`;");		
+		mes "MVP LADDER RESET SUCCESSFULLY";
+		close;
+
+		noo:
+		mes "Well Okay";
+		close;
+	break;
+	}
+
+OnInit: // Script Configuration
+	setarray .mobid[0],1511,1647,1785,1630,1399,1039,1874,2068,1272,1719,1046,1389,1112,1115,1957,1418,1871,1252,1768,1086,1688,1646,1885,1492,1734,
+				1373,1147,1059,1150,1956,2022,1087,1190,1038,1157,1159,1502,1623,1650,1583,1708,1312,1751,1685,1648,1917,1658,1832,1251,1770,1649,1651; // MvP Ids
+	set .a, 1; // Broadcast who killed the MvP and wich MvP and wick Map [0 Off - 1 On]
+	set .top, 10; // Max. Top Rank (Hihgly recommended between 5~10, more maybe bug the server (limited variables)
+	
+	setarray .MvpMap$,"moc_pryd06","lou_dun03","prt_maze03","gl_chyard","gef_dun01","gef_dun02","treasure02","pay_fild11","gon_dun03","xmas_fild01","prt_sewb4","ama_dun03","xmas_dun02","ayo_dun02","niflheim","anthell02","mjolnir_04","pay_dun04","gef_fild02","gef_fild14","gef_fild10","moc_pryd04","in_sphinx5","ein_dun02","beach_dun","tur_dun04";			
+	.size = getarraysize( .MvpMap$ );
+	for( .@i = 0; .@i < .size; .@i += 2 )
+		setmapflag .MvpMap$[.@i], mf_loadevent;
+	end;
+
+OnNPCKillEvent: // Script execution
+	for (set .@c, 0; .@c < getarraysize(.mobid); set .@c, .@c + 1)
+	if (killedrid == .mobid[.@c])
+		set .@s, 1; // If a MvP
+	if (!.@s) end;
+	query_sql "INSERT INTO `mvp` VALUE ( "+ getcharid(0) +", '"+ escape_sql( strcharinfo(0) ) +"', 1 ) ON DUPLICATE KEY UPDATE `points` = `points` + 1";
+	query_sql("INSERT INTO `mvplog` (`mvp_id`,`mvp_date`,`kill_char_id`,`monster_id`,`prize`,`mvpexp`,`map`) VALUES (NULL, '"+gettimestr("%Y-%m/%d %H:%M:%S",21)+"', '"+getcharid(0)+"', '"+killedrid+"', '0', '"+getmonsterinfo(killedrid,MOB_MVPEXP)+"', '"+strcharinfo(3)+"')");	
+	if (.a == 1) // If announce On
+		if (getmonsterinfo(killedrid,MOB_MVPEXP) != 0)
+			if (getcharid(1))
+				announce "Player ["+ strcharinfo(0) +"] from party ["+ strcharinfo(1) +"] has killed a ["+ getmonsterinfo(killedrid,MOB_NAME)+"] in the map [" +strcharinfo(3) +"].",bc_blue|bc_all;
+			else
+				announce "Player ["+ strcharinfo(0) +"] has killed a ["+ getmonsterinfo(killedrid,MOB_NAME)+"] in the map [" +strcharinfo(3) +"].",bc_blue|bc_all;
+	end;	
+}

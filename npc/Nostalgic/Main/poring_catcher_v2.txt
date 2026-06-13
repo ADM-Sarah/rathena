@@ -1,0 +1,156 @@
+//==================================================
+// Poring Catcher - FINAL FIXED
+// Reward:
+// - 33017 x2 (Credit)
+// - 51001 x2 (Nostalgic Pot Box)
+// Warp all to SavePoint
+//==================================================
+
+-	script	Poring_Catcher	-1,{
+OnInit:
+	setarray .item,
+		33017,2,
+		51001,2;
+
+	bindatcmd "poringstart", strnpcinfo(0)+"::OnStart",60,60;
+	bindatcmd "poring", strnpcinfo(0)+"::OnJoinEvent";
+
+	.event_cd = 60 * 60 * 1;
+
+	setarray .@mapflag,
+		mf_nowarp,
+		mf_nowarpto,
+		mf_noskill,
+		mf_noloot,
+		mf_noteleport,
+		mf_nomemo,
+		mf_nosave,
+		mf_noicewall,
+		mf_nobranch,
+		mf_noreturn;
+
+	for ( .@i = 0; .@i < getarraysize(.@mapflag); .@i++)
+		setmapflag "poring_w01", .@mapflag[.@i];
+
+	.@min = gettime(DT_MINUTE)*60;
+	.@sec = gettime(DT_SECOND);
+	.event_time = (gettimetick(2) - ( .@min + .@sec )) + .event_cd - 5;
+	end;
+
+OnJoinEvent:
+	mes " [ Event Status ] ";
+	if ( !.start ) mes "Next schedule starts in ^FF0000"+ Time2Str(.event_time) +"^000000.";
+	if ( .start == 1 ) mes "Event is currently active.";
+	if ( .start == 2 ) mes "Event is currently on-going.";
+	next;
+
+	switch(select(
+		"Poring Catcher - "+ ((.start == 1) ? "^00ff00Join Event":((.start == 2) ? "^00ff00Event On-Going":"^ff0000Not Available"))+"^000000" )) {
+	case 1:
+		if ( !.start ) {
+			mes "Event is not available.";
+			close;
+		} else if ( .start == 2 ) {
+			mes "Event is on-going";
+			close;
+		}
+		else
+			warp "poring_w01",100,100;
+	}
+	end;
+
+OnStart: .@force = true;
+OnMinute00:
+	.@time = gettimetick(2);
+	.@min = gettime(DT_MINUTE)*60;
+	.@sec = gettime(DT_SECOND);
+
+	if ( .event_time > .@time && !.@force || .start && !.@force ) end;
+
+	.event_time = (.@time - ( .@min + .@sec )) + .event_cd - 5;
+	.start = 1;
+
+	announce "Poring Catcher: We are going to have a Poring Catcher event.",0;
+	sleep 10000;
+	announce "Poring Catcher: For those who wants to join, use @poring",0;
+	sleep 10000;
+	announce "Poring Catcher: After 1 Minute Event will close.",0;
+	sleep 10000;
+	announce "Poring Catcher: So please if you want to join. use @poring",0;
+	sleep 60000;
+
+	announce "Poring Catcher: The entry to the event is now closed.",bc_all,0x0ceedb;
+
+	.start = 2;
+	sleep 3500;
+
+	if( !getmapusers("poring_w01") ) {
+		announce "Poring Catcher: Not enough participants in the Event.",bc_all,0x0ceedb;
+		sleep 2500;
+		announce "Poring Catcher: Event will be halted.",bc_all,0x0ceedb;
+		.start = false;
+		end;
+	}
+
+	mapannounce "poring_w01","We're about to begin the event.",bc_map,0x0ceedb;
+	sleep 2500;
+	mapannounce "poring_w01","The rules are simple.",bc_map,0x0ceedb;
+	sleep 2500;
+	mapannounce "poring_w01","In a few seconds I'm going to spawn tons of porings..",bc_map,0x0ceedb;
+	sleep 2500;
+	mapannounce "poring_w01","..All you need to do is kill the Poring with the right name..",bc_map,0x0ceedb;
+	sleep 2500;
+	mapannounce "poring_w01","..Which would be Poring.",bc_map,0x0ceedb;
+	sleep 2000;
+	mapannounce "poring_w01","If you kill the wrong one, you're out!",bc_map,0x0ceedb;
+	sleep 2000;
+	mapannounce "poring_w01","That's all. Let's begin.",bc_map,0x0ceedb;
+	sleep 3000;
+
+	areamonster "poring_w01",84,119,124,90,"Poring",1002,1,strnpcinfo(0)+"::OnMobKilledWin";
+	areamonster "poring_w01",84,119,124,90,"Poking",1002,3*getmapusers("poring_w01"),strnpcinfo(0)+"::OnMobKilled";
+	areamonster "poring_w01",84,119,124,90,"Poiring",1002,3*getmapusers("poring_w01"),strnpcinfo(0)+"::OnMobKilled";
+	areamonster "poring_w01",84,119,124,90,"Poling",1002,3*getmapusers("poring_w01"),strnpcinfo(0)+"::OnMobKilled";
+	areamonster "poring_w01",84,119,124,90,"Porng",1002,3*getmapusers("poring_w01"),strnpcinfo(0)+"::OnMobKilled";
+	areamonster "poring_w01",84,119,124,90,"pH0ur1n6",1002,3*getmapusers("poring_w01"),strnpcinfo(0)+"::OnMobKilled";
+	areamonster "poring_w01",84,119,124,90,"P0ring",1002,3*getmapusers("poring_w01"),strnpcinfo(0)+"::OnMobKilled";
+	areamonster "poring_w01",84,119,124,90,"Porong",1002,3*getmapusers("poring_w01"),strnpcinfo(0)+"::OnMobKilled";
+	areamonster "poring_w01",84,119,124,90,"Powing",1002,3*getmapusers("poring_w01"),strnpcinfo(0)+"::OnMobKilled";
+	areamonster "poring_w01",84,119,124,90,"Poriing",1002,3*getmapusers("poring_w01"),strnpcinfo(0)+"::OnMobKilled";
+	areamonster "poring_w01",84,119,124,90,"Boring",1002,3*getmapusers("poring_w01"),strnpcinfo(0)+"::OnMobKilled";
+	areamonster "poring_w01",84,119,124,90,"Lolwut!?",1002,3*getmapusers("poring_w01"),strnpcinfo(0)+"::OnMobKilled";
+	areamonster "poring_w01",84,119,124,90,"Kill me to win!",1002,3*getmapusers("poring_w01"),strnpcinfo(0)+"::OnMobKilled";
+	end;
+
+OnMobKilled:
+	dispbottom "You killed the wrong Poring! You're out!";
+	warp "SavePoint",0,0;
+
+	sleep 3000;
+
+	if ( !getmapusers("poring_w01") ) {
+		.start = false;
+		killmonsterall "poring_w01";
+		announce "Poring Catcher: No one won the event!",bc_all,0x0ceedb;
+	}
+	end;
+
+OnMobKilledWin:
+	announce strcharinfo(0)+" won the Poring Catcher Event!",bc_all,0xFF7F50;
+
+	getitem 33017,2;
+	getitem 51001,2;
+	dispbottom "Poring Catcher: You received your reward!";
+
+	killmonsterall "poring_w01";
+	sleep 3000;
+	mapwarp "poring_w01","SavePoint",0,0;
+
+	.start = false;
+	end;
+}
+
+poring_w01,105,123,3	script	Exit	4_BULLETIN_BOARD2,{
+	warp "SavePoint",0,0;
+	end;
+}

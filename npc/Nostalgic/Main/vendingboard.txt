@@ -1,0 +1,14 @@
+turbo_room,99,110,4	script	Vending Area	11009,{
+
+	mes "[Vending Area]";
+	mes "Welcome to the vending zone.";
+	next;
+
+	mes "[Vending Area]";
+	mes "^00FF00Open your shop here^000000";
+	mes "and start selling items!";
+	mes "";
+	mes "^FFFF00HAPPY VENDING!^000000";
+	close;
+
+}

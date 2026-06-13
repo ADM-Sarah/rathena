@@ -1036,10 +1036,11 @@ Body:
     Name: Fly Wing
     Type: Delayconsume
     Buy: 60
-    Weight: 50
+    Weight: 10
     Flags:
       BuyingStore: true
     Script: |
+      callfunc "F_BlockArenaWingUse";
       itemskill "AL_TELEPORT",1;
   - Id: 602
     AegisName: Wing_Of_Butterfly
@@ -1050,6 +1051,7 @@ Body:
     Flags:
       BuyingStore: true
     Script: |
+      callfunc "F_BlockArenaWingUse";
       itemskill "AL_TELEPORT",3;
   - Id: 603
     AegisName: Old_Blue_Box
@@ -1095,16 +1097,17 @@ Body:
       Sitting: true
     Script: |
       itemskill "SM_SELFPROVOKE",1;
+      sc_start SC_ATKPOTION,30000,20;
   - Id: 607
     AegisName: Yggdrasilberry
     Name: Yggdrasil Berry
     Type: Healing
     Buy: 5000
-    Weight: 300
+    Weight: 100
     Flags:
       BuyingStore: true
     Delay:
-      Duration: 5000
+      Duration: 1000
       Status: Reuse_Limit_F
     Script: |
       percentheal 100,100;
@@ -1113,12 +1116,10 @@ Body:
     Name: Yggdrasil Seed
     Type: Healing
     Buy: 5000
-    Weight: 300
+    Weight: 100
     Flags:
       BuyingStore: true
     Delay:
-      Duration: 3000
-      Status: Reuse_Limit_G
     Script: |
       percentheal 50,50;
   - Id: 609
@@ -1988,6 +1989,11 @@ Body:
       Sitting: true
     Script: |
       itemskill "MG_FROSTDIVER",1;
+  - Id: 2775
+    AegisName: Lure
+    Name: Lure
+    Type: Usable
+    Buy: 20
   - Id: 6046
     AegisName: Clothing_Dye_Coupon
     Name: Clothing Dye Coupon
@@ -3218,7 +3224,7 @@ Body:
     Name: Steamed Tongue
     Type: Healing
     Buy: 100000
-    Weight: 1000
+    Weight: 10
     Flags:
       BuyingStore: true
     Script: |
@@ -3273,7 +3279,7 @@ Body:
     Name: Dragon Breath Cocktail
     Type: Healing
     Buy: 100000
-    Weight: 1000
+    Weight: 10
     Flags:
       BuyingStore: true
     Script: |
@@ -3328,7 +3334,7 @@ Body:
     Name: Immortal Stew
     Type: Healing
     Buy: 100000
-    Weight: 1000
+    Weight: 10
     Flags:
       BuyingStore: true
     Script: |
@@ -3383,7 +3389,7 @@ Body:
     Name: Steamed Desert Scorpions
     Type: Healing
     Buy: 100000
-    Weight: 1000
+    Weight: 10
     Flags:
       BuyingStore: true
     Script: |
@@ -3438,7 +3444,7 @@ Body:
     Name: Hwergelmir's Tonic
     Type: Healing
     Buy: 100000
-    Weight: 1000
+    Weight: 10
     Flags:
       BuyingStore: true
     Script: |
@@ -3493,7 +3499,7 @@ Body:
     Name: Cooked Nine Tail's Tails
     Type: Healing
     Buy: 100000
-    Weight: 500
+    Weight: 10
     Flags:
       BuyingStore: true
     Script: |
@@ -3856,7 +3862,7 @@ Body:
   - Id: 12135
     AegisName: Green_Ale
     Name: Green Ale
-    Type: Usable
+    Type: Healing
     Buy: 20
     Weight: 30
     Script: |
@@ -4796,12 +4802,8 @@ Body:
       Duration: 60000
       Status: Reuse_Limit_D
     Trade:
-      NoDrop: true
-      NoTrade: true
       NoSell: true
-      NoCart: true
       NoGuildStorage: true
-      NoMail: true
       NoAuction: true
     Script: |
       sc_start SC_ITEMBOOST,1800000,100;
@@ -9519,12 +9521,6 @@ Body:
     Type: Cash
     Buy: 20
     Weight: 10
-    Trade:
-      NoDrop: true
-      NoSell: true
-      NoGuildStorage: true
-      NoMail: true
-      NoAuction: true
     Script: |
       getitem 12210,10;
   - Id: 12903
@@ -9533,84 +9529,48 @@ Body:
     Type: Cash
     Buy: 20
     Weight: 10
-    Trade:
-      NoDrop: true
-      NoSell: true
-      NoGuildStorage: true
-      NoMail: true
-      NoAuction: true
     Script: |
-      getitem 12202,10;
+      getitem 12075,10;
   - Id: 12904
     AegisName: Agi_Dish_Box
     Name: Steamed Scorpion Box
     Type: Cash
     Buy: 20
     Weight: 10
-    Trade:
-      NoDrop: true
-      NoSell: true
-      NoGuildStorage: true
-      NoMail: true
-      NoAuction: true
     Script: |
-      getitem 12203,10;
+      getitem 12090,10;
   - Id: 12905
     AegisName: Int_Dish_Box
     Name: Dragon Breath Cocktail Box
     Type: Cash
     Buy: 20
     Weight: 10
-    Trade:
-      NoDrop: true
-      NoSell: true
-      NoGuildStorage: true
-      NoMail: true
-      NoAuction: true
     Script: |
-      getitem 12204,10;
+      getitem 12080,10;
   - Id: 12906
     AegisName: Dex_Dish_Box
     Name: Hwergelmir's Tonic Box
     Type: Cash
     Buy: 20
     Weight: 10
-    Trade:
-      NoDrop: true
-      NoSell: true
-      NoGuildStorage: true
-      NoMail: true
-      NoAuction: true
     Script: |
-      getitem 12205,10;
+      getitem 12095,10;
   - Id: 12907
     AegisName: Luk_Dish_Box
     Name: Nine Tail Dish Box
     Type: Cash
     Buy: 20
     Weight: 10
-    Trade:
-      NoDrop: true
-      NoSell: true
-      NoGuildStorage: true
-      NoMail: true
-      NoAuction: true
     Script: |
-      getitem 12206,10;
+      getitem 12100,10;
   - Id: 12908
     AegisName: Vit_Dish_Box
     Name: Stew Of Immortality Box
     Type: Cash
     Buy: 20
     Weight: 10
-    Trade:
-      NoDrop: true
-      NoSell: true
-      NoGuildStorage: true
-      NoMail: true
-      NoAuction: true
     Script: |
-      getitem 12207,10;
+      getitem 12085,10;
   - Id: 12909
     AegisName: Kafra_Card_Box
     Name: Kafra Card Box

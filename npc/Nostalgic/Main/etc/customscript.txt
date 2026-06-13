@@ -1,0 +1,58 @@
+//==============================================================
+// VIP Status System
+//==============================================================
+
+-	script	VIPStatus	-1,{
+
+OnInit:
+	bindatcmd "vipstatus", strnpcinfo(3)+"::OnVipStatusCmd", 0, 99;
+	end;
+
+OnVipStatusCmd:
+	dispbottom "=====================";
+
+	if (vip_status(1)) {
+		.@Timer = vip_status(2);
+		dispbottom "Account status: VIP";
+		dispbottom "You are a VIP for " + callfunc("Time2Str", .@Timer) + ".";
+		dispbottom "=====================";
+		dispbottom "VIP Benefits:";
+		dispbottom "    1. Exclusive Commands";
+		dispbottom "            ~ @vipstatus";
+		dispbottom "    2. Storage Slot Increase by 300";
+		dispbottom "    3. Gives an additional 5% Drop Rate";
+		dispbottom "    4. Increased BaseExp & Job Exp by 50%";
+		dispbottom "    5. Reduced Refine Cost";
+		dispbottom "    6. VIP Exclusive Buffs";
+		dispbottom "    7. Increase Weight Limit +500";
+	} else {
+		dispbottom "Account status: Normal (Non-VIP)";
+	}
+
+	dispbottom "=====================";
+	end;
+
+OnDefaultVip:
+OnPCLoginEvent:
+	if (vip_status(1)) {
+		#ISVIP = 1;
+		.@Timer = vip_status(2);
+
+		dispbottom "=====================";
+		dispbottom "You are a VIP for " + callfunc("Time2Str", .@Timer) + ".";
+		dispbottom "=====================";
+		dispbottom "VIP Benefits:";
+		dispbottom "    1. Exclusive Commands";
+		dispbottom "            ~ @vipstatus";
+		dispbottom "    2. Storage Slot Increase by 300";
+		dispbottom "    3. Gives an additional 5% Drop Rate";
+		dispbottom "    4. Increased BaseExp & Job Exp by 50%";
+		dispbottom "    5. Reduced Refine Cost";
+		dispbottom "    6. VIP Exclusive Buffs";
+		dispbottom "    7. Increase Weight Limit +500";
+	} else {
+		#ISVIP = 0;
+	}
+
+	end;
+}

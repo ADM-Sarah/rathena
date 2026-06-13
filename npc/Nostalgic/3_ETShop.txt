@@ -1,0 +1,200 @@
+-	shop	Endless_Tower_Shop	-1,512:100
+
+e_tower,69,112,4	script	Tower Shop	406,{
+
+function ShopSettings;
+function ValidateCost;
+function CurrencyInfo;
+function ClearData;
+function ValueConvert;
+function ErrorNotice;
+
+	mes (gettime(3)>=6 && gettime(3)<=12 ? "Good Morning" : (gettime(3)>=13 && gettime(3)<=18 ? "Good afternoon" : "Good evening")) + ", ^FFA500" + strcharinfo(0) + "^000000 !";
+	mes "You may purchase items using your ^FF0000E-Tower Points^000000.";
+	mes "Beginner Points and Divine Points are separate currencies.";
+	next;
+
+	select(
+		"[ Beginner Points ] Shop",
+		"[ Divine Points ] Shop"
+	);
+
+	ClearData();
+	ShopSettings(@menu);
+
+	npcshopitem "Endless_Tower_Shop",512,100;
+	npcshopdelitem "Endless_Tower_Shop",512;
+
+	for (set .@i,0; .@i < getarraysize(@ItemLists); set .@i,.@i+1)
+		npcshopadditem "Endless_Tower_Shop",@ItemLists[.@i],@ItemCost[.@i];
+
+	mes "";
+	CurrencyInfo(@Currency$);
+	mes "";
+
+	callshop "Endless_Tower_Shop",1;
+	npcshopattach "Endless_Tower_Shop";
+	end;
+
+
+function	ShopSettings	{
+
+	switch(getarg(0)) {
+
+	case 1:
+		set @Currency$,"#ETOWER_BEGINNER";
+
+		// Beginner Points Shop Items
+		setarray @ItemLists[0],
+			55805,33021,33022,55811,33019,51004,12103;
+
+		setarray @ItemCost[0],
+			60,25,20,50,60,15,20;
+		break;
+
+
+	case 2:
+		set @Currency$,"#ETOWER_DIVINE";
+
+		// Divine Points Shop Items
+		setarray @ItemLists[0],
+			55806,55807,55808,51001,33020,51002,55813;
+
+		setarray @ItemCost[0],
+			120,900,900,50,200,200,250;
+		break;
+
+
+	default:
+		ErrorNotice("Invalid Menu Selection for Menu " + @menu + ".");
+		close;
+	}
+
+	if (@Currency$ == "")
+		ErrorNotice("Invalid Currency Setting in Menu " + @menu + ".");
+
+	if (getarraysize(@ItemCost) != getarraysize(@ItemLists))
+		ErrorNotice("Missing or Extra Value of Item or Cost Settings in Menu " + @menu + ".");
+
+	return;
+}
+
+
+function	ErrorNotice	{
+	mes "^FF0000ERROR^000000 - " + getarg(0);
+	mes "^00FF00____________________________^000000";
+	mes "Inform this message to ^0000FFGame Staffs^000000 immediately!";
+	close;
+}
+
+
+function	CurrencyInfo	{
+	if (getitemname(atoi(getarg(0))) != "null") {
+		mes "Currency : [ ^FF0000" + getitemname(atoi(getarg(0))) + "^000000 ]";
+		mes "Available Amount : [ ^0000FF" + ValueConvert(countitem(atoi(getarg(0)))) + "^000000 ]";
+	}
+	else {
+		mes "Currency : [ ^FF0000" + getarg(0) + "^000000 ]";
+		mes "Available Amount : [ ^0000FF" + ValueConvert(getd(getarg(0))) + "^000000 ]";
+	}
+	return;
+}
+
+
+function	ValidateCost	{
+	if (getitemname(atoi(getarg(0))) != "null") {
+		if (countitem(atoi(getarg(0))) < getarg(1)) return 1;
+	}
+	else {
+		if (getd(getarg(0)) < getarg(1)) return 1;
+	}
+	return 0;
+}
+
+
+function	ClearData	{
+	set @Currency$,"";
+	set @TotalCost,0;
+
+	deletearray @bought_nameid[0],getarraysize(@bought_nameid);
+	deletearray @bought_quantity[0],getarraysize(@bought_quantity);
+	deletearray @ItemLists[0],getarraysize(@ItemLists);
+	deletearray @ItemCost[0],getarraysize(@ItemCost);
+
+	return;
+}
+
+
+function	ValueConvert	{
+	set .@num, atoi("" + getarg(0));
+
+	if (.@num == 0 || .@num >= 2147483647)
+		return getarg(0);
+
+	set .@l, getstrlen("" + .@num);
+
+	for (set .@i,0; .@i < .@l; set .@i,.@i+1) {
+		set .@num$, .@num % pow(10,.@i+1) / pow(10,.@i) + .@num$;
+
+		if ((.@i+1) % 3 == 0 && .@i+1 != .@l)
+			set .@num$, "," + .@num$;
+	}
+
+	return .@num$;
+}
+
+
+OnBuyItem:
+
+	ShopSettings(@menu);
+
+	for (set @i,0; @i < getarraysize(@bought_nameid); set @i,@i+1) {
+		for (set @j,0; @j < getarraysize(@ItemLists); set @j,@j+1) {
+			if (@ItemLists[@j] == @bought_nameid[@i])
+				set @TotalCost,@TotalCost + (@ItemCost[@j] * @bought_quantity[@i]);
+		}
+	}
+
+	mes " ^FF0000BILLING LIST^000000";
+
+	for (set @i,0; @i < getarraysize(@bought_nameid); set @i,@i+1)
+		mes " ^FF0000" + @bought_quantity[@i] + " x ^0000FF" + getitemname(@bought_nameid[@i]) + "^000000";
+
+	if (getitemname(atoi(@Currency$)) != "null")
+		mes " > Total Cost : ^0000FF" + ValueConvert(@TotalCost) + " x " + getitemname(atoi(@Currency$)) + "^000000";
+	else
+		mes " > Total Cost : [ ^0000FF" + ValueConvert(@TotalCost) + " ] " + @Currency$ + "^000000";
+
+	if (ValidateCost(@Currency$,@TotalCost)) {
+
+		if (getitemname(atoi(@Currency$)) != "null")
+			mes " > [ ^FF0000X^000000 ] Insufficient ^0000FF" + getitemname(atoi(@Currency$)) + "^000000";
+		else
+			mes " > [ ^FF0000X^000000 ] Insufficient ^0000FF" + @Currency$ + "^000000";
+
+	}
+	else {
+
+		if (select("^0000FFPurchase^000000:Cancel") == 1) {
+
+			if (getitemname(atoi(@Currency$)) != "null")
+				delitem atoi(@Currency$),@TotalCost;
+			else
+				set getd(@Currency$),getd(@Currency$) - @TotalCost;
+
+			for (set @i,0; @i < getarraysize(@bought_nameid); set @i,@i+1)
+				getitem @bought_nameid[@i],@bought_quantity[@i];
+
+			message strcharinfo(0),"Purchased " + getarraysize(@bought_nameid) + " item(s).";
+			mes "Thank you for shopping.";
+		}
+	}
+
+	ClearData();
+	close;
+
+
+OnInit:
+	setunitdata(getnpcid(0), UNPC_GROUP_ID,27);
+	end;
+}

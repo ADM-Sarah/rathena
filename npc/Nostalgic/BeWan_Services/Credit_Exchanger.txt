@@ -1,0 +1,107 @@
+valmorra,159,147,5	script	Credit Exchanger	630,{
+
+	
+	// ----------------------
+	// - Core Code
+	// ----------------------
+	
+	cutin "kafra_08",2;
+	mes "[" + .colors$[1] + .npc_name$ + .colors$[0] + "]";
+	mes "What would you like to do today?";
+	set .@trade_type, select("- Credit -> Zeny:- Zeny -> Credit");
+	
+	mes "Very well. Here is the list on how much each credit is worth:";
+	for (set .@a, 0; .@a < getarraysize(.coin_id); set .@a, .@a + 1) {
+		mes .colors$[3 + .@a] + getitemname(.coin_id[.@a]) + .colors$[0] + ": " + .coin_to_zeny_format$[.@a] + "z";
+		set .@coin_menu$, .@coin_menu$ + (.@coin_menu$ == "" ? "" : ":") + .colors$[3 + .@a] + getitemname(.coin_id[.@a]) + .colors$[0];
+	}
+
+	mes "Tell me, what credit would you like to exchange?";
+	next;
+
+	set .@coin_choice, select(.@coin_menu$) - 1;
+	
+	next;
+	
+	mes "[" + .colors$[1] + .npc_name$ + .colors$[0] + "]";
+	
+	switch(.@trade_type) {
+		case 1: // Coins -> Zeny
+			mes "How much credit would you like to give up?";
+			input .@amount;
+			if (.@amount <= 0) { // Invalid Number?
+				mes .colors$[2] + "Please Input a number greater than 0:";
+				cutin "",255;
+				close;
+			} else if (countitem(.coin_id[.@coin_choice]) < .@amount) {
+				mes .colors$[2] + "I'm sorry, you do not have " + .@amount + " " + getitemname(.coin_id[.@coin_choice]) + (.@amount == 1 ? "" : "s");
+				cutin "",255;
+				close;
+			} else { // Ok! Checks Passed, Let's Trade!
+                                if(Zeny >= 1800000000) goto L_FullZeny; //Checks to see if the player has more than 1.8b
+				set Zeny,Zeny + (.coin_to_zeny[.@coin_choice] * .@amount);
+				delitem .coin_id[.@coin_choice],.@amount;
+				cutin "",255;
+				break;
+			}
+			
+		case 2: // Zeny -> Coins
+			mes "How much credit would you like?";
+			input .@amount;
+			if (.@amount <= 0) { // Invalid Number?
+				mes .colors$[2] + "Please Input a number greater than 0:";
+				cutin "",255;
+				close;
+			} else if (!checkweight(.coin_id[.@coin_choice],.@amount)) { // Will it Make Char Overweight?
+				mes .colors$[2] + "I'm Sorry, but you can't carry this due to weight restrictions";
+				cutin "",255;
+				close;
+			} else if (Zeny < .coin_to_zeny[.@coin_choice] * .@amount) {
+				mes .colors$[2] + "I'm sorry, you do not have enough zeny...";
+				cutin "",255;
+				close;
+			} else { // Checks OK! Let's trade!
+				set Zeny, Zeny - (.coin_to_zeny[.@coin_choice] * .@amount);
+				getitem .coin_id[.@coin_choice], .@amount;				
+				cutin "",255;
+			}
+		}
+		mes "[" + .colors$[1] + .npc_name$ + .colors$[0] + "]";
+		mes "Pleasure doing business with you.";
+		close2;
+		cutin "", 255;
+		close;
+
+
+		L_FullZeny:
+                        next;
+                        mes "[" + .colors$[1] + .npc_name$ + .colors$[0] + "]";
+                        mes "I'm sorry, but I can't allow you to exchange Credits into Zeny when you have over 1.8b zeny.";
+                        close;
+
+			// ----------------------
+			// - Soft Code / Configurations
+			// ----------------------	
+ 
+			
+                  OnInit:
+			// Store NPC Name
+			set .npc_name$, "Credit Master";
+			
+			// Storing Colours
+			// Order of Array: Default Text, NPC Name, Error, coin_type1, coin_type2, coin_type3, coin_type4, etc...
+			// Note: If you plan on adding additional coins, simply add a new color here
+			setarray .colors$[0],"^000000", "^336699", "^550000", "^996633", "^666666", "^BBA14F", "^99CCCC";
+			
+			// Set Coin Item ID's
+			// In Order coin_id1, coin_id2, coin_id3, coin_id4, etc...
+			setarray .coin_id[0],33017, 33018, 33019, 33020;
+			
+			// Coin -> Zeny Value
+                        // Change the Value you want the coins to be worth | Order: Bronze Coin, Gold Coin, Platinum Coin, Mithril Coin
+			setarray .coin_to_zeny[0],1000000,100000000,500000000,1000000000;
+			
+			// Currency Formatted String of Zeny | Order: Bronze Coin, Gold Coin, Platinum Coin, Mithril Coin
+			setarray .coin_to_zeny_format$[0],"1,000,000","100,000,000","500,000,000","1,000,000,000";
+
+}

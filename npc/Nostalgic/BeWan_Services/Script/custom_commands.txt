@@ -1,0 +1,322 @@
+-	script	hold	-1,{
+
+OnInit:
+	bindatcmd("hold", strnpcinfo(3)+"::OnHold");
+	end;
+
+OnHold:
+	if ( !@Hold ) {
+		set @Hold, 1;
+		message strcharinfo(0), "Hold mode is ON.";
+		pcblockmove getcharid(3), 1;
+	} else {
+		set @Hold, 0;
+		message strcharinfo(0), "Hold mode is OFF.";
+		pcblockmove getcharid(3), 0;
+	}
+
+}
+
+//=======================================================================================================================================================================================
+-	script	Track_System	-1,{
+
+OnInit:
+	bindatcmd("track",strnpcinfo(0)+"::OnTrack",99);
+end;
+
+OnTrack:
+if(!getarraysize(.@atcmd_parameters$)){
+	message strcharinfo(0), "@track failed.";
+end;
+}
+
+.@command$ = strtolower(.@atcmd_parameters$[0]);
+.@name$ = implode(.@atcmd_parameters$, " ");
+
+if(query_sql("SELECT `account_id` FROM `char` WHERE `name` = '"+escape_sql(.@name$)+"'",.@acc_ID$)){
+if(.@acc_ID$=="")
+	query_sql("SELECT `account_id` FROM `char` WHERE `char_id` = '"+escape_sql(getcharid(0,.@name$))+"'",.@acc_ID$);
+
+	query_sql("SELECT `last_unique_id` FROM `login` WHERE `account_id` = '"+escape_sql(.@acc_ID$)+"'",.@UniqueID$);
+	query_sql("SELECT `last_ip` FROM `login` WHERE `account_id` = '"+escape_sql(.@acc_ID$)+"'",.@ipadd$);
+
+	if(query_sql("SELECT `account_id` FROM `login` WHERE `last_unique_id` = '"+escape_sql(.@UniqueID$)+"'",.@accid)){
+		set .@arrayset,getarraysize(.@accid);
+		if(.@arrayset > 40){
+			mes " ","^FF0000ERROR!^000000","^FF0000Too many accounts!^000000","[ "+.@arrayset+" ] accounts detected.";
+			mes "^888888==========================^000000";
+			for( set .@i,0; .@i<=.@arrayset; set .@i,.@i+1 ){
+				if(.@accid[.@i] != 0)
+					mes "^0000FF"+.@accid[.@i]+"^000000";
+			}
+			mes "^888888==========================^000000";
+			close;
+		}
+		for( set .@i,0; .@i<=.@arrayset; set .@i,.@i+1 ){
+			if(.@accid[.@i] != 0){
+				if(query_sql("SELECT DISTINCT `name`,`account_id` FROM `char` WHERE `char`.`account_id`='"+.@accid[.@i]+"' ",.@name$,.@acid)){
+					for( set .@j,0; .@j<=getarraysize(.@acid); set .@j,.@j+1 ){
+						if(.@accid[.@i])
+						mes "^FF0000====== Account ID :^000000 ^0000FF"+.@accid[.@i]+"^000000 ^FF0000======^000000";
+						if(query_sql("SELECT `online` FROM `char` WHERE `name`='"+escape_sql(.@name$[.@j])+"'",.@Online) && .@Online==1){
+							mes .@name$[.@j]+"^19C319(ON)^000000";
+							set .@Online,0;
+						} else {
+							mes .@name$[.@j];
+							dispbottom .@name$[.@j];
+						}
+						set .@accid[.@i],0;
+						set .@name$[.@j],"";
+					}
+				}
+			}
+		}
+		mes "^FF0000==========================^000000";
+		dispbottom "IP Trace: "+.@ipadd$;
+		dispbottom "UniqueID Trace: "+.@UniqueID$;
+		dispbottom "Accounts Found : "+.@arrayset;
+		close;
+	}
+}
+	message strcharinfo(0),"Player Name Not found.";
+end;
+
+}
+
+// Need custom sources
+//=======================================================================================================================================================================================
+// -	script	ChannelSystem	-1,{
+//
+//OnInit:
+//	bindatcmd "chjoin",strnpcinfo(0)+"::OnAtJoin";
+//	bindatcmd "chleave",strnpcinfo(0)+"::OnAtLeave";
+//	bindatcmd "chlist",strnpcinfo(0)+"::OnAtList";
+//	bindatcmd "chmine",strnpcinfo(0)+"::OnAtMine";
+//	end;
+//
+//OnAtList:
+//	atcommand "@list_channel list";
+//	end;
+//
+//OnAtMine:
+//	atcommand "@list_channel list mine";
+//	end;
+//	
+//OnAtJoin:
+//	if(compare(.@atcmd_parameters$,"#recruit")){
+//		set ChannelRecruit,1;
+//		join_channel("#recruit");
+//		end;
+//	}else if(compare(.@atcmd_parameters$,"#main")){
+//		set ChannelMain,1;
+//		join_channel("#main");
+//		end;
+//	}else if(compare(.@atcmd_parameters$,"#market")){
+//		set ChannelMarket,1;
+//		join_channel("#market");
+//		end;
+//	}else if(compare(.@atcmd_parameters$,"#main-en")){
+//		set ChannelMainEN,1;
+//		join_channel("#main-en");
+//		end;
+//	}else{
+//		dispbottom "Unknown channel (usage: @chjoin <#channel_name>";
+//		end;
+//	}
+//
+//OnAtLeave:
+//	if(compare(.@atcmd_parameters$,"#recruit")){
+//		set ChannelRecruit,0;
+//		leave_channel("#recruit");
+//		end;
+//	}else if(compare(.@atcmd_parameters$,"#main")){
+//		set ChannelMain,0;
+//		leave_channel("#main");
+//		end;
+//	}else if(compare(.@atcmd_parameters$,"#market")){
+//		set ChannelMarket,0;
+//		leave_channel("#market");
+//		end;
+//	}else if(compare(.@atcmd_parameters$,"#main-en")){
+//		set ChannelMainEN,0;
+//		leave_channel("#main-en");
+//		end;
+//	}else{
+//		dispbottom "Channel name must start with '#'.";
+//		end;
+//	}
+//
+//OnPCLoginEvent:
+//	if(ChannelRecruit == 1)
+//		atcommand "@join #recruit";
+//	if(ChannelMain == 1)
+//		atcommand "@join #main";
+//	if(ChannelMarket == 1)
+//		atcommand "@join #market";
+//	if(ChannelMainEN == 1)
+//		atcommand "@join #main-en";
+//end;
+//
+//}
+
+//=======================================================================================================================================================================================
+-	script	WarpQuest	-1,{
+
+OnInit:
+	bindatcmd "quest",strnpcinfo(3)+"::OnQuestWarp";
+	end;
+
+OnQuestWarp:
+	if ( getmapflag( strcharinfo(3),mf_pvp ) ) || getmapflag( strcharinfo(3),mf_gvg ) { //restrict on pvp and gvg map
+		dispbottom .@atcmd_command$+" failed in PVP/GVG maps";
+		end;
+	}else{
+		if(strcharinfo(3) == "1@def01"){ dispbottom .@atcmd_command$+" not allowed to use in starting area."; end; }
+		atcommand "@warp valmorra,172,206";
+		end; 
+	}
+}
+
+//=======================================================================================================================================================================================
+-	script	WarpDonor	-1,{
+
+OnInit:
+	bindatcmd "donor",strnpcinfo(3)+"::OnQuestWarp";
+	end;
+
+OnQuestWarp:
+	if ( getmapflag( strcharinfo(3),mf_pvp ) ) || getmapflag( strcharinfo(3),mf_gvg ) { //restrict on pvp and gvg map
+		dispbottom .@atcmd_command$+" failed in PVP/GVG maps";
+		end;
+	}else{
+		if(strcharinfo(3) == "1@def01"){ dispbottom .@atcmd_command$+" not allowed to use in starting area."; end; }
+		atcommand "@warp valmorra,139,216";
+		end; 
+	}
+}
+
+//=======================================================================================================================================================================================
+-	script	WarpFishing	-1,{
+
+OnInit:
+	bindatcmd "fishing",strnpcinfo(3)+"::OnQuestWarp";
+	end;
+
+OnQuestWarp:
+	if ( getmapflag( strcharinfo(3),mf_pvp ) ) || getmapflag( strcharinfo(3),mf_gvg ) { //restrict on pvp and gvg map
+		dispbottom .@atcmd_command$+" failed in PVP/GVG maps";
+		end;
+	}else{
+		if(strcharinfo(3) == "1@def01"){ dispbottom .@atcmd_command$+" not allowed to use in starting area."; end; }
+		atcommand "@warp valmorra,101,68";
+		end; 
+	}
+}
+
+//=======================================================================================================================================================================================
+-	script	WarpPunching	-1,{
+
+OnInit:
+	bindatcmd "punch",strnpcinfo(3)+"::OnQuestWarp";
+	end;
+
+OnQuestWarp:
+	if ( getmapflag( strcharinfo(3),mf_pvp ) ) || getmapflag( strcharinfo(3),mf_gvg ) { //restrict on pvp and gvg map
+		dispbottom .@atcmd_command$+" failed in PVP/GVG maps";
+		end;
+	}else{
+		if(strcharinfo(3) == "1@def01"){ dispbottom .@atcmd_command$+" not allowed to use in starting area."; end; }
+		atcommand "@warp valmorra,171,41";
+		end; 
+	}
+}
+
+
+//=======================================================================================================================================================================================
+-	script	itemmap	-1,{
+
+OnInit:
+    bindatcmd "itemmap",strnpcinfo(3)+"::OnAtshower",99,99;
+    end;
+
+OnAtshower:
+		if ( .@atcmd_numparameters != 2 ) {
+			message .@myname$, "Usage: "+ .@atcmd_command$ +" <item id> <amount>";
+			end;
+		}
+		.atoi_id = atoi( .@atcmd_parameters$[0] );
+		.atoi_amount = atoi( .@atcmd_parameters$[1] );
+		.@myname$ = strcharinfo(0);
+		if ( getiteminfo( .atoi_id,0 ) == -1 ) {
+			message .@myname$, "Requesting to send an non-existing item ("+ .atoi_id +"). "+ .@atcmd_command$ +" failed.";
+			end;
+		}
+		else if ( .atoi_amount < 1 ) {
+			message .@myname$, "You can't send "+ .atoi_amount +" item. "+ .@atcmd_command$ +" failed.";
+			end;
+		}
+		addrid(1);
+		if(checkvending(strcharinfo(0))) { end; }
+		else { getitem .atoi_id, .atoi_amount; }
+		end;
+}
+
+//=======================================================================================================================================================================================
+-	script	Item_Shower	-1,{
+OnInit:
+	bindatcmd "itemrain", strnpcinfo(0) +"::OnItemShower", 99,99;
+	end;
+	
+OnItemShower:
+	.@itemid = atoi( .@atcmd_parameters$[0] );
+	.@amount = atoi( .@atcmd_parameters$[1] );
+	if ( getitemname( .@itemid ) == "null" ) {
+		message strcharinfo(0), "Invalid Item ID";
+		end;
+	}
+	if ( !.@amount || .@amount > 100 ) .@amount = 100;
+	getmapxy .@map$, .@x, .@y, BL_PC;
+	while ( .@i < .@amount ) {
+		do {
+			.@dx = rand( -14, 14 );
+			.@dy = rand( -14, 14 );
+		} while( !checkcell( .@map$,(.@x+.@dx),(.@y+.@dy),cell_chkpass ) );
+		makeitem .@itemid, 1, .@map$, .@x + .@dx, .@y + .@dy;
+		.@i++;
+	}
+	end;
+}
+
+//=======================================================================================================================================================================================
+-	script	who4	-1,{
+
+OnCommand:	
+	freeloop(1);
+	query_sql("SELECT `account_id`,`name` FROM `char` WHERE `online` = '1'",.@account_id,.@char_name$);
+	for(.@i=0;.@i<getarraysize(.@account_id);.@i++){
+		query_sql("SELECT `last_unique_id` FROM `login` WHERE `account_id` = '" +.@account_id[.@i]+"'",.@last_unique_id$);
+		.@exx = false;
+		for(.@s=0;.@s<getarraysize(.@id_list$);.@s++){
+			if(.@id_list$[.@s] == .@last_unique_id$){
+				.@exx = true;
+			}
+		}
+		if(!.@exx){
+			.@id_list$[getarraysize(.@id_list$)] = .@last_unique_id$;
+			.@charName$[getarraysize(.@charName$)] = .@char_name$[.@i];
+		}
+	}
+	freeloop(0);
+	for(.@i=0;.@i<getarraysize(.@id_list$);.@i++){
+		message strcharinfo(0),.@id_list$[.@i] + " ( " + .@charName$[.@i] + " )";
+	}
+	message strcharinfo(0),getarraysize(.@id_list$) + " Players Found.";
+end;
+
+OnInit:
+	bindatcmd("who4",strnpcinfo(3)+"::OnCommand",99,99);
+end;
+
+}
+
+//=======================================================================================================================================================================================

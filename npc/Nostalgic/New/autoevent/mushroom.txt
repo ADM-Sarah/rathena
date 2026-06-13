@@ -1,0 +1,84 @@
+//=========================== KafraShop.net ===============================
+//=        _    _       ____                   _         
+//=       | |  / /     /  __\                 / \
+//=       | |_/ / ___ _| |____ ___ ___ _  ____| |___  _____ _____
+//=       |  _  \/ _ ' |  __/ '__/  _ ' |/ ___|  _  \/  _  \  __ \
+//=       | | \ | |_|  | |  | |  | |_|  | ___ | | | |  |_| | |_| |
+//=       \_/  \ \__,|_| |  \_/   \__,|_|\____/_| | |\____/| .___/
+//=             \_/    \_/                        \_/      | |
+//=                                                        \_/
+//=========================================================================
+//= Mini-Games : Find the Mushroom (Original Script by Mysterious)
+//================= Description ===========================================
+//= Spawns random amount of mushrooms in certain maps.
+//================= Current Version =======================================
+//= 1.0
+//================= Changelogs ============================================
+//= 1.0 - Implementation
+//=========================================================================
+
+-	script	MG_Mushroom	FAKE_NPC,{
+	end;
+
+OnInit:
+	.evtName$ = "Find the Mushroom";
+	setarray .mapList$[0],
+					"izlude",
+					"geffen",
+					"morocc",
+					"prontera",
+					"payon",
+					"aldebaran",
+					"alberta",
+					"amatsu",
+					"comodo";
+	end;
+
+OnStart:
+	initnpctimer();
+	for (.@i=0; .@i<getarraysize(.mapList$); .@i++)
+		killmonster(.mapList$[.@i], "MG_Mushroom::OnMobKilled");
+	.map_idx = rand(getarraysize(.mapList$));
+	.map$ = .mapList$[.map_idx];
+	.spawn = 30;
+	if (getarraysize($EVT_MUSHROOM_WINNER$))
+		deletearray($EVT_MUSHROOM_WINNER$);
+	monster .map$, 0, 0, "Please don't kill me!", 1084, .spawn, strnpcinfo(0)+"::OnMobKilled";
+	announce(sprintf("[%s] The event is about to start at [%s].", .evtName$, .map$), bc_all|bc_blue);
+	end;
+
+OnTimer2500:
+	stopnpctimer();
+	announce(sprintf("[%s] Every mushroom you kill will give you rewards.", .evtName$), bc_all|bc_blue);
+	end;
+
+OnMobKilled:
+	if (playerattached()) {
+		setarray $EVT_MUSHROOM_WINNER$[getarraysize($EVT_MUSHROOM_WINNER$)], strcharinfo(0);
+		if (getarraysize($EVT_MUSHROOM_ITEM) > 1) {
+			for (.@i=0; .@i<getarraysize($EVT_MUSHROOM_ITEM); .@i+=2)
+				getitem($EVT_MUSHROOM_ITEM[.@i], $EVT_MUSHROOM_ITEM[.@i+1]);
+		}
+		if ($EVT_MUSHROOM_POINT > 0) {
+			F_PointGain(0, $EVT_MUSHROOM_POINT, .evtName$);
+			F_ShowCurrency("#EVENTPOINT", "Event", $EVT_MUSHROOM_POINT);
+			EVENTWINS += $EVT_MUSHROOM_POINT;
+			EVENTWINS_MUSHROOM += $EVT_MUSHROOM_POINT;
+		}
+	}
+	if (--.spawn > 0)
+		announce(sprintf("[%s] There are now %s left.", .evtName$, F_InsertPlural(.spawn, "Mushroom")), bc_map|bc_blue);
+	else {
+		announce(sprintf("[%s] The event has ended. All the mushroom have been killed.", .evtName$), bc_map|bc_blue);
+		donpcevent(strnpcinfo(0)+"::OnStop");
+	}
+	end;
+
+OnStop:
+	stopnpctimer();
+	for (.@i=0; .@i<getarraysize(.mapList$); .@i++)
+		killmonster(.mapList$[.@i], "MG_Mushroom::OnMobKilled");
+	$EVT_MUSHROOM = 0;
+	.map$ = "";
+	end;
+}

@@ -1,0 +1,648 @@
+//=========================================================
+// Mini-Games : Manager (Final + 5-Minute Cutin + @join Fixed + NO LMS)
+//=========================================================
+-	script	Evt_Manager	FAKE_NPC,{
+	end;
+
+	function F_SetMiniGame;
+
+OnInit:
+	.header$ = "[ Event Staff ]";
+	bindatcmd("events", strnpcinfo(0)+"::OnCommand", 50, 99);
+
+	setarray .evtList$[0],
+						"Bombring", "MG_Bombring", "bombring",
+						"Dice", "MG_Dice", "dice",
+						"Disguise", "MG_Disguise", "disguise",
+						"Find the Mushroom", "MG_Mushroom", "mushroom",
+						"Novice vs Zombies", "MG_Zombie", "zombie",
+						"Poring Catcher", "MG_PoringCatcher", "catcher",
+						"Stop the Clock", "MG_StopTheClock", "stopclock";
+
+	// -----------------------------------------------------------
+	// Fixed rewards for all mini-games
+	// Reward:
+	// 51004 x1
+	// 33017 x5
+	// -----------------------------------------------------------
+	setarray $EVT_BOMBRING_ITEM[0], 51004,1,33018,1;
+	set $EVT_BOMBRING_POINT, 0;
+	set $EVT_BOMBRING_CONSO_POINT, 0;
+
+	setarray $EVT_DICE_ITEM[0], 51004,1,33018,1;
+	set $EVT_DICE_POINT, 0;
+	set $EVT_DICE_CONSO_POINT, 0;
+
+	setarray $EVT_DISGUISE_ITEM[0], 51004,1,33017,30;
+	set $EVT_DISGUISE_POINT, 0;
+	set $EVT_DISGUISE_CONSO_POINT, 0;
+
+	setarray $EVT_MUSHROOM_ITEM[0], 51004,1,33017,30;
+	set $EVT_MUSHROOM_POINT, 0;
+	set $EVT_MUSHROOM_CONSO_POINT, 0;
+
+
+	setarray $EVT_ZOMBIE_ITEM[0], 51004,1,33018,1;
+	set $EVT_ZOMBIE_POINT, 0;
+	set $EVT_ZOMBIE_CONSO_POINT, 0;
+
+	setarray $EVT_CATCHER_ITEM[0], 51004,1,33018,1;
+	set $EVT_CATCHER_POINT, 0;
+	set $EVT_CATCHER_CONSO_POINT, 0;
+
+	setarray $EVT_STOPCLOCK_ITEM[0], 51004,1,33018,1;
+	set $EVT_STOPCLOCK_POINT, 0;
+	set $EVT_STOPCLOCK_CONSO_POINT, 0;
+
+	$@EVT_CUTIN$ = "";
+	end;
+
+// -----------------------------------------------------------
+// Random scheduler helper
+// -----------------------------------------------------------
+// OnClock0100:
+	if (getarraysize($LDRAW_INFO$) > 0 || $CFB_START || $@EVT_WB || $@INVADE_MAP$ != "" || $SERV_MODE || getarraysize($EVT_GMMODE$) > 0 || $ACTIVE_LOTTI ||
+		(getarraysize(getd(sprintf("$bid_list_%d", 0))) > 0 || getarraysize(getd(sprintf("$bid_list_%d", 1))) > 0 || getarraysize(getd(sprintf("$bid_list_%d", 2))) > 0))
+		end;
+
+	while (.@j == .evt_idx)
+		.@j = rand(getarraysize(.evtList$)/3);
+
+	.evt_idx = .@j;
+
+	.@var$ = sprintf("$EVT_%s", strtoupper(.evtList$[(.evt_idx * 3 + 2)]));
+	setd(.@var$, 1);
+	if (getd(.@var$)) {
+		for (.@i = 0; .@i < getarraysize(.evtList$); .@i += 3) {
+			if (.@i/3 != .evt_idx)
+				donpcevent(.evtList$[.@i + 1] + "::OnStop");
+		}
+		donpcevent(strnpcinfo(0) + "::OnBegin");
+	}
+	end;
+
+// -----------------------------------------------------------
+// Event Schedule - 1 Hour Gap Between Events
+// Event starts every 2 hours.
+// Example: 02:00 event start, 03:00 gap, 04:00 next event.
+// 21:00 - 22:59 reserved for KOE / WOE.
+// -----------------------------------------------------------
+
+OnClock0000:	// Bombring
+	F_SetMiniGame(0);
+	end;
+
+OnClock0200:	// Poring Catcher
+	F_SetMiniGame(5);
+	end;
+
+OnClock0400:	// Dice
+	F_SetMiniGame(1);
+	end;
+
+OnClock0600:	// Disguise
+	F_SetMiniGame(2);
+	end;
+
+OnClock0800:	// Find the Mushroom
+	F_SetMiniGame(3);
+	end;
+
+OnClock1000:	// Novice vs Zombies
+	F_SetMiniGame(4);
+	end;
+
+OnClock1200:	// Stop the Clock
+	F_SetMiniGame(6);
+	end;
+
+OnClock1400:	// Poring Catcher
+	F_SetMiniGame(5);
+	end;
+
+OnClock1600:	// Bombring
+	F_SetMiniGame(0);
+	end;
+
+OnClock1800:	// Dice
+	F_SetMiniGame(1);
+	end;
+
+OnClock2000:	// Disguise
+	F_SetMiniGame(2);
+	end;
+
+// 21:00 - 22:59 RESERVED FOR KOE / WOE
+
+OnClock2300:	// Find the Mushroom
+	F_SetMiniGame(3);
+	end;
+
+// -----------------------------------------------------------
+// Admin command panel
+// -----------------------------------------------------------
+OnCommand:
+	if (agitcheck() || agitcheck2()) {
+		message(strcharinfo(0), "War of Emperium is currently active.");
+		message(strcharinfo(0), sprintf("%s failed.", .@atcmd_command$));
+		end;
+	}
+	while (1) {
+		.@menu$ = "";
+		for (.@i = 0; .@i < getarraysize(.evtList$); .@i += 3) {
+			.@menu$ += sprintf("[ %s^000000 ] %s:",
+						(getd(sprintf("$EVT_%s", strtoupper(.evtList$[.@i+2]))) > 0 ? "^009900Active" : "^FF0000Inactive"),
+						.evtList$[.@i]);
+		}
+		.@menu$ += "Cancel";
+		.@evt_idx = select(.@menu$) - 1;
+		if (.@evt_idx == getarraysize(.evtList$) / 3) break;
+		callsub(S_OnEventSelect, .@evt_idx);
+	}
+	close();
+	end;
+
+S_OnEventSelect:
+	.evt_idx = getarg(0);
+	while (1) {
+		.@disguise = .evtList$[getarg(0) * 3 + 2] == "disguise" ? true : false;
+		.@var$ = sprintf("$EVT_%s", strtoupper(.evtList$[(.evt_idx * 3 + 2)]));
+		deletearray(.@tempList);
+		copyarray(.@tempList[0], getd(.@var$ + "_ITEM[0]"), getarraysize(getd(.@var$ + "_ITEM")));
+		mes .header$;
+		mes sprintf("Event: ^0000FF%s^000000", .evtList$[getarg(0) * 3]);
+		if (getarraysize(.@tempList) > 1) {
+			mes "Rewards: ";
+			for (.@i = 0; .@i < getarraysize(.@tempList); .@i += 2)
+				mes sprintf(" > ^3355FF%d ^777777%s^000000", .@tempList[.@i+1], F_GetItemName(.@tempList[.@i]));
+		}
+		if (getd(.@var$ + "_POINT") > 0)
+			mes sprintf("Event Points: ^3355FF%d^000000", getd(.@var$ + "_POINT"));
+		if (getd(.@var$ + "_CONSO_POINT") > 0)
+			mes sprintf("Consolation Points: ^3355FF%d^000000", getd(.@var$ + "_CONSO_POINT"));
+		if (.@disguise) {
+			mes "Mechanics:";
+			if (getd(.@var$ + "_ROUND") > 0)
+				mes sprintf(" > ^777777Rounds: ^3355FF%d^000000", getd(.@var$ + "_ROUND"));
+			mes sprintf(" > ^777777Mode: ^3355FF%s^000000", getd(.@var$ + "_RULE") == 1 ? "All monsters" : "MvP monsters");
+		}
+		next;
+		switch(select(
+			sprintf("%s^000000 Event", getd(.@var$) > 0 ? "^FF0000Deactivate" : "^009900Activate"),
+			(getgroupid() >= 99 ? "[ ^0000FFAdmin^000000 ] Modify Rewards" : ""),
+			(getgroupid() >= 99 && .@disguise ? "[ ^0000FFAdmin^000000 ] Modify Mechanics" : ""),
+			"Go Back"
+		)) {
+			default:
+				return;
+				break;
+
+			case 1:
+				mes .header$;
+				mes sprintf("Are you going to %s^000000 the ^0000FF%s^000000?", getd(.@var$) > 0 ? "^FF0000deactivate" : "^009900activate", .evtList$[getarg(0) * 3]);
+				next;
+				if (select("Yes!", "No") == 2) break;
+				setd(.@var$, getd(.@var$) > 0 ? 0 : 1);
+				if (getd(.@var$)) {
+					donpcevent(strnpcinfo(0) + "::OnBegin");
+					for (.@i = 0; .@i < getarraysize(.evtList$); .@i += 3)
+						if (.@i/3 != getarg(0))
+							donpcevent(.evtList$[.@i + 1] + "::OnStop");
+				} else
+					donpcevent(strnpcinfo(0) + "::OnStop");
+				message(strcharinfo(0), sprintf("[ %s ] The event has been %s.", .evtList$[getarg(0) * 3], getd(.@var$) > 0 ? "activated" : "deactivated"));
+				break;
+
+			case 2:
+				.@i = 0;
+				while (.@i != -1) {
+					switch(select(sprintf("[ ^3355FF%s^000000 ] Item Rewards", F_InsertPlural(getarraysize(.@tempList)/2, "Item")),
+								sprintf("[ ^3355FF%d^000000 ] Points", getd(.@var$ + "_POINT")),
+								sprintf("[ ^3355FF%d^000000 ] Consolation Points", getd(.@var$ + "_CONSO_POINT")),
+								"Go Back")) {
+						default:
+							.@i = -1;
+							break;
+
+						case 1:
+							.@h = 0;
+							while (.@h != -1) {
+								if (getarraysize(.@tempList) > 1) {
+									mes .header$;
+									mes sprintf("^0000FF%s^000000 Reward List:", .evtList$[getarg(0) * 3]);
+									for (.@j = 0; .@j < getarraysize(.@tempList); .@j += 2)
+										mes sprintf(" > ^3355FF%d ^777777%s^000000", .@tempList[.@j+1], F_GetItemName(.@tempList[.@j]));
+								}
+								next;
+								switch(select("Add Item",
+									(getarraysize(.@tempList) > 1 ? "Remove Item" : ""),
+									(getarraysize(.@tempList) != getarraysize(getd(.@var$ + "_ITEM")) ? "Confirm Reward" : ""),
+									"Go Back"
+								)) {
+									case 1:
+										mes .header$;
+										mes "Enter an item ID.";
+										input(.@itm);
+										if (getitemname(.@itm) == "null") {
+											mes sprintf("Item ID (%d) not found.", .@itm);
+											break;
+										}
+										mes "Enter amount.";
+										input(.@amt);
+										if (.@amt < 1) break;
+										setarray .@tempList[getarraysize(.@tempList)], .@itm, .@amt;
+										break;
+
+									case 2:
+										.@menu$ = "";
+										for (.@j = 0; .@j < getarraysize(.@tempList); .@j += 2)
+											.@menu$ += sprintf("^777777%d x ^3355FF%s^000000:", .@tempList[.@j+1], F_GetItemName(.@tempList[.@j]));
+										.@menu$ += "Go Back";
+										.@j = select(.@menu$) - 1;
+										if (.@j == getarraysize(.@tempList)/2) break;
+										mes .header$;
+										mes "Are you sure you";
+										mes "want to remove this";
+										mes "from the reward list?";
+										mes " ";
+										mes sprintf(" > ^3355FF%d ^777777%s^000000", .@tempList[.@j*2+1], F_GetItemName(.@tempList[.@j*2]));
+										if (select("Yes!", "No.") == 2) break;
+										message(strcharinfo(0), sprintf("[ %s ] You removed [%d %s] from the reward list.", .evtList$[getarg(0) * 3], .@tempList[.@j*2+1], F_GetItemName(.@tempList[.@j*2])));
+										deletearray(.@tempList[.@j*2], 2);
+										break;
+
+									case 3:
+										deletearray(getd(.@var$ + "_ITEM"));
+										copyarray(getd(.@var$ + "_ITEM"), .@tempList[0], getarraysize(.@tempList));
+										message(strcharinfo(0), sprintf("[ %s ] You have updated the reward list.", .evtList$[getarg(0) * 3]));
+									default:
+										.@h = -1;
+										break;
+								}
+								next;
+							}
+							break;
+
+						case 2:
+							mes .header$;
+							mes sprintf("How many points will be rewarded on ^3355FF%s^000000 mini-game?", .evtList$[getarg(0) * 3]);
+							mes " ";
+							mes sprintf("Event Points: ^3355FF%d^000000", getd(.@var$ + "_POINT"));
+							next;
+							input(.@pt,0,10000);
+							if (.@pt < 0) break;
+							setd(.@var$ + "_POINT", .@pt);
+							message(strcharinfo(0), sprintf("[ %s ] You have set the points earned to [ %s ].", .evtList$[getarg(0) * 3], F_InsertPlural(.@pt, "Event Point")));
+							break;
+
+						case 3:
+							mes .header$;
+							mes sprintf("How many points will be rewarded on ^3355FF%s^000000 mini-game as consolation?", .evtList$[getarg(0) * 3]);
+							mes " ";
+							mes sprintf("Event Points: ^3355FF%d^000000", getd(.@var$ + "_CONSO_POINT"));
+							next;
+							input(.@pt,0,10000);
+							if (.@pt < 0) break;
+							setd(.@var$ + "_CONSO_POINT", .@pt);
+							message(strcharinfo(0), sprintf("[ %s ] You have set the consolation points earned to [ %s ].", .evtList$[getarg(0) * 3], F_InsertPlural(.@pt, "Event Point")));
+							break;
+					}
+				}
+				break;
+
+			case 3:
+				.@i = 0;
+				while (.@i != -1) {
+					switch(select(sprintf("[ ^0000FF%d^000000 ] Rounds", getd(.@var$ + "_ROUND")),
+								sprintf("[ ^0000FF%s^000000 ] Mode", getd(.@var$ + "_RULE") == 1 ? "All monsters" : "MvP monsters"),
+								"Go Back")) {
+						default:
+							.@i = -1;
+							break;
+
+						case 1:
+							mes .header$;
+							mes "How many rounds will the ^0000FFDisguise^000000 mini-game run?";
+							mes " ";
+							mes sprintf("Rounds: ^3355FF%d^000000", getd(.@var$ + "_ROUND"));
+							next;
+							input(.@rnd,0,10000);
+							if (.@rnd < 0) break;
+							setd(.@var$ + "_ROUND", .@rnd);
+							message(strcharinfo(0), sprintf("[ %s ] You have set rounds to [ %s ].", .evtList$[getarg(0) * 3], F_InsertPlural(.@rnd, "Round")));
+							break;
+
+						case 2:
+							mes .header$;
+							mes "What will be the ^0000FFDisguise mode^000000 of the mini-game NPC?";
+							mes " ";
+							mes sprintf("Mode: ^3355FF%s^000000", getd(.@var$ + "_RULE") == 1 ? "All monsters" : "MvP monsters");
+							next;
+							switch(select("All monsters", "MvP monsters", "Go Back")) {
+								default:
+									break;
+
+								case 1:
+									setd(.@var$ + "_RULE", 1);
+									break;
+
+								case 2:
+									setd(.@var$ + "_RULE", 2);
+									break;
+							}
+							message(strcharinfo(0), sprintf("[ %s ] You have set the mode to [ %s ].", .evtList$[getarg(0) * 3], (getd(.@var$ + "_RULE") == 1 ? "All monsters" : "MvP monsters")));
+							break;
+					}
+				}
+				break;
+		}
+	}
+	return;
+
+// -----------------------------------------------------------
+// 5-minute countdown starts cutin immediately
+// -----------------------------------------------------------
+OnBegin:
+	.cnt = 5;
+	$@EVT_CUTIN$ = .evtList$[.evt_idx * 3 + 2];
+	.@var$ = sprintf("$EVT_%s", strtoupper(.evtList$[.evt_idx * 3 + 2]));
+	setd(.@var$, 1);
+	initnpctimer();
+	end;
+
+OnTimer60000:
+	announce(sprintf("[ %s ] %s remaining before the mini-game starts. Use '@join %s' command to participate.", .evtList$[.evt_idx * 3], F_CommaPlural(4, "minute"), .evtList$[.evt_idx * 3 + 2]), bc_all|bc_npc, 0x00ffff);
+	end;
+
+OnTimer120000:
+	announce(sprintf("[ %s ] %s remaining before the mini-game starts. Use '@join %s' command to participate.", .evtList$[.evt_idx * 3], F_CommaPlural(3, "minute"), .evtList$[.evt_idx * 3 + 2]), bc_all|bc_npc, 0x00ffff);
+	end;
+
+OnTimer180000:
+	announce(sprintf("[ %s ] %s remaining before the mini-game starts. Use '@join %s' command to participate.", .evtList$[.evt_idx * 3], F_CommaPlural(2, "minute"), .evtList$[.evt_idx * 3 + 2]), bc_all|bc_npc, 0x00ffff);
+	end;
+
+OnTimer240000:
+	announce(sprintf("[ %s ] %s remaining before the mini-game starts. Use '@join %s' command to participate.", .evtList$[.evt_idx * 3], F_CommaPlural(1, "minute"), .evtList$[.evt_idx * 3 + 2]), bc_all|bc_npc, 0x00ffff);
+	end;
+
+OnTimer290000:
+	announce(sprintf("[ %s ] %s remaining before the mini-game starts. Use '@join %s' command to participate.", .evtList$[.evt_idx * 3], F_CommaPlural(10, "second"), .evtList$[.evt_idx * 3 + 2]), bc_all|bc_npc, 0x00ffff);
+	end;
+
+OnTimer300000:
+	stopnpctimer();
+	$@EVT_CUTIN$ = "";
+	.@var$ = sprintf("$EVT_%s", strtoupper(.evtList$[.evt_idx * 3 + 2]));
+	setd(.@var$, 2);
+	announce(sprintf("[ %s ] The mini-game has begun!", .evtList$[.evt_idx * 3]), bc_all|bc_npc, 0x00ffff);
+	donpcevent(.evtList$[.evt_idx * 3 + 1] + "::OnStart");
+	end;
+
+OnStop:
+	stopnpctimer();
+	$@EVT_CUTIN$ = "";
+	.@var$ = sprintf("$EVT_%s", strtoupper(.evtList$[.evt_idx * 3 + 2]));
+	setd(.@var$, 0);
+	announce(sprintf("[ %s ] The mini-game has ended!", .evtList$[.evt_idx * 3]), bc_all|bc_npc, 0x00ffff);
+	donpcevent(.evtList$[.evt_idx * 3 + 1] + "::OnStop");
+	end;
+
+// Syntax: F_SetMiniGame(.evt_idx);
+function F_SetMiniGame {
+	if (getarraysize($LDRAW_INFO$) > 0 || $CFB_START || $@EVT_WB || $@INVADE_MAP$ != "" || $SERV_MODE || getarraysize($EVT_GMMODE$) > 0 || $ACTIVE_LOTTI ||
+		(getarraysize(getd(sprintf("$bid_list_%d", 0))) > 0 || getarraysize(getd(sprintf("$bid_list_%d", 1))) > 0 || getarraysize(getd(sprintf("$bid_list_%d", 2))) > 0))
+		return;
+
+	.evt_idx = getarg(0);
+
+	.@var$ = sprintf("$EVT_%s", strtoupper(.evtList$[(.evt_idx * 3 + 2)]));
+	setd(.@var$, 1);
+	if (getd(.@var$)) {
+		for (.@i = 0; .@i < getarraysize(.evtList$); .@i += 3) {
+			if (.@i/3 != .evt_idx)
+				donpcevent(.evtList$[.@i + 1] + "::OnStop");
+		}
+		donpcevent(strnpcinfo(0) + "::OnBegin");
+	}
+	return;
+}
+}
+
+//-------------------------------------------------
+// -- Mini-Games : Illustrations (5-minute Cutin)
+// Shows cutin during countdown only
+// Hides cutin when event starts
+//-------------------------------------------------
+-	script	Evt_Illustration	FAKE_NPC,{
+	end;
+
+OnInit:
+	setarray .evtList$[0],
+						"bombring", "bomb_ev",
+						"dice", "dice_ev",
+						"disguise", "disguise_ev",
+						"mushroom", "",
+						"zombie", "zombie_ev",
+						"catcher", "pcatch_ev",
+						"stopclock", "stc_ev";
+	end;
+
+OnPCLoginEvent:
+	deltimer("Evt_Illustration::OnPCLoginEvent");
+
+	.@state = 0;
+	.@cutin$ = "";
+
+	if ($SERV_MODE > 0) {
+		.@state = 1;
+		.@cutin$ = sprintf("gm_maintenance_%d", $SERV_MODE);
+	}
+	else if ((atcmd_login&512) == 0 && getarraysize($EVT_GMMODE$) > 0) {
+		if (!(getmapflag(strcharinfo(3), MF_GVG) || getmapflag(strcharinfo(3), MF_BATTLEGROUND) || getmapflag(strcharinfo(3), MF_MVP_MAP) || getmapflag(strcharinfo(3), MF_PVP) || #botCheck)) {
+			.@state = 1;
+			.@cutin$ = sprintf("%s_%s", $EVT_GMMODE$[0], $EVT_GMMODE$[1]);
+		}
+	}
+	else if ((atcmd_login&512) == 0 && !(getmapflag(strcharinfo(3), MF_GVG) || getmapflag(strcharinfo(3), MF_BATTLEGROUND) || getmapflag(strcharinfo(3), MF_MVP_MAP) || getmapflag(strcharinfo(3), MF_PVP) || #botCheck)) {
+
+		if ($@INVADE_MAP$ != "") {
+			.@state = strcharinfo(3) != $@INVADE_MAP$ ? 1 : 0;
+			.@cutin$ = "invasion";
+		}
+		else if ($ACTIVE_LOTTI || getarraysize($LDRAW_INFO$) > 0 || (getarraysize(getd(sprintf("$bid_list_%d", 0))) > 0 || getarraysize(getd(sprintf("$bid_list_%d", 1))) > 0 || getarraysize(getd(sprintf("$bid_list_%d", 2))) > 0)) {
+			.@state = 1;
+			if ($ACTIVE_LOTTI)
+				.@cutin$ = "lotti";
+			else if (getarraysize($LDRAW_INFO$) > 0)
+				.@cutin$ = "luckydraw";
+			else
+				.@cutin$ = "auction";
+		}
+		else if ($@EVT_WB > 0) {
+			.@state = strcharinfo(3) == $EVT_WB_MAP$ ? 0 : 1;
+			.@cutin$ = strcharinfo(3) == $EVT_WB_MAP$ ? "" : "worldboss";
+		}
+		else if ($CFB_START) {
+			.@state = strcharinfo(3) == "cockpit_ev" ? 0 : 1;
+			.@cutin$ = strcharinfo(3) == "cockpit_ev" ? "" : "derby";
+		}
+		else if ($@EVT_CUTIN$ != "") {
+			.@state = 1;
+			.@cutin$ = $@EVT_CUTIN$;
+
+			for (.@i = 0; .@i < getarraysize(.evtList$); .@i += 2) {
+				if (.evtList$[.@i] == .@cutin$) {
+					.@map$ = .evtList$[.@i + 1];
+
+					if (.@cutin$ == "mushroom")
+						.@map$ = getvariableofnpc(.map$, "MG_Mushroom");
+
+					if (.@map$ != "" && strcharinfo(3) == .@map$) {
+						.@state = 0;
+						.@cutin$ = "";
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	if (.@state != 1 || .@cutin$ == "") {
+		cutin("", 255);
+		addtimer(1000, "Evt_Illustration::OnPCLoginEvent");
+		end;
+	}
+
+	cutin(sprintf("event\\%s", .@cutin$), 2);
+	addtimer(1000, "Evt_Illustration::OnPCLoginEvent");
+	end;
+}
+
+//-------------------------------------------------
+// -- Mini-Games : Player Command/Access
+//-------------------------------------------------
+-	script	Evt_Player	FAKE_NPC,{
+	end;
+
+OnInit:
+	bindatcmd("join", strnpcinfo(0)+"::OnExecute", 0, 99);
+
+	setarray .evtList$[0],
+		"Bombring", "MG_Bombring", "bombring",
+		"Dice", "MG_Dice", "dice",
+		"Disguise", "MG_Disguise", "disguise",
+		"Find the Mushroom", "MG_Mushroom", "mushroom",
+		"Novice vs Zombies", "MG_Zombie", "zombie",
+		"Poring Catcher", "MG_PoringCatcher", "catcher",
+		"Stop the Clock", "MG_StopTheClock", "stopclock";
+	end;
+
+OnExecute:
+	if (.@atcmd_parameters$ == "") {
+		callsub(S_CommandFail);
+		end;
+	}
+
+	@evtJoin = -1;
+	.@var$ = "";
+	.@input$ = strtolower(.@atcmd_parameters$);
+
+	for (.@i = 0; .@i < getarraysize(.evtList$); .@i += 3) {
+		if (.@input$ == .evtList$[.@i+2]) {
+			@evtJoin = .@i / 3;
+			.@var$ = "$EVT_" + strtoupper(.evtList$[.@i+2]);
+			break;
+		}
+	}
+
+	if (.@var$ == "") {
+		callsub(S_CommandFail);
+		end;
+	}
+
+	if (!getd(.@var$)) {
+		dispbottom(sprintf("[ %s ] The mini-game is not active.", .evtList$[@evtJoin * 3]), 0x00ffff);
+		end;
+	}
+
+	if (getd(.@var$) == 2) {
+		dispbottom(sprintf("[ %s ] The mini-game is already running. Join later.", .evtList$[@evtJoin * 3]), 0x00ffff);
+		end;
+	}
+
+	.@evt$ = .evtList$[@evtJoin * 3];
+
+	switch (@evtJoin) {
+		default:
+			warp("prontera", 157, 190);
+			break;
+
+		case 0: // Bombring
+			callsub(S_LevelCheck, .@evt$);
+			callsub(S_Debuff);
+			atcommand("@storeall");
+			warp("bomb_ev", 0, 0);
+			break;
+
+		case 1: // Dice
+			warp("dice_ev", 50, 72);
+			break;
+
+		case 2: // Disguise
+			warp("disguise_ev", 99, 85);
+			break;
+
+		case 3: // Find the Mushroom
+			.@map$ = getvariableofnpc(.map$, "MG_Mushroom");
+			if (.@map$ != "")
+				warp(.@map$, 0, 0);
+			else
+				message(strcharinfo(0), sprintf("[ %s ] The map is not announced yet.", .@evt$));
+			break;
+
+
+		case 4: // Novice vs Zombies
+			callsub(S_LevelCheck, .@evt$);
+			callsub(S_Debuff);
+			atcommand("@storeall");
+			warp("zombie_ev", 0, 0);
+			break;
+
+		case 5: // Poring Catcher
+			warp("pcatch_ev", 0, 0);
+			break;
+
+		case 6: // Stop the Clock
+			if (#STOPCLOCK) #STOPCLOCK = 0;
+			warp("stc_ev", 48, 29);
+			break;
+	}
+	end;
+
+S_CommandFail:
+	.@evt$ = "";
+	for (.@i = 0; .@i < getarraysize(.evtList$); .@i += 3) {
+		.@evt$ += .evtList$[.@i+2];
+		if (.@i < getarraysize(.evtList$) - 3)
+			.@evt$ += " | ";
+	}
+
+	message(strcharinfo(0), "-- Event List ----------------------------");
+	message(strcharinfo(0), .@evt$);
+	message(strcharinfo(0), "---------------------------------------------");
+	message(strcharinfo(0), "@join failed.");
+	return;
+
+S_LevelCheck:
+	if (BaseLevel != 1 || JobLevel != 1 || Class != Job_Novice) {
+		message(strcharinfo(0), sprintf("[ %s ] You must be a Level 1 Novice to join the mini-game.", getarg(0)));
+		end;
+	}
+	return;
+
+S_Debuff:
+	sc_end(SC_ALL);
+	return;
+
+}

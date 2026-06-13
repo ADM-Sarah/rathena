@@ -640,6 +640,40 @@ ACMD_FUNC(mapmove)
 }
 
 /*==========================================
+ * @nobroadcast
+ *------------------------------------------*/
+ACMD_FUNC(nobc)
+{
+	nullpo_retr(-1, sd);
+
+	sd->state.nobroadcast = !sd->state.nobroadcast;
+
+	if (sd->state.nobroadcast)
+		clif_displaymessage(fd, "Broadcast messages OFF.");
+	else
+		clif_displaymessage(fd, "Broadcast messages ON.");
+
+	return 0;
+}
+
+/*==========================================
+ * @nobroadcast2
+ *------------------------------------------*/
+ACMD_FUNC(nobc2)
+{
+	nullpo_retr(-1, sd);
+
+	sd->state.nobroadcastall = !sd->state.nobroadcastall;
+
+	if (sd->state.nobroadcastall)
+		clif_displaymessage(fd, "All announcements OFF.");
+	else
+		clif_displaymessage(fd, "All announcements ON.");
+
+	return 0;
+}
+
+/*==========================================
  * Displays where a character is. Corrected version by Silent. [Skotlex]
  *------------------------------------------*/
 ACMD_FUNC(where)
@@ -2104,10 +2138,10 @@ ACMD_FUNC(go)
 		char map[MAP_NAME_LENGTH];
 		int32 x, y;
 	} data[] = {
-		{ MAP_PRONTERA,    156, 191 }, //  0=Prontera
+		{ MAP_VALMORRA,    171, 132 }, // 0=Valmorra
 		{ MAP_MORROC,      156,  93 }, //  1=Morroc
 		{ MAP_GEFFEN,      119,  59 }, //  2=Geffen
-		{ MAP_PAYON,       162, 233 }, //  3=Payon
+		{ MAP_PAYON,       182, 270 }, //  3=Payon
 		{ MAP_ALBERTA,     192, 147 }, //  4=Alberta
 #ifdef RENEWAL
 		{ MAP_IZLUDE,      128, 146 }, //  5=Izlude (Renewal)
@@ -2149,6 +2183,7 @@ ACMD_FUNC(go)
 		{ MAP_MALAYA,      242, 211 }, // 34=Malaya Port
 		{ MAP_ECLAGE,      110,  39 }, // 35=Eclage
 		{ MAP_LASAGNA,     193, 182 }, // 36=Lasagna
+		{ MAP_PRONTERA,    156, 191 }, //  37=Prontera
 	};
 
 	nullpo_retr(-1, sd);
@@ -2186,7 +2221,7 @@ ACMD_FUNC(go)
 	for (i = 0; map_name[i]; i++)
 		map_name[i] = TOLOWER(map_name[i]);
 	// try to identify the map name
-	if (strncmp(map_name, "prontera", 3) == 0) {
+	if (strncmp(map_name, "valmorra", 3) == 0) {
 		town = 0;
 	} else if (strncmp(map_name, "morocc", 4) == 0 ||
 	           strncmp(map_name, "morroc", 4) == 0) {
@@ -2270,6 +2305,8 @@ ACMD_FUNC(go)
 		town = 35;
 	} else if (strncmp(map_name, "lasagna", 2) == 0) {
 		town = 36;
+	} else if (strncmp(map_name, "prontera", 2) == 0) {
+		town = 37;
 	}
 
 	if (town >= 0 && town < ARRAYLENGTH(data))
@@ -6974,6 +7011,14 @@ ACMD_FUNC(autoloot)
 {
 	int32 rate;
 	nullpo_retr(-1, sd);
+
+	// Block @autoloot inside World Boss Area
+	if (sd->m >= 0 && strcmp(map_getmapdata(sd->m)->name, "worldboss") == 0) {
+		sd->state.autoloot = 0;
+		clif_displaymessage(fd, "[World Boss] @autoloot is disabled in this area.");
+		return 0;
+	}
+
 	// autoloot command without value
 	if(!message || !*message)
 	{
@@ -6991,10 +7036,10 @@ ACMD_FUNC(autoloot)
 
 	sd->state.autoloot = rate;
 	if (sd->state.autoloot) {
-		snprintf(atcmd_output, sizeof atcmd_output, msg_txt(sd,1187),((double)sd->state.autoloot)/100.); // Autolooting items with drop rates of %0.02f%% and below.
+		snprintf(atcmd_output, sizeof atcmd_output, msg_txt(sd,1187),((double)sd->state.autoloot)/100.);
 		clif_displaymessage(fd, atcmd_output);
 	}else
-		clif_displaymessage(fd, msg_txt(sd,1188)); // Autoloot is now off.
+		clif_displaymessage(fd, msg_txt(sd,1188));
 
 	return 0;
 }
@@ -7010,6 +7055,14 @@ ACMD_FUNC(autolootitem)
 
 	nullpo_retr(-1, sd);
 
+	// Block @alootid inside World Boss Area
+	if (sd->m >= 0 && strcmp(map_getmapdata(sd->m)->name, "worldboss") == 0) {
+		memset(sd->state.autolootid, 0, sizeof(sd->state.autolootid));
+		sd->state.autolooting = 0;
+		clif_displaymessage(fd, "[World Boss] @alootid is disabled in this area.");
+		return 0;
+	}
+
 	if (message && *message) {
 		if (message[0] == '+') {
 			message++;
@@ -7023,7 +7076,7 @@ ACMD_FUNC(autolootitem)
 			action = 4;
 	}
 
-	if (action < 3) // add or remove
+	if (action < 3)
 	{
 		item_data = item_db.find( strtoul( message, nullptr, 10 ) );
 
@@ -7032,8 +7085,7 @@ ACMD_FUNC(autolootitem)
 		}
 
 		if( item_data == nullptr ){
-			// No items founds in the DB with Id or Name
-			clif_displaymessage(fd, msg_txt(sd,1189)); // Item not found.
+			clif_displaymessage(fd, msg_txt(sd,1189));
 			return -1;
 		}
 	}
@@ -7042,43 +7094,45 @@ ACMD_FUNC(autolootitem)
 	case 1:
 		ARR_FIND(0, AUTOLOOTITEM_SIZE, i, sd->state.autolootid[i] == item_data->nameid);
 		if (i != AUTOLOOTITEM_SIZE) {
-			clif_displaymessage(fd, msg_txt(sd,1190)); // You're already autolooting this item.
+			clif_displaymessage(fd, msg_txt(sd,1190));
 			return -1;
 		}
 		ARR_FIND(0, AUTOLOOTITEM_SIZE, i, sd->state.autolootid[i] == 0);
 		if (i == AUTOLOOTITEM_SIZE) {
-			clif_displaymessage(fd, msg_txt(sd,1191)); // Your autolootitem list is full. Remove some items first with @autolootid -<item name or ID>.
+			clif_displaymessage(fd, msg_txt(sd,1191));
 			return -1;
 		}
-		sd->state.autolootid[i] = item_data->nameid; // Autoloot Activated
-		sprintf(atcmd_output, msg_txt(sd,1192), item_data->name.c_str(), item_db.create_item_link( item_data ).c_str(), item_data->nameid); // Autolooting item: '%s'/'%s' {%u}
+		sd->state.autolootid[i] = item_data->nameid;
+		sprintf(atcmd_output, msg_txt(sd,1192), item_data->name.c_str(), item_db.create_item_link( item_data ).c_str(), item_data->nameid);
 		clif_displaymessage(fd, atcmd_output);
 		sd->state.autolooting = 1;
 		break;
+
 	case 2:
 		ARR_FIND(0, AUTOLOOTITEM_SIZE, i, sd->state.autolootid[i] == item_data->nameid);
 		if (i == AUTOLOOTITEM_SIZE) {
-			clif_displaymessage(fd, msg_txt(sd,1193)); // You're currently not autolooting this item.
+			clif_displaymessage(fd, msg_txt(sd,1193));
 			return -1;
 		}
 		sd->state.autolootid[i] = 0;
-		sprintf(atcmd_output, msg_txt(sd,1194), item_data->name.c_str(), item_db.create_item_link( item_data ).c_str(), item_data->nameid); // Removed item: '%s'/'%s' {%u} from your autolootitem list.
+		sprintf(atcmd_output, msg_txt(sd,1194), item_data->name.c_str(), item_db.create_item_link( item_data ).c_str(), item_data->nameid);
 		clif_displaymessage(fd, atcmd_output);
 		ARR_FIND(0, AUTOLOOTITEM_SIZE, i, sd->state.autolootid[i] != 0);
 		if (i == AUTOLOOTITEM_SIZE) {
 			sd->state.autolooting = 0;
 		}
 		break;
+
 	case 3:
-		sprintf(atcmd_output, msg_txt(sd,1195), AUTOLOOTITEM_SIZE); // You can have %d items on your autolootitem list.
+		sprintf(atcmd_output, msg_txt(sd,1195), AUTOLOOTITEM_SIZE);
 		clif_displaymessage(fd, atcmd_output);
-		clif_displaymessage(fd, msg_txt(sd,1196)); // To add an item to the list, use "@alootid +<item name or ID>". To remove an item, use "@alootid -<item name or ID>".
-		clif_displaymessage(fd, msg_txt(sd,1197)); // "@alootid reset" will clear your autolootitem list.
+		clif_displaymessage(fd, msg_txt(sd,1196));
+		clif_displaymessage(fd, msg_txt(sd,1197));
 		ARR_FIND(0, AUTOLOOTITEM_SIZE, i, sd->state.autolootid[i] != 0);
 		if (i == AUTOLOOTITEM_SIZE) {
-			clif_displaymessage(fd, msg_txt(sd,1198)); // Your autolootitem list is empty.
+			clif_displaymessage(fd, msg_txt(sd,1198));
 		} else {
-			clif_displaymessage(fd, msg_txt(sd,1199)); // Items on your autolootitem list:
+			clif_displaymessage(fd, msg_txt(sd,1199));
 			for(i = 0; i < AUTOLOOTITEM_SIZE; i++)
 			{
 				if (sd->state.autolootid[i] == 0)
@@ -7095,9 +7149,10 @@ ACMD_FUNC(autolootitem)
 			}
 		}
 		break;
+
 	case 4:
 		memset(sd->state.autolootid, 0, sizeof(sd->state.autolootid));
-		clif_displaymessage(fd, msg_txt(sd,1200)); // Your autolootitem list has been reset.
+		clif_displaymessage(fd, msg_txt(sd,1200));
 		sd->state.autolooting = 0;
 		break;
 	}
@@ -7123,6 +7178,13 @@ ACMD_FUNC(autoloottype)
 	int32 ITEM_MAX = 1533;
 
 	nullpo_retr(-1, sd);
+
+	// Block @aloottype inside World Boss Area
+	if (sd->m >= 0 && strcmp(map_getmapdata(sd->m)->name, "worldboss") == 0) {
+		sd->state.autoloottype = 0;
+		clif_displaymessage(fd, "[World Boss] @aloottype is disabled in this area.");
+		return 0;
+	}
 
 	if (message && *message) {
 		if (message[0] == '+') {
@@ -8106,6 +8168,11 @@ ACMD_FUNC(mobinfo)
 			base_exp += (base_exp * battle_config.vip_base_exp_increase) / 100;
 			job_exp += (job_exp * battle_config.vip_job_exp_increase) / 100;
 		}
+		if (sd->sc.getSCE(SC_AUTOATTACK)) {
+			int ratio = pc_isvip(sd) ? battle_config.autobattle_vip_exp_ratio:battle_config.autobattle_exp_ratio;
+			base_exp = base_exp * ratio / 100;
+			job_exp  = job_exp  * ratio / 100;
+		}
 #ifdef RENEWAL_EXP
 		if( battle_config.atcommand_mobinfo_type ) {
 			int32 penalty = pc_level_penalty_mod( sd, PENALTY_EXP, mob );
@@ -8161,6 +8228,13 @@ ACMD_FUNC(mobinfo)
 					continue;
 
 				int32 droprate = mob_getdroprate( sd, mob, entry->rate, drop_modifier );
+
+				if (sd->state.autoattack) {
+					if (pc_isvip(sd))
+						droprate = droprate * battle_config.autobattle_vip_drop_ratio / 100;
+					else
+						droprate = droprate * battle_config.autobattle_drop_ratio / 100;
+				}
 
 				sprintf(atcmd_output2, " - %s  %02.02f%%", item_db.create_item_link( id ).c_str(), (float)droprate / 100);
 				strcat(atcmd_output, atcmd_output2);
@@ -8723,7 +8797,7 @@ ACMD_FUNC(whodrops)
 						dropchance = 1;
 				}
 #endif
-				if (pc_isvip(sd)) // Display item rate increase for VIP
+				if (pc_isvip(sd) && !vip_drop_excluded_db.find(id->nameid)) // Display item rate increase for VIP
 					dropchance += (dropchance * battle_config.vip_drop_increase) / 100;
 				sprintf(atcmd_output, "- %s (%d): %02.02f%%", mob->jname.c_str(), id->mob[j].id, dropchance/100.);
 				clif_displaymessage(fd, atcmd_output);
@@ -10901,6 +10975,143 @@ ACMD_FUNC(cloneequip) {
 	return 0;
 }
 
+/*=========================================
+* Check values of resistance [ADM]Sarah
+*-----------------------------------------*/
+ACMD_FUNC(resist) {
+    char resis_state[100];
+    char info[CHAT_SIZE_MAX];
+    int j, count = 0;
+    struct {
+        const char* format;
+        int value;
+    } info_table[] = {
+        { NULL, 0 },
+        { "   [ %d ] Small size resist", 0 }, // 1
+        { "   [ %d ] Medium size resist", 0 },
+        { "   [ %d ] Large size resist", 0 },
+
+        { "   [ %d ] Normal class resist", 0 },
+        { "   [ %d ] Boss class resist", 0 },
+        { "   [ %d ] Guardian class resist", 0 },
+        { "   [ %d ] Battlefield class resist", 0 }, // 7
+
+        { "   [ %d ] Formless race resist", 0 },
+        { "   [ %d ] Undead race resist", 0 },
+        { "   [ %d ] Brute race resist", 0 },
+        { "   [ %d ] Plant race resist", 0 },
+        { "   [ %d ] Insect race resist", 0 },
+        { "   [ %d ] Fish race resist", 0 },
+        { "   [ %d ] Demon race resist", 0 },
+        { "   [ %d ] Demi-Human race resist", 0 },
+        { "   [ %d ] Angel race resist", 0 },
+        { "   [ %d ] Dragon race resist", 0 },
+        { "   [ %d ] Player race resist", 0 }, // 18
+
+        { "   [ %d ] Resistance from Goblin", 0 },
+        { "   [ %d ] Resistance from Kobold", 0 },
+        { "   [ %d ] Resistance from Orc", 0 },
+        { "   [ %d ] Resistance from Golem", 0 },
+        { "   [ %d ] Resistance from Guardian", 0 },
+        { "   [ %d ] Resistance from Ninja", 0 },
+        { "   [ %d ] Resistance from GVG", 0 },
+        { "   [ %d ] Resistance from Battlefield", 0 },
+        { "   [ %d ] Resistance from Treasure", 0 },
+        { "   [ %d ] Resistance from Biolab", 0 },
+        { "   [ %d ] Resistance from Manuk", 0 },
+        { "   [ %d ] Resistance from Splendide", 0 },
+        { "   [ %d ] Resistance from Scaraba", 0 }, // 31
+
+        { "   [ %d ] Neutral element resist", 0 },
+        { "   [ %d ] Water element resist", 0 },
+        { "   [ %d ] Earth element resist", 0 },
+        { "   [ %d ] Fire element resist", 0 },
+        { "   [ %d ] Wind element resist", 0 },
+        { "   [ %d ] Poison element resist", 0 },
+        { "   [ %d ] Holy element resist", 0 },
+        { "   [ %d ] Dark element resist", 0 },
+        { "   [ %d ] Ghost element resist", 0 },
+        { "   [ %d ] Undead element resist", 0 }, // 41
+
+        { "   [ %d ] Neutral element defense", 0 },
+        { "   [ %d ] Water element defense", 0 },
+        { "   [ %d ] Earth element defense", 0 },
+        { "   [ %d ] Fire element defense", 0 },
+        { "   [ %d ] Wind element defense", 0 },
+        { "   [ %d ] Poison element defense", 0 },
+        { "   [ %d ] Holy element defense", 0 },
+        { "   [ %d ] Dark element defense", 0 },
+        { "   [ %d ] Ghost element defense", 0 },
+        { "   [ %d ] Undead element defense", 0 }, // 51
+
+        { "   [ %d ] Long range damage resist", 0 },
+        { "   [ %d ] Melee damage resist", 0 }, // 53
+        { "   [ %d ] Weapon immunity", 0 },
+        { "   [ %d ] Magic immunity", 0 },
+        { "   [ %d ] Misc immunity", 0 }, // 56
+        { NULL, 0 }
+    };
+
+    memset(resis_state, '\0', sizeof(resis_state));
+    memset(info, '\0', sizeof(info));
+
+    info_table[0].format = resis_state;
+
+    for (j = 0; j <= 2; j++)
+        info_table[j+1].value = sd->indexed_bonus.subsize[SZ_ALL] + sd->indexed_bonus.subsize[j];
+
+    for (j = 0; j <= 3; j++)
+        info_table[j+4].value = sd->indexed_bonus.subclass[CLASS_ALL] + sd->indexed_bonus.subclass[j];
+
+    for (j = 0; j <= 10; j++)
+        info_table[j+8].value = sd->indexed_bonus.subrace[RC_ALL] + sd->indexed_bonus.subrace[j];
+
+    for (j = 0; j <= 13; j++)
+        info_table[j+19].value = sd->indexed_bonus.subrace2[j];
+
+    for (j = 0; j <= 9; j++) {
+        info_table[j+32].value = (
+            sd->indexed_bonus.subele[ELE_ALL] +
+            sd->indexed_bonus.subele_script[ELE_ALL] +
+            sd->indexed_bonus.subele[j] +
+            sd->indexed_bonus.subele_script[j]
+        );
+    }
+
+    for (j = 0; j <= 9; j++)
+        info_table[j+42].value = sd->indexed_bonus.subdefele[ELE_ALL] + sd->indexed_bonus.subdefele[j];
+
+    info_table[52].value = sd->bonus.long_attack_def_rate;
+    info_table[53].value = sd->bonus.near_attack_def_rate;
+    info_table[54].value = sd->special_state.no_weapon_damage;
+    info_table[55].value = sd->special_state.no_magic_damage;
+    info_table[56].value = sd->special_state.no_misc_damage;
+
+    for (j = 1; info_table[j].format != NULL; j++) {
+        if (info_table[j].value != 0)
+            count += 1;
+    }
+
+    if (count == 0) {
+        sprintf(resis_state, "You don't have any resistance.");
+        clif_messagecolor(sd, color_table[COLOR_RED], resis_state, false, SELF);
+    } else {
+        sprintf(resis_state, "======== Resistance ========");
+        clif_messagecolor(sd, color_table[COLOR_WHITE], resis_state, false, SELF);
+    }
+
+    for (j = 1; info_table[j].format != NULL; j++) {
+        sprintf(info, info_table[j].format, info_table[j].value);
+        if (info_table[j].value > 0 && info_table[j].value <= 70)
+            clif_messagecolor(sd, color_table[COLOR_CYAN], info, false, SELF);
+        else if (info_table[j].value > 70)
+            clif_messagecolor(sd, color_table[COLOR_YELLOW], info, false, SELF);
+        else if (info_table[j].value < 0)
+            clif_messagecolor(sd, color_table[COLOR_RED], info, false, SELF);
+    }
+    return 0;
+}
+
 /**
 * Clone other player's statuses/parameters using method same like ACMD_FUNC(param), doesn't use stat point
 * Usage: @clonestat <char name/ID>
@@ -11464,6 +11675,359 @@ ACMD_FUNC(macrochecker){
 	return 0;
 }
 
+ACMD_FUNC(battleoffline) {
+ 
+	nullpo_retr(-1, sd);
+
+	if (pc_isdead(sd)) {
+		clif_displaymessage(fd, "You cannot enter battle mode when dead.");
+		return -1;
+	}
+
+	sd->state.autotrade = 1;
+	clif_authfail_fd(fd, 15);
+
+	return 0;
+}
+
+ACMD_FUNC(reloadjobbonusdb){
+	nullpo_retr(-1, sd);
+
+	struct s_mapiterator* iter;
+
+	// clear data
+	job_bonus_db.clear();
+
+	// read new data
+	job_bonus_db.load();
+
+	// readjust itemdb pointer cache for each player
+	iter = mapit_geteachpc();
+	for( sd = (map_session_data*)mapit_first(iter); mapit_exists(iter); sd = (map_session_data*)mapit_next(iter) ) {
+		status_calc_pc(sd, SCO_FORCE); // 
+	}
+	mapit_free(iter);
+
+	clif_displaymessage(fd, "Job bonus database has been reloaded.");
+
+	return 0;
+}
+
+// (^~_~^) Gepard Shield Start
+
+ACMD_FUNC(gepard_block_nick)
+{
+	map_session_data* violator_sd;
+	time_t time_server;
+	unsigned int duration;
+	unsigned int violator_account_id = 0;
+	unsigned int violator_unique_id = 0;
+	char reason_str[GEPARD_REASON_LENGTH];
+	char unban_time_str[GEPARD_TIME_STR_LENGTH];
+	char duration_type, violator_name[NAME_LENGTH];
+	const char* command_info = "Wrong input (usage: @gepard_block_nick <duration> <duration_type m/h/d> \"<char name>\" <reason>)";
+
+	nullpo_retr(-1, sd);
+
+	memset(atcmd_player_name, '\0', sizeof(atcmd_player_name));
+
+	if (!*message || sscanf(message, "%u %c \"%23[^\"]\" %99[^\n]", &duration, &duration_type, violator_name, reason_str) < 4)
+	{
+		clif_displaymessage(fd, command_info);
+		return -1;
+	}
+
+	time(&time_server);
+
+	switch (duration_type)
+	{
+		case 'm':
+			time_server += (duration * 60);
+		break;
+
+		case 'h':
+			time_server += (duration * 3600);
+		break;
+
+		case 'd':
+			time_server += (duration * 86400);
+		break;
+
+		default:
+			duration = 0;
+		break;
+	}
+
+	if (duration == 0)
+	{
+		clif_displaymessage(fd, command_info);
+		return -1;
+	}
+
+	strftime(unban_time_str, sizeof(unban_time_str), "%Y-%m-%d %H:%M:%S", localtime(&time_server)); 
+
+	sprintf(atcmd_output, "Request: block by name - %s", violator_name);
+	clif_displaymessage(fd, atcmd_output);
+
+	violator_sd = map_nick2sd(violator_name, false);
+
+	if (violator_sd != NULL)
+	{
+		violator_account_id = violator_sd->status.account_id;
+		violator_unique_id = session[violator_sd->fd]->gepard_info.unique_id;
+	}
+
+	chrif_gepard_req_block(violator_unique_id, violator_name, violator_account_id, sd->status.name, sd->status.account_id, unban_time_str, reason_str);
+
+	return 0;
+}
+
+// (^~_~^) Gepard Shield End
+
+// (^~_~^) Gepard Shield Start
+
+ACMD_FUNC(gepard_block_account_id)
+{
+	map_session_data* violator_sd;
+	time_t time_server;
+	unsigned int duration;
+	unsigned int violator_account_id = 0;
+	unsigned int violator_unique_id = 0;
+	char reason_str[GEPARD_REASON_LENGTH];
+	char duration_type, unban_time_str[GEPARD_TIME_STR_LENGTH];
+	const char* command_info = "Wrong input (usage: @gepard_block_account_id <duration> <duration_type m/h/d> <account ID> <reason>)";
+
+	nullpo_retr(-1, sd);
+
+	memset(atcmd_player_name, '\0', sizeof(atcmd_player_name));
+
+	if (!*message || sscanf(message, "%u %c %u %99[^\n]", &duration, &duration_type, &violator_account_id, reason_str) < 4)
+	{
+		clif_displaymessage(fd, command_info);
+		return -1;
+	}
+
+	time(&time_server);
+
+	switch (duration_type)
+	{
+		case 'm':
+			time_server += (duration * 60);
+		break;
+
+		case 'h':
+			time_server += (duration * 3600);
+		break;
+
+		case 'd':
+			time_server += (duration * 86400);
+		break;
+
+		default:
+			duration = 0;
+		break;
+	}
+
+	if (duration == 0)
+	{
+		clif_displaymessage(fd, command_info);
+		return -1;
+	}
+
+	strftime(unban_time_str, sizeof(unban_time_str), "%Y-%m-%d %H:%M:%S", localtime(&time_server)); 
+
+	sprintf(atcmd_output, "Request: block by account ID: %u", violator_account_id);
+	clif_displaymessage(fd, atcmd_output);
+
+	violator_sd = map_id2sd(violator_account_id);
+
+	if (violator_sd != NULL)
+	{
+		violator_account_id = violator_sd->status.account_id;
+		violator_unique_id = session[violator_sd->fd]->gepard_info.unique_id;
+	}
+
+	chrif_gepard_req_block(violator_unique_id, atcmd_player_name, violator_account_id, sd->status.name, sd->status.account_id, unban_time_str, reason_str);
+
+	return 0;
+}
+
+ACMD_FUNC(gepard_block_unique_id)
+{
+	time_t time_server;
+	unsigned int duration;
+	unsigned int violator_unique_id = 0;
+	char reason_str[GEPARD_REASON_LENGTH];
+	char duration_type, unban_time_str[GEPARD_TIME_STR_LENGTH];
+	const char* command_info = "Wrong input (usage: @gepard_block_unique_id <duration> <duration_type m/h/d> <unique ID> <reason>)";
+
+	nullpo_retr(-1, sd);
+
+	memset(atcmd_player_name, '\0', sizeof(atcmd_player_name));
+
+	if (!*message || sscanf(message, "%u %c %u %99[^\n]", &duration, &duration_type, &violator_unique_id, reason_str) < 4)
+	{
+		clif_displaymessage(fd, command_info);
+		return -1;
+	}
+
+	time(&time_server);
+
+	switch (duration_type)
+	{
+		case 'm':
+			time_server += (duration * 60);
+		break;
+
+		case 'h':
+			time_server += (duration * 3600);
+		break;
+
+		case 'd':
+			time_server += (duration * 86400);
+		break;
+
+		default:
+			duration = 0;
+		break;
+	}
+
+	if (duration == 0)
+	{
+		clif_displaymessage(fd, command_info);
+		return -1;
+	}
+
+	strftime(unban_time_str, sizeof(unban_time_str), "%Y-%m-%d %H:%M:%S", localtime(&time_server)); 
+
+	sprintf(atcmd_output, "Request: block by unqiue ID: %u", violator_unique_id);
+	clif_displaymessage(fd, atcmd_output);
+
+	chrif_gepard_req_block(violator_unique_id, NULL, 0, sd->status.name, sd->status.account_id, unban_time_str, reason_str);
+
+	return 0;
+}
+
+ACMD_FUNC(gepard_unblock_nick)
+{
+	char violator_name[NAME_LENGTH];
+	const char* command_info = "Wrong input (usage: @gepard_unblock_nick <char name>)";
+
+	nullpo_retr(-1, sd);
+
+	if (!*message || sscanf(message, "\"%23[^\"]\"[^\n]", violator_name) < 1)
+	{
+		clif_displaymessage(fd, command_info);
+		return -1;
+	}
+
+	sprintf(atcmd_output, "Request: unblock by name - %s", violator_name);
+
+	clif_displaymessage(fd, atcmd_output);
+
+	chrif_gepard_req_unblock(0, violator_name, 0, sd->status.account_id);
+
+	return 0;
+}
+
+ACMD_FUNC(gepard_unblock_account_id)
+{
+	int violator_aid;
+	const char* command_info = "Wrong input (usage: @gepard_unblock_account_id <account ID>)";
+
+	nullpo_retr(-1, sd);
+
+	memset(atcmd_player_name, '\0', sizeof(atcmd_player_name));
+
+	if (!*message || sscanf(message, "%d", &violator_aid) < 1)
+	{
+		clif_displaymessage(fd, command_info);
+		return -1;
+	}
+
+	sprintf(atcmd_output, "Request: unblock by account id - %d", violator_aid);
+
+	clif_displaymessage(fd, atcmd_output);
+
+	chrif_gepard_req_unblock(0, NULL, violator_aid, sd->status.account_id);
+
+	return 0;
+}
+
+ACMD_FUNC(gepard_unblock_unique_id)
+{
+	unsigned int violator_unique_id;
+	const char* command_info = "Wrong input (usage: @gepard_unblock_unique_id <unique ID>)";
+
+	nullpo_retr(-1, sd);
+
+	if (!*message || sscanf(message, "%u", &violator_unique_id) < 1)
+	{
+		clif_displaymessage(fd, command_info);
+		return -1;
+	}
+
+	sprintf(atcmd_output, "Request: unblock by unique id - %u", violator_unique_id);
+
+	clif_displaymessage(fd, atcmd_output);
+
+	chrif_gepard_req_unblock(violator_unique_id, NULL, 0, sd->status.account_id);
+
+	return 0;
+}
+
+// (^~_~^) Gepard Shield End
+
+// (^~_~^) Color Nicks Start
+
+ACMD_FUNC(reload_color_db)
+{
+	map_color_nicks_load();
+
+	clif_displaymessage(fd, "Color Nicks DB reloaded.");
+
+	return 0;
+}
+
+ACMD_FUNC(colornick)
+{
+	unsigned int group_id;
+
+	nullpo_retr(-1, sd);
+
+	if (!*message || sscanf(message, "%d", &group_id) < 1)
+	{
+		clif_displaymessage(fd, "Please, enter number of color nick group (usage: @colornick <group_id>).");
+		return -1;
+	}
+
+	if (group_id == 0)
+	{
+		sd->color_nicks_group_id = 0;
+		clif_displaymessage(fd, "Color nick disabled!");
+	}
+	else
+	{
+		if (idb_exists(color_nicks_db, group_id) == 0)
+		{
+			clif_displaymessage(fd, "Group id has not found in Color Nicks DB.");
+			return 0;
+		}
+
+		sd->color_nicks_group_id = group_id;
+
+		clif_displaymessage(fd, "Color nick set.");
+	}
+
+	pc_setglobalreg(sd, add_str("CN_GROUP_ID"), sd->color_nicks_group_id);
+	
+	clif_send_colornicks(sd);
+
+	return 0;
+}
+
+// (^~_~^) Color Nicks End
+
 #include <custom/atcommand.inc>
 
 /**
@@ -11480,8 +12044,29 @@ void atcommand_basecommands(void) {
 	 * TODO: List all commands that causing crash
 	 **/
 	AtCommandInfo atcommand_base[] = {
+
+// (^~_~^) Color Nicks Start
+
+	ACMD_DEF(reload_color_db),
+	ACMD_DEF(colornick),
+
+// (^~_~^) Color Nicks End
+
+// (^~_~^) Gepard Shield Start
+
+		ACMD_DEF(gepard_block_nick),
+		ACMD_DEF(gepard_block_account_id),
+		ACMD_DEF(gepard_block_unique_id),
+		ACMD_DEF(gepard_unblock_nick),
+		ACMD_DEF(gepard_unblock_account_id),
+		ACMD_DEF(gepard_unblock_unique_id),
+
+// (^~_~^) Gepard Shield End
+
 #include <custom/atcommand_def.inc>
 		ACMD_DEF(mapmove),
+		ACMD_DEF(nobc),
+		ACMD_DEF(nobc2),
 		ACMD_DEF(where),
 		ACMD_DEF(jumpto),
 		ACMD_DEF(jump),
@@ -11771,6 +12356,7 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(langtype),
 		ACMD_DEF(vip),
 		ACMD_DEF(showrate),
+		ACMD_DEF(resist),
 		ACMD_DEF(fullstrip),
 		ACMD_DEF(costume),
 		ACMD_DEF(cloneequip),
@@ -11794,6 +12380,10 @@ void atcommand_basecommands(void) {
 		ACMD_DEFR(roulette, ATCMD_NOCONSOLE|ATCMD_NOAUTOTRADE),
 		ACMD_DEF(setcard),
 		ACMD_DEF(macrochecker),
+
+		ACMD_DEF(battleoffline),
+		
+		ACMD_DEF(reloadjobbonusdb),
 	};
 	AtCommandInfo* atcommand;
 	int32 i;

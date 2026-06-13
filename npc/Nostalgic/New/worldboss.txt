@@ -1,0 +1,929 @@
+//===== World Boss MVP Counter Function =======================
+//= Used by normal MVP kills, Bloody Branch, and custom MVP summoner.
+//============================================================
+function	script	F_WorldBoss_AddMvpKill	{
+	.@amount = getarg(0,1);
+	if (.@amount < 1) .@amount = 1;
+
+	if (getvariableofnpc(.status,"WORLDBOSS") || getvariableofnpc(.WorldBossReady,"WORLDBOSS"))
+		return;
+
+	set $KilledMvp, $KilledMvp + .@amount;
+
+	if (getvariableofnpc(.MvpKills,"WORLDBOSS") > 0 && $KilledMvp >= getvariableofnpc(.MvpKills,"WORLDBOSS")) {
+		set getvariableofnpc(.WorldBossReady,"WORLDBOSS"), 1;
+		donpcevent "WORLDBOSS::OnCheckKills";
+	}
+	return;
+}
+
+
+//============================================================
+// World Boss Entry Checker - IP + Gepard Unique ID
+// FULL FIX: LIVE REGISTRY CHECK, NO MORE `char.last_map` DEPENDENCY
+// - Blocks entry if same IP is already inside worldboss map.
+// - Blocks entry if same Gepard unique_id/device is already inside.
+// - Uses live registry + attachrid verification, because SQL last_map can delay/leak.
+// - This is a LIVE map check
+//============================================================
+function	script	F_WB_CleanupRegistry	{
+	.@map$ = getarg(0, "worldboss");
+	.@orig_aid = getcharid(3);
+
+	for (.@i = getarraysize($@WB_AID) - 1; .@i >= 0; .@i--) {
+		.@remove = 0;
+
+		if ($@WB_AID[.@i] <= 0) {
+			.@remove = 1;
+		}
+		else if (!attachrid($@WB_AID[.@i])) {
+			.@remove = 1;
+		}
+		else if (strcharinfo(3) != .@map$) {
+			.@remove = 1;
+		}
+		else {
+			// Refresh data while player is confirmed alive inside map.
+			$@WB_CID[.@i] = getcharid(0);
+			$@WB_NAME$[.@i] = strcharinfo(0);
+			$@WB_IP$[.@i] = getcharip();
+			$@WB_UID$[.@i] = get_unique_id();
+		}
+
+		if (.@remove) {
+			deletearray $@WB_AID[.@i], 1;
+			deletearray $@WB_CID[.@i], 1;
+			deletearray $@WB_NAME$[.@i], 1;
+			deletearray $@WB_IP$[.@i], 1;
+			deletearray $@WB_UID$[.@i], 1;
+		}
+	}
+
+	if (.@orig_aid > 0)
+		attachrid(.@orig_aid);
+	return;
+}
+
+function	script	F_WB_CheckEntry	{
+	.@map$ = getarg(0, "worldboss");
+	.@orig_aid = getcharid(3);
+	.@orig_cid = getcharid(0);
+	.@my_ip$ = getcharip();
+	.@my_uid$ = get_unique_id();
+
+	$@WB_BlockReason$ = "";
+
+	// Clean old/logout/warped entries first.
+	callfunc "F_WB_CleanupRegistry", .@map$;
+
+	for (.@i = 0; .@i < getarraysize($@WB_AID); .@i++) {
+		// Ignore current character if already registered.
+		if ($@WB_AID[.@i] == .@orig_aid && $@WB_CID[.@i] == .@orig_cid)
+			continue;
+
+		if ($@WB_IP$[.@i] != "" && $@WB_IP$[.@i] == .@my_ip$) {
+			$@WB_BlockReason$ = "[World Boss] Only 1 player per IP can enter the World Boss Area. Duplicate IP detected with player: "+$@WB_NAME$[.@i]+".";
+			return 0;
+		}
+
+		if (.@my_uid$ != "" && $@WB_UID$[.@i] != "" && $@WB_UID$[.@i] == .@my_uid$) {
+			$@WB_BlockReason$ = "[World Boss] Only 1 player per device can enter the World Boss Area. Duplicate device detected with player: "+$@WB_NAME$[.@i]+".";
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+function	script	F_WB_RegisterEntry	{
+	.@map$ = getarg(0, "worldboss");
+	.@aid = getcharid(3);
+	.@cid = getcharid(0);
+
+	callfunc "F_WB_CleanupRegistry", .@map$;
+
+	// Update existing record if same character already registered.
+	for (.@i = 0; .@i < getarraysize($@WB_AID); .@i++) {
+		if ($@WB_AID[.@i] == .@aid && $@WB_CID[.@i] == .@cid) {
+			$@WB_NAME$[.@i] = strcharinfo(0);
+			$@WB_IP$[.@i] = getcharip();
+			$@WB_UID$[.@i] = get_unique_id();
+			return;
+		}
+	}
+
+	.@n = getarraysize($@WB_AID);
+	$@WB_AID[.@n] = .@aid;
+	$@WB_CID[.@n] = .@cid;
+	$@WB_NAME$[.@n] = strcharinfo(0);
+	$@WB_IP$[.@n] = getcharip();
+	$@WB_UID$[.@n] = get_unique_id();
+	return;
+}
+
+function	script	F_WB_UnregisterEntry	{
+	.@aid = getcharid(3);
+	.@cid = getcharid(0);
+
+	for (.@i = getarraysize($@WB_AID) - 1; .@i >= 0; .@i--) {
+		if ($@WB_AID[.@i] == .@aid && $@WB_CID[.@i] == .@cid) {
+			deletearray $@WB_AID[.@i], 1;
+			deletearray $@WB_CID[.@i], 1;
+			deletearray $@WB_NAME$[.@i], 1;
+			deletearray $@WB_IP$[.@i], 1;
+			deletearray $@WB_UID$[.@i], 1;
+			return;
+		}
+	}
+	return;
+}
+
+function	script	F_WB_ClearRegistry	{
+	deletearray $@WB_AID[0], getarraysize($@WB_AID);
+	deletearray $@WB_CID[0], getarraysize($@WB_CID);
+	deletearray $@WB_NAME$[0], getarraysize($@WB_NAME$);
+	deletearray $@WB_IP$[0], getarraysize($@WB_IP$);
+	deletearray $@WB_UID$[0], getarraysize($@WB_UID$);
+	return;
+}
+
+-	script	WORLDBOSS	-1,{
+
+OnStartEvent:
+	if (.status) end;
+	.status = 1;
+
+	if(.MvpKills) $KilledMvp = 0;
+	if(.MobKills) $KilledMob = 0;
+	.wave = 0;
+	.WorldBossReady = 0;
+	.timetick = gettimetick(2);
+	.MapIdx = 0;
+
+	announce "Valfreyja : Citizens of midgard! An abnormality has been detected at "+.MapName$[.MapIdx]+"("+.Map$[.MapIdx]+")!",bc_all;
+	sleep 10000;
+	announce "Valfreyja : The flood will emerge in 2 minutes! Prepare for battle!",bc_all;
+	sleep 30000;
+	announce "Valfreyja : 90 seconds left! Join the others and help defend "+.MapName$[.MapIdx]+"!",bc_all;
+	sleep 30000;
+	announce "Valfreyja : 1 minute left! There are currently "+getmapusers(.Map$[.MapIdx])+" prepared adventurers!",bc_all;
+	sleep 40000;
+	announce "Valfreyja : 20 Seconds left.",bc_all;
+	sleep 15000;
+	announce "Valfreyja : 5 Seconds left.",bc_all;
+	sleep 2000;
+	announce "Valfreyja : \"Flood\" will emerge in 3.",bc_all;
+	sleep 1000;
+	announce "Valfreyja : 2.",bc_all;
+	sleep 1000;
+	announce "Valfreyja : 1.",bc_all;
+	sleep 1000;
+	announce "Valfreyja : Good Luck and Bless you all warriors!",bc_all;
+	callsub OnSlavesSpawn,.wave;
+end;
+
+OnPreludeSlave:
+	announce "Valfreyja : Good job on repelling wave "+(.wave)+"!.",bc_all;
+	sleep 5000;
+	announce "Valfreyja : The next wave will arrive in roughly 10 seconds.",bc_all;
+	sleep 7000;
+	announce "Valfreyja : Next wave in 3.",bc_all;
+	sleep 1000;
+	announce "Valfreyja : 2.",bc_all;
+	sleep 1000;
+	announce "Valfreyja : 1.",bc_all;
+	sleep 1000;
+	announce "Valfreyja : Good Luck and Bless you all warriors!",bc_all;
+return;
+
+OnSetUnitData:
+	.@mid = getarg(0);
+	.@gid = getarg(1);
+	for(.@i=0;.@i<getarraysize(.DATA);.@i++)
+		if(getd(".monster_"+.@mid+"["+.@i+"]"))
+			setunitdata .@gid,.DATA[.@i],getd(".monster_"+.@mid+"["+.@i+"]");
+return;
+
+OnSlavesSpawn:
+	if(.WaveSlaves$[.wave]=="")
+		callsub OnWorldBossSpawn;
+	.Slaves = 0;
+	explode(.@mobs$,.WaveSlaves$[.wave],",");
+	for(.@i=0;.@i<getarraysize(.@mobs$);.@i+=2){
+		monster .Map$[.MapIdx],0,0,"[Slave]"+getmonsterinfo(1,atoi(.@mobs$[.@i])),atoi(.@mobs$[.@i]),atoi(.@mobs$[.@i+1]),"WORLDBOSS::OnSlaveDead";
+		if(getd(".monster_"+.@mobs$[.@i]))
+			for(.@j=0;.@j<atoi(.@mobs$[.@i+1]);.@j++)
+				callsub OnSetUnitData,atoi(.@mobs$[.@i]),$@mobid[.@j];
+		.Slaves += atoi(.@mobs$[.@i+1]);
+	}
+end;
+
+OnSlaveDead:
+	if(playerattached()){
+		.@mid = killedrid;
+		.@gid = killedgid;
+		if(.WaveRank && .timetick){
+			if(isloggedin(killerrid))
+				query_sql("INSERT INTO `world_boss` (char_id,wavekills,timetick) VALUES ("+getcharid(0)+",1,"+.timetick+") ON DUPLICATE KEY UPDATE wavekills=wavekills+1;");
+		}
+		if(getd(".scatter_"+.@mid)){
+			getunitdata .@gid,.@data;
+			.@x = .@data[UMOB_X]; .@y = .@data[UMOB_Y];
+			callsub OnScatterItems,getd(".scatter_"+.@mid),strcharinfo(3),.@x,.@y;
+		}
+		if(getd(".lasthit_"+.@mid)){
+			callsub OnLastHitReward,getd(".lasthit_"+.@mid);
+		}
+	}
+	.Slaves--;
+	if(.Slaves%5 == 0 && .Slaves >=5)
+		announce "Valfreyja : "+.Slaves+" Monsters Left.",bc_all;
+	if(.Slaves < 5 && .Slaves > 0)
+		announce "Valfreyja : "+.Slaves+" Monster"+((.Slaves==1)?"":"s")+" Left.",bc_all;
+	if(.Slaves==0)
+		if(.WaveSlaves$[.wave++]!=""){
+			callsub OnPreludeSlave;
+			callsub OnSlavesSpawn,.wave;
+		}else{
+			callsub OnPreludeBoss;
+			callsub OnWorldBossSpawn;
+		}
+end;
+
+OnPreludeBoss:
+	announce "Valfreyja : Wow! That was the last wave of small time monsters!.",bc_all;
+	sleep 5000;
+	announce "Valfreyja : The next one will be the boss now, Prepare for battle!.",bc_all;
+	sleep 5000;
+	announce "Valfreyja : You will be rewarded base on how much damage you dealt.",bc_all;
+	sleep 5000;
+	announce "Valfreyja : This is no ordinary boss as it has a very immense power than other bosses.",bc_all;
+	sleep 5000;
+	announce "Valfreyja : Anyway, The Boss is coming now! On your positions!.",bc_all;
+	sleep 5000;
+	announce "Valfreyja : 3.",bc_all;
+	sleep 1000;
+	announce "Valfreyja : 2.",bc_all;
+	sleep 1000;
+	announce "Valfreyja : 1.",bc_all;
+	sleep 1000;
+	announce "Valfreyja : Good Luck and Bless all of you!.",bc_all;
+return;
+
+OnWorldBossSpawn:
+	.@BossID = 0;
+	monster .Map$[.MapIdx],.SpawnX[.MapIdx],.SpawnY[.MapIdx],"[BOSS]"+getmonsterinfo(1,.BossID[.@BossID]),.BossID[.@BossID],1,"WORLDBOSS::OnWorldBossDead",2;
+	if(getd(".monster_"+.BossID[.@BossID]))
+		callsub OnSetUnitData,.BossID[.@BossID],$@mobid[0];
+end;
+
+OnWorldBossDead:
+	if(playerattached()){
+		.@mid = killedrid;
+		.@gid = killedgid;
+		.@name$ = strcharinfo(0);
+
+		if(getd(".scatter_"+.@mid)){
+			getunitdata .@gid,.@data;
+			.@x = .@data[UMOB_X]; .@y = .@data[UMOB_Y];
+			callsub OnScatterItems,getd(".scatter_"+.@mid),strcharinfo(3),.@x,.@y;
+		}
+		if(getd(".lasthit_"+.@mid)){
+			callsub OnLastHitReward,getd(".lasthit_"+.@mid);
+		}
+
+		if(.@mid == 28008 && rand(10000) < 100){
+			if(checkweight(33048,1)){
+				getitem 33048,1;
+				dispbottom "[World Boss] Lucky last hit reward! You received 1 Nostalgic Coin.";
+			}
+		}
+
+		getmonsterdamage .@gid;
+		if(.PlayerRank && .timetick){
+			for(.@i=0;.@i<getarraysize(.@dmglog_id);.@i++)
+				query_sql("INSERT INTO `world_boss` (char_id,damage,timetick) VALUES ("+.@dmglog_id[.@i]+","+.@dmglog_dmg[.@i]+","+.timetick+") ON DUPLICATE KEY UPDATE damage=damage+"+.@dmglog_dmg[.@i]+";");
+		}
+	}
+
+	callsub OnPartReward;
+
+	announce "Valfreyja : The Boss has been slain! Congratulations.",bc_all;
+	sleep 5000;
+	if(playerattached()){
+		announce "Valfreyja : Brave "+.@name$+" has dealt the last blow!",bc_all;
+	}
+
+	if(.WaveRank && .timetick){
+		.@wcount = query_sql("SELECT w.`id`,c.`name`,w.`wavekills` FROM `world_boss` AS w LEFT JOIN `char` AS c ON c.`char_id` = w.`char_id` WHERE w.`timetick` = "+.timetick+" ORDER BY w.`wavekills` DESC LIMIT "+getarraysize(.WaveRankReward$),.@wid,.@wname$,.@wkills);
+		if(.@wcount){
+			for(.@i=0;.@i<.@wcount;.@i++)
+				query_sql("UPDATE `world_boss` SET `item1` = '"+.WaveItem$[.@i]+"', `amount1` = '"+.WaveAmt$[.@i]+"', `received1` = 1 WHERE `id` = "+.@wid[.@i]);
+			.@announce$[.@ann++] = "Valfreyja : Applause to "+.@wname$+" for killing a total of "+callfunc("F_InsertComma",.@wkills)+" monsters during the flood!";
+		}
+	}
+	if(.PlayerRank && .timetick){
+		.@pcount = query_sql("SELECT w.`id`,c.`name`,w.`damage` FROM `world_boss` AS w LEFT JOIN `char` AS c ON c.`char_id` = w.`char_id` WHERE w.`timetick` = "+.timetick+" ORDER BY w.`damage` DESC LIMIT "+getarraysize(.PlayerRankReward$),.@pid,.@pname$,.@pdamage);
+		if(.@pcount){
+			for(.@i=0;.@i<.@pcount;.@i++)
+				query_sql("UPDATE `world_boss` SET `item2` = '"+.PlayerItem$[.@i]+"', `amount2` = '"+.PlayerAmt$[.@i]+"', `received2` = 1 WHERE `id` = "+.@pid[.@i]);
+			.@announce$[.@ann++] = "Valfreyja : Almighty "+.@pname$+" dealt the most damage at a total of "+callfunc("F_InsertComma",.@pdamage)+" to the boss !";
+		}
+	}
+
+	for(.@i=0;.@i<.@ann;.@i++){
+		sleep 5000;
+		announce .@announce$[.@i],bc_all;
+	}
+	callsub OnEventEnd;
+end;
+
+OnPartReward:
+	.@count = query_sql("SELECT `account_id` FROM `char` WHERE `online` = 1 AND `last_map` = '"+.Map$[.MapIdx]+"'", .@aid);
+
+	if(.@count <= 0)
+		return;
+
+	for(.@i = 0; .@i < .@count; .@i++){
+		if(attachrid(.@aid[.@i])){
+			if(checkweight(55703,1)){
+				getitem 55703,1;
+				dispbottom "[World Boss] Participation Reward: You received 1x WorldBoss Coin.";
+			}else{
+				#WB_COIN_PENDING += 1;
+				dispbottom "[World Boss] Your inventory is full or overweight. Your 1x WorldBoss Coin has been saved. Claim it from the World Boss NPC.";
+			}
+		}
+	}
+	detachrid;
+return;
+
+OnLastHitReward:
+	.@size = getarraysize(getarg(0));
+	for(.@i=0;.@i<.@size;.@i+=2)
+		getitem getelementofarray(getarg(0),.@i),getelementofarray(getarg(0),.@i+1);
+return;
+
+OnScatterItems:
+	.@size = getarraysize(getarg(0));
+	.@map$ = getarg(1);
+	.@mapX = getarg(2);
+	.@mapY = getarg(3);
+	freeloop(1);
+	for(.@i=0; .@i<.@size; .@i+=2)
+		for(.@j=0;.@j<getelementofarray(getarg(0),.@i+1);.@j++){
+			getfreecell(.@map$,.@x,.@y,.@mapX,.@mapY,.ScatterDistance,.ScatterDistance);
+			makeitem getelementofarray(getarg(0),.@i),1,.@map$,.@x,.@y;
+		}
+	freeloop(0);
+return;
+
+OnEventEnd:
+	announce "Valfreyja : The crisis at "+.MapName$[.MapIdx]+" has been finally solved",bc_all;
+	sleep 10000;
+	announce "Valfreyja : I thank you all for helping to helping us exterminating the flood "+.MapName$[.MapIdx],bc_all;
+	sleep 10000;
+	announce "Valfreyja : As my thanks, a couple of participants that contributed the most will be rewarded",bc_all;
+	sleep 10000;
+	getmapxy(.@map$,.@x,.@y,BL_NPC,getnpcid(0,"WB_NPC"));
+	announce "Valfreyja : Please Proceed to my guardian at "+.@map$+" "+.@x+","+.@y+"!.",bc_all;
+	sleep 10000;
+	announce "Valfreyja : Once Again, Thank you for helping, I hope to see you adventurers at the next crisis!.",bc_all;
+
+OnEnd:
+	stopnpctimer;
+	killmonster .Map$[0], "All";
+	mapwarp .Map$[0], "prontera", 155,181;
+	callfunc "F_WB_ClearRegistry";
+	.status = 0;
+	.WorldBossReady = 0;
+	.Timer = 0;
+	end;
+
+OnTimer60000:
+	stopnpctimer;
+end;
+
+//============================================================
+// Auto Kick AFK / Early Entry
+// - If player enters worldboss map while event is NOT running
+//   and countdown is NOT active, they will be warped out after 5 sec.
+// - During 5-minute countdown (.WorldBossReady = 1) players can stay.
+// - During active event (.status = 1) players can stay.
+//============================================================
+OnPCLoadMapEvent:
+	if(strcharinfo(3) != .Map$[0])
+		end;
+
+	// IP + Device live check.
+	// Event start or not start, if same IP/device already inside the map, this player will be warped out.
+	if (!callfunc("F_WB_CheckEntry", .Map$[0])) {
+		dispbottom $@WB_BlockReason$;
+		warp "SavePoint",0,0;
+		end;
+	}
+
+	// Register this player as ACTIVE inside World Boss map.
+	// This fixes multiple ID leak from SQL last_map delay.
+	callfunc "F_WB_RegisterEntry", .Map$[0];
+
+	if(.status || .WorldBossReady)
+		end;
+
+	dispbottom "[World Boss] The event is not active yet. You will be warped out in 5 seconds.";
+	sleep2 5000;
+
+	if(strcharinfo(3) == .Map$[0] && !.status && !.WorldBossReady){
+		dispbottom "[World Boss] Please come back when the Boss Raid countdown/event is active.";
+		callfunc "F_WB_UnregisterEntry";
+		warp "SavePoint",0,0;
+	}
+	end;
+
+OnPCLogoutEvent:
+	if(strcharinfo(3) == .Map$[0])
+		callfunc "F_WB_UnregisterEntry";
+	end;
+
+OnNPCKillEvent:
+	if(.status || .WorldBossReady) end;
+
+	.@is_mvp = 0;
+
+	if(getmonsterinfo(killedrid, MOB_MVPEXP) > 0)
+		.@is_mvp = 1;
+
+	for(.@i = 0; .@i < getarraysize(.ForceCountMVP); .@i++){
+		if(killedrid == .ForceCountMVP[.@i]){
+			.@is_mvp = 1;
+			break;
+		}
+	}
+
+	if(!.@is_mvp) end;
+
+	callfunc "F_WorldBoss_AddMvpKill", 1;
+end;
+
+OnCommandEvent:
+	if (.@atcmd_parameters$[0] == "start" || .@atcmd_parameters$[0] == "on") {
+		if (.status)
+			dispbottom "Boss raid already begun.";
+		else {
+			dispbottom "Boss raid starting.";
+			donpcevent strnpcinfo(3)+"::OnStartEvent";
+		}
+	}
+	else if (.@atcmd_parameters$[0] == "stop" || .@atcmd_parameters$[0] == "off") {
+		if (!.status)
+			dispbottom "Boss raid not yet begun.";
+		else {
+			dispbottom "Boss raid stopping.";
+			donpcevent strnpcinfo(3)+"::OnEnd";
+		}
+	}
+	else {
+		dispbottom .@atcmd_command$+" failed. Usage: "+.@atcmd_command$+" <start|stop|on|off>";
+	}
+	end;
+
+OnSat1200:
+OnSat2300:
+end;
+
+OnCheckKills:
+	if(.status) end;
+	if(.MvpKills > $KilledMvp) end;
+
+	announce "Valfreyja : The server has reached a total of "+callfunc("F_InsertComma",$KilledMvp)+" MVP kills!",bc_all;
+	sleep 5000;
+	announce "Valfreyja : Boss Raid will begin in 5 minutes. Prepare yourselves, warriors!",bc_all;
+	sleep 60000;
+	announce "Valfreyja : Boss Raid will begin in 4 minutes. Gather your party and prepare for battle!",bc_all;
+	sleep 60000;
+	announce "Valfreyja : Boss Raid will begin in 3 minutes. The World Boss Area will soon become active!",bc_all;
+	sleep 60000;
+	announce "Valfreyja : Boss Raid will begin in 2 minutes. Make your final preparations now!",bc_all;
+	sleep 60000;
+	announce "Valfreyja : Boss Raid will begin in 1 minute. All warriors, stand ready! Go to BOSS RAID NPC NOW!!",bc_all;
+	sleep 30000;
+	announce "Valfreyja : 30 seconds left before the Boss Raid begins!",bc_all;
+	sleep 20000;
+	announce "Valfreyja : 10 seconds left!",bc_all;
+	sleep 5000;
+	announce "Valfreyja : Boss Raid begins in 5!",bc_all;
+	sleep 1000;
+	announce "Valfreyja : 4!",bc_all;
+	sleep 1000;
+	announce "Valfreyja : 3!",bc_all;
+	sleep 1000;
+	announce "Valfreyja : 2!",bc_all;
+	sleep 1000;
+	announce "Valfreyja : 1!",bc_all;
+	sleep 1000;
+
+	callsub OnStartEvent;
+end;
+
+OnInit:
+	.status = 0;
+	.Timer = 0;
+	.WorldBossReady = 0;
+	callfunc "F_WB_ClearRegistry";
+
+	setarray .BossID[0], 28008;
+
+	setarray .Map$[0], "worldboss";
+	setarray .MapName$[0], "World Boss Area";
+	setarray .SpawnX[0], 99;
+	setarray .SpawnY[0], 100;
+
+	setarray .WaveSlaves$[0],
+		"28005,1,1272,1,1302,10,1200,5,1202,10,1191,20,1193,15",
+		"28006,1,1373,1,1507,10,1370,10,1374,10,1379,20,1371,25",
+		"28007,1,1832,1,1831,15,1833,15,1837,25,1383,30,1366,20";
+
+	setarray .DATA[0],
+		UMOB_MAXHP,UMOB_HP,UMOB_ATKMIN,UMOB_ATKMAX,UMOB_MATKMIN,UMOB_MATKMAX,UMOB_DEF,UMOB_MDEF,
+		UMOB_STR,UMOB_AGI,UMOB_VIT,UMOB_INT,UMOB_DEX,UMOB_LUK;
+
+	setarray .monster_1832,20000000,20000000,12543,16534,9342,12432,65,70,0,0,0,0,0,0;
+
+	set .ScatterDistance,14;
+
+	setarray .scatter_28005[0],33017,30,51005,1,51004,1;
+	setarray .lasthit_28005[0],33018,5,51005,1,51004,1;
+
+	setarray .scatter_28006[0],33017,20,51005,1,51004,1;
+	setarray .lasthit_28006[0],33018,5,51005,1,51004,1;
+
+	setarray .scatter_28007[0],33018,10,51005,1,51004,1;
+	setarray .lasthit_28007[0],33019,2,51005,1,51004,1;
+
+	setarray .scatter_28008[0],33018,12,51005,1,51004,1;
+	setarray .lasthit_28008[0],33019,3,51005,1,51004,1;
+
+	setarray .ForceCountMVP[0], 3532;
+
+	set .PointSystem,0;
+
+	set .WaveRank,1;
+	setarray .WaveRankReward$[0],
+		"51004,1,51005,1,51001,8,55703,1",
+		"51004,1,51005,1,51001,5,55703,1",
+		"51004,1,51005,1,51001,3,55703,1";
+
+	set .PlayerRank,1;
+	setarray .PlayerRankReward$[0],
+		"51004,3,51005,3,51001,10,55703,1",
+		"51004,2,51005,2,51001,8,55703,1",
+		"51004,1,51005,1,51001,5,55703,1";
+
+	set .GuildRank,0;
+	deletearray .GuildRankReward$[0], getarraysize(.GuildRankReward$);
+
+	set .TimeEvent,0;
+	set .MvpKills,3000;
+	set .MobKills,0;
+	set .Delay,0;
+
+	for(.@i=0;.@i<getarraysize(.WaveRankReward$);.@i++){
+		deletearray .@witem$[0];
+		deletearray .@wamt$[0];
+		.@w = 0;
+		explode(.@warr$,.WaveRankReward$[.@i],",");
+		for(.@j=0; .@j<getarraysize(.@warr$);.@j+=2){
+			.@witem$[.@w] = .@warr$[.@j];
+			.@wamt$[.@w++] = .@warr$[.@j+1];
+		}
+		.WaveItem$[.@i] = implode(.@witem$,",");
+		.WaveAmt$[.@i] = implode(.@wamt$,",");
+	}
+
+	for(.@i=0;.@i<getarraysize(.PlayerRankReward$);.@i++){
+		deletearray .@pitem$[0];
+		deletearray .@pamt$[0];
+		.@p = 0;
+		explode(.@parr$,.PlayerRankReward$[.@i],",");
+		for(.@j=0;.@j<getarraysize(.@parr$);.@j+=2){
+			.@pitem$[.@p] = .@parr$[.@j];
+			.@pamt$[.@p++] = .@parr$[.@j+1];
+		}
+		.PlayerItem$[.@i] = implode(.@pitem$,",");
+		.PlayerAmt$[.@i] = implode(.@pamt$,",");
+	}
+
+	if(!.TimeEvent) callsub OnCheckKills;
+
+	bindatcmd "worldboss",strnpcinfo(3) + "::OnCommandEvent", 99, 99;
+end;
+}
+
+valmorra,164,109,4	script	World Boss::WB_NPC	10983,{
+	callsub OnSetVariable;
+	.Claim = callsub(OnHasReward);
+
+	mes .name$;
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000";
+	mes "Goddess Freyja has sent me here to give rewards for the braves that help in solving flood crisises.\r\n";
+	if(.MvpKills) mes "^0055FFBosses Killed^000000 : "+($KilledMvp >= .MvpKills ? "^03C04A"+.MvpKills:"^FF5500"+$KilledMvp)+"^000000/"+.MvpKills;
+	if(.MobKills) mes "^0055FFMonsters Killed^000000 : "+($KilledMob >= .MobKills ? "^03C04A"+.MobKills:"^FF5500"+$KilledMob)+"^000000/"+.MobKills;
+	next;
+
+	.@isgm = (getgroupid() >= 99);
+
+	.@menu$ = "^00ff54[   ]^000000 Information";
+	.@menu$ += ":^00ff54[   ]^000000 ^03C04AEnter Ritual Room^000000";
+	if(.Claim) .@menu$ += ":^00ff54[   ]^000000 ^03C04AClaim Rewards^000000";
+	if(#WB_COIN_PENDING > 0) .@menu$ += ":^00ff54[   ]^000000 ^03C04AClaim Pending Coin^000000";
+	if(.Reward) .@menu$ += ":^00ff54[   ]^000000 Check Rewards";
+	.@menu$ += ":^00ff54[   ]^000000 Check Rankings";
+	.@menu$ += ":^00BFFF[   ]^000000 ^0000FFGo To WorldBoss Shop^000000";
+	if(.@isgm) .@menu$ += ":^FF0000[GM PANEL]^000000";
+
+	.@s = select(.@menu$);
+	.@idx = 0;
+
+	++.@idx;
+	if(.@s == .@idx){
+		mes .name$;
+		mes "^4B0082------------------------------^000000";
+		mes "^0055FF World Boss Raid Information^000000";
+		mes "^4B0082------------------------------^000000";
+		mes "Trigger Requirement:";
+		mes "^00AA00Server-wide MVP Kills^000000";
+		mes "^00ff54[   ]^000000 Current MVP Kills: ^FF5500"+callfunc("F_InsertComma",$KilledMvp)+"^000000/^03C04A"+callfunc("F_InsertComma",.MvpKills)+"^000000";
+		mes "";
+		mes "Once the server reaches the required MVP kills, the Boss Raid will begin after a 5-minute global countdown.";
+		mes "";
+		mes "^0055FFReward Information:^000000";
+		mes "^00ff54[   ]^000000 All players inside the World Boss Area will receive 1x WorldBoss Coin after the final boss dies.";
+		mes "^00ff54[   ]^000000 Bosses from each wave can give Scatter Rewards and Last Hitter Rewards.";
+		mes "^00ff54[   ]^000000 Ranking Rewards are based on Wave Kills and Player Damage.";
+		close;
+	}
+
+	++.@idx;
+	if(.@s == .@idx){
+		// IP + Device live check before entering World Boss Area.
+		if (!callfunc("F_WB_CheckEntry", "worldboss")) {
+			mes .name$;
+			mes $@WB_BlockReason$;
+			close;
+		}
+		warp "worldboss",99,140;
+		close;
+	}
+
+	if(.Claim){
+		++.@idx;
+		if(.@s == .@idx){
+			mes .name$;
+			mes "Which Reward would you like to claim?";
+			next;
+			.@sel = select("^00ff54[   ]^000000 Wave Kills:^00ff54[   ]^000000 Player Damage");
+			callsub OnGetReward,.@sel;
+			close;
+		}
+	}
+
+	if(#WB_COIN_PENDING > 0){
+		++.@idx;
+		if(.@s == .@idx){
+			mes .name$;
+			mes "You have ^03C04A"+#WB_COIN_PENDING+"x WorldBoss Coin^000000 pending.";
+			mes "This happened because your inventory was full or overweight during the auto participation reward.";
+			next;
+
+			if(select("^00ff54[   ]^000000 Claim Now:^FF0000[   ]^000000 Cancel") == 2)
+				close;
+
+			if(!checkweight(55703,#WB_COIN_PENDING)){
+				mes .name$;
+				mes "You still don't have enough inventory space or weight.";
+				close;
+			}
+
+			getitem 55703,#WB_COIN_PENDING;
+			mes .name$;
+			mes "You received ^03C04A"+#WB_COIN_PENDING+"x WorldBoss Coin^000000.";
+			#WB_COIN_PENDING = 0;
+			close;
+		}
+	}
+
+	if(.Reward){
+		++.@idx;
+		if(.@s == .@idx){
+			if(.WaveSize){
+				mes "^FF748CWave Kills Rewards^000000";
+				for(.@i=0;.@i<.WaveSize;.@i++){
+					deletearray .@wrwd$;
+					explode(.@wrwd$,callsub(OnGetVariable,1,.@i),",");
+					mes "^0055FFTop "+(.@i+1)+" Rewards: ^000000";
+					for(.@j=0;.@j<getarraysize(.@wrwd$);.@j+=2)
+						mes "^00ff54[   ]^000000 "+atoi(.@wrwd$[.@j+1])+"x "+getitemname(atoi(.@wrwd$[.@j]));
+				}
+			}
+			if(.PlayerSize){
+				next;
+				mes "^FF748CPlayer Damage Rewards^000000";
+				for(.@i=0;.@i<.PlayerSize;.@i++){
+					deletearray .@wrwd$;
+					explode(.@wrwd$,callsub(OnGetVariable,2,.@i),",");
+					mes "^0055FFTop "+(.@i+1)+" Rewards: ^000000";
+					for(.@j=0;.@j<getarraysize(.@wrwd$);.@j+=2)
+						mes "^00ff54[   ]^000000 "+atoi(.@wrwd$[.@j+1])+"x "+getitemname(atoi(.@wrwd$[.@j]));
+				}
+			}
+			close;
+		}
+	}
+
+	++.@idx;
+	if(.@s == .@idx){
+		mes .name$;
+		mes "Which ranking would you like to see?";
+		next;
+		.@sel = select((.WaveRank ? "^00ff54[   ]^000000 Wave Kills Ranking":"")+":"+(.PlayerRank ? "^00ff54[   ]^000000 Player Damage Ranking":""));
+		callsub OnCheckRanking,.@sel;
+		close;
+	}
+
+	++.@idx;
+	if(.@s == .@idx){
+		warp "que_temsky",99,143;
+		close;
+	}
+
+	if(.@isgm){
+		++.@idx;
+		if(.@s == .@idx){
+			mes "^FF0000[GM PANEL]^000000";
+			mes "Event Status: "+(getvariableofnpc(.status,"WORLDBOSS") ? "^FF0000Running^000000" : "^00AA00Idle^000000");
+			next;
+			switch(select("^00ff54[   ]^000000 Start Event Now:^00ff54[   ]^000000 Stop Event:^00ff54[   ]^000000 Reset MVP Counter:^00ff54[   ]^000000 Close")){
+				case 1:
+					if(getvariableofnpc(.status,"WORLDBOSS")){
+						mes "^FF0000[GM PANEL]^000000";
+						mes "World Boss event is already running.";
+					}else{
+						donpcevent "WORLDBOSS::OnStartEvent";
+						mes "^FF0000[GM PANEL]^000000";
+						mes "World Boss event has been started manually.";
+					}
+					close;
+				case 2:
+					if(!getvariableofnpc(.status,"WORLDBOSS")){
+						mes "^FF0000[GM PANEL]^000000";
+						mes "World Boss event is not running.";
+					}else{
+						donpcevent "WORLDBOSS::OnEnd";
+						mes "^FF0000[GM PANEL]^000000";
+						mes "World Boss event has been stopped.";
+					}
+					close;
+				case 3:
+					if(getvariableofnpc(.status,"WORLDBOSS")){
+						mes "^FF0000[GM PANEL]^000000";
+						mes "World Boss event is currently running.";
+						mes "You cannot reset the MVP counter while the event is active.";
+					}else{
+						set $KilledMvp, 0;
+						set $KilledMob, 0;
+						set getvariableofnpc(.WorldBossReady,"WORLDBOSS"), 0;
+						set getvariableofnpc(.Timer,"WORLDBOSS"), 0;
+						stopnpctimer "WORLDBOSS";
+						mes "^FF0000[GM PANEL]^000000";
+						mes "World Boss MVP counter has been reset.";
+						mes "Current Progress: ^FF55000^000000/^03C04A"+callfunc("F_InsertComma",getvariableofnpc(.MvpKills,"WORLDBOSS"))+"^000000 MVP kills.";
+					}
+					close;
+				default:
+					close;
+			}
+		}
+	}
+
+	end;
+
+OnInit:
+	.name$ = "^00B2EE[ World Boss ]^000000";
+end;
+
+OnCheckRanking:
+	.@count = query_sql("SELECT `timetick` FROM `world_boss` WHERE `timetick` != 0 ORDER BY `timetick` DESC Limit 3",.@timetick);
+	switch(getarg(0)){
+		case 1:
+			.@title$ = "^FF748CWave Kills ["+gettimestr("%Y-%m-%d %H:%M",21,.@timetick)+"]^000000";
+			.@ranking = query_sql("SELECT w.`char_id`,c.`name`,w.`wavekills` FROM `world_boss` AS w LEFT JOIN `char` AS c ON w.`char_id` = c.`char_id` WHERE `wavekills` != 0 AND `timetick` = "+.@timetick+" ORDER BY `wavekills` DESC Limit 30",.@cid,.@name$,.@value);
+			break;
+		case 2:
+			.@title$ = "^FF748CPlayer Damage ["+gettimestr("%Y-%m-%d %H:%M",21,.@timetick)+"]^000000";
+			.@ranking = query_sql("SELECT w.`char_id`,c.`name`,w.`damage` FROM `world_boss` AS w LEFT JOIN `char` AS c ON c.`char_id` = w.`char_id` WHERE `damage` != 0 AND `timetick` = "+.@timetick+" ORDER BY `damage` DESC Limit 30",.@cid,.@name$,.@value);
+			break;
+	}
+	if(!.@ranking && !.@timetick){ mes .name$; mes "I'm sorry but there's no one in the ranking right now"; end; }
+	mes .@title$;
+	for(.@i=0;.@i<.@ranking;.@i++){
+		if(.@i%10==0 && .@i!=0){ next; mes .@title$; }
+		mes (.@i+1)+". ^0000FF"+.@name$[.@i]+"^000000 ^00ff54[   ]^000000 [ ^00D323"+callfunc("F_InsertComma",.@value[.@i])+"^000000 ]";
+	}
+return;
+
+OnHasReward:
+	.@count = query_sql("SELECT `timetick` FROM `world_boss` WHERE `char_id` = "+getcharid(0)+" AND (`received1` != 0 OR `received2` != 0 )",.@timetick);
+	if(.@count) return 1;
+return 0;
+
+OnGetReward:
+	.@table$ = "world_boss";
+	.@rec$ = "received"+getarg(0);
+
+	switch(getarg(0)){
+		case 1:
+			.@count = query_sql("SELECT `id`,`item1`,`amount1`,`timetick` FROM `world_boss` WHERE `char_id` = "+getcharid(0)+" AND `received1` != 0 ORDER BY `timetick` ASC Limit 10",.@id,.@item$,.@amount$,.@timetick);
+			break;
+		case 2:
+			.@count = query_sql("SELECT `id`,`item2`,`amount2`,`timetick` FROM `world_boss` WHERE `char_id` = "+getcharid(0)+" AND `received2` != 0 ORDER BY `timetick` ASC Limit 10",.@id,.@item$,.@amount$,.@timetick);
+			break;
+	}
+
+	if(!.@count){
+		mes .name$;
+		mes "There is nothing to claim.";
+		close;
+	}
+
+	for(.@i=0;.@i<.@count;.@i++)
+		.@menu$ += "^00ff54[   ]^000000 Reward ["+gettimestr("%Y-%m/%d %H.%M",21,.@timetick[.@i])+"]:";
+
+	.@idx = select(.@menu$)-1;
+	mes .name$;
+	mes "Reward Information: ";
+
+	explode(.@itm$,.@item$[.@idx],",");
+	explode(.@amt$,.@amount$[.@idx],",");
+
+	for(.@i=0;.@i<getarraysize(.@itm$);.@i++){
+		.@iid[.@i] = atoi(.@itm$[.@i]);
+		.@amt[.@i] = atoi(.@amt$[.@i]);
+		mes "^00ff54[   ]^000000 "+.@amt$[.@i]+"x "+getitemname(atoi(.@itm$[.@i]));
+	}
+
+	mes "\r\nConfirm to Receive?";
+	next;
+	if(select("^00ff54[   ]^000000 Receive Reward:^00ff54[   ]^000000 Cancel")==2) close;
+
+	if(!checkweight2(.@iid,.@amt)){
+		mes .name$;
+		mes "You don't have enough inventory space or you are overweight.";
+		mes "Please make enough space.";
+		close;
+	}
+
+	query_sql("UPDATE `"+.@table$+"` SET `"+.@rec$+"` = 0 WHERE `id` = "+.@id[.@idx]);
+
+	for(.@i=0;.@i<getarraysize(.@iid);.@i++)
+		getitem .@iid[.@i],.@amt[.@i];
+return;
+
+OnGetVariable:
+	switch(getarg(0)){
+		case 1: return getelementofarray(getvariableofnpc(.WaveRankReward$,"WORLDBOSS"),getarg(1));
+		case 2: return getelementofarray(getvariableofnpc(.PlayerRankReward$,"WORLDBOSS"),getarg(1));
+	}
+return "";
+
+OnSetVariable:
+	.PointSystem = 0;
+	.WaveRank = getvariableofnpc(.WaveRank,"WORLDBOSS");
+	.PlayerRank = getvariableofnpc(.PlayerRank,"WORLDBOSS");
+	.GuildRank = 0;
+
+	.MvpKills = getvariableofnpc(.MvpKills,"WORLDBOSS");
+	.MobKills = getvariableofnpc(.MobKills,"WORLDBOSS");
+
+	.WaveSize = getarraysize(getvariableofnpc(.WaveRankReward$,"WORLDBOSS"));
+	.PlayerSize = getarraysize(getvariableofnpc(.PlayerRankReward$,"WORLDBOSS"));
+	.GuildSize = 0;
+	.Reward = (.WaveSize || .PlayerSize) ? 1:0;
+	.VarSet = 1;
+return;
+end;
+}
+
+worldboss,99,146,3	script	Portal	45,2,2,{
+end;
+OnTouch:
+	callfunc "F_WB_UnregisterEntry";
+	warp "SavePoint",0,0;
+	end;
+}
+
+worldboss	mapflag	monster_noteleport
+worldboss	mapflag	noteleport
+worldboss	mapflag	nobranch
+worldboss	mapflag	nodrop
+worldboss	mapflag	nowarp
+worldboss	mapflag	loadevent

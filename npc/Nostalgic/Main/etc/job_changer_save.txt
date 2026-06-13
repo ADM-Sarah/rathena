@@ -1,0 +1,187 @@
+// =============================================================
+//  Modern rAthena Job Slot Manager & Level 1 Reset System
+//  Job Swap Edition - Custom Premium Pricing & Bonus Stats
+// =============================================================
+
+comodo,245,189,5	script	Job Slot Manager	909,{
+
+    // --- CONFIGURATION ---
+    .SlotLimit = 5;
+    .ArchivePrice = 500000000;  // 500 Million Zeny to Archive & Reset
+    .SwapPrice    = 1500000000; // 1.5 Billion Zeny to Restore & Swap
+    .BonusStats   = 100;        // Additional stats given upon reset
+    // ----------------------------
+
+    mes "[Job Manager]";
+    mes "Hello, " + strcharinfo(0) + ".";
+    mes "I can archive your current job status, reset you to a Level 1 Novice, or swap status with a saved life.";
+    mes "Archive & Reset: ^00FF00500,000,000 Zeny^000000";
+    mes "Restore & Swap:   ^00FF001,500,000,000 Zeny^000000";
+    next;
+
+    switch(select("~ Archive & Reset to Novice:~ Restore & Swap Job Slot:~ View Saved Slots:~ Cancel")) {
+        
+        case 1: // ARCHIVE & RESET PROCEDURE
+            if (Zeny < .ArchivePrice) {
+                mes "[Job Manager]";
+                mes "You do not have enough funds. You need 500,000,000 Zeny.";
+                close;
+            }
+
+            // Find an open save slot index cleanly
+            .@freeSlot = -1;
+            for (.@i = 1; .@i <= .SlotLimit; .@i++) {
+                if (getd("#JobSlot_Class_" + .@i) == 0) {
+                    .@freeSlot = .@i;
+                    break;
+                }
+            }
+
+            if (.@freeSlot == -1) {
+                mes "[Job Manager]";
+                mes "All 5 of your save slots are full! You must swap or restore an existing slot first.";
+                close;
+            }
+
+            mes "[Job Manager]";
+            mes "I found an empty slot (**Slot " + .@freeSlot + "**).";
+            mes "Are you sure you want to archive your progress and reset to a Level 1 Novice?";
+            next;
+            
+            if (select("Yes, reset me.:No, abort.") == 2) {
+                mes "[Job Manager]";
+                mes "Come back when you are ready.";
+                close;
+            }
+
+            // Deduct the 500M Zeny archive fee safely
+            Zeny -= .ArchivePrice;
+
+            // NOVICE FIX: Add 1 to the Class ID so Novice (0) is saved as (1)
+            setd "#JobSlot_Class_" + .@freeSlot, Class + 1;
+            setd "#JobSlot_BaseLvl_" + .@freeSlot, BaseLevel;
+            setd "#JobSlot_JobLvl_" + .@freeSlot, JobLevel;
+            
+            mes "[Job Manager]";
+            mes "Your progress as a **" + jobname(Class) + "** has been secured in Slot " + .@freeSlot + ".";
+            mes "Now, returning you to the beginning...";
+            next;
+
+            // Safe strip status to prevent client side item weight bugs
+            sc_start SC_STRIP, 1000, 1; 
+            
+            resetstatus;
+            resetskill;
+            
+            // Reset character stats cleanly
+            BaseLevel = 1;
+            jobchange 0; // 0 = Novice
+            JobLevel = 1; 
+
+            // ADDED: Inject the bonus status points directly into the character data profile
+            StatusPoint += .BonusStats;
+
+            mes "[Job Manager]";
+            mes "You are now a Level 1 Novice with an extra **" + .BonusStats + " status points**! Go forth and write your new history!";
+            close;
+
+        case 2: // SWAP PROGRESS PROCEDURE
+            if (Zeny < .SwapPrice) {
+                mes "[Job Manager]";
+                mes "You do not have enough funds. Swapping slots costs 1,500,000,000 Zeny.";
+                close;
+            }
+
+            mes "[Job Manager]";
+            mes "Here is a breakdown of your current saved data:";
+            mes "----------------------------------";
+            
+            for (.@i = 1; .@i <= .SlotLimit; .@i++) {
+                .@val = getd("#JobSlot_Class_" + .@i);
+                if (.@val == 0) {
+                    mes "Slot " + .@i + ": ^777777[Empty]^000000";
+                } else {
+                    mes "Slot " + .@i + ": ^0000FF" + jobname(.@val - 1) + "^000000 (Base: " + getd("#JobSlot_BaseLvl_" + .@i) + " / Job: " + getd("#JobSlot_JobLvl_" + .@i) + ")";
+                }
+            }
+            mes "----------------------------------";
+            mes "Which slot would you like to SWAP your current character status into?";
+            next;
+
+            .@choice = select(
+                "Swap with Slot 1",
+                "Swap with Slot 2",
+                "Swap with Slot 3",
+                "Swap with Slot 4",
+                "Swap with Slot 5",
+                "Cancel"
+            );
+
+            if (.@choice > .SlotLimit) close; 
+
+            .@storedValue = getd("#JobSlot_Class_" + .@choice);
+            if (.@storedValue == 0) {
+                mes "[Job Manager]";
+                mes "Slot " + .@choice + " contains no data to swap with.";
+                close;
+            }
+
+            // Step 1: Temporarily remember the target data to restore
+            .@restoreClass = .@storedValue - 1;
+            .@targetBase = getd("#JobSlot_BaseLvl_" + .@choice);
+            .@targetJob = getd("#JobSlot_JobLvl_" + .@choice);
+
+            mes "[Job Manager]";
+            mes "You are about to restore **" + jobname(.@restoreClass) + " (Lvl " + .@targetBase + "/" + .@targetJob + ")**.";
+            mes "Your current job **" + jobname(Class) + " (Lvl " + BaseLevel + "/" + JobLevel + ")** will take its place in Slot " + .@choice + ".";
+            next;
+
+            if (select("Yes, swap them now.:No, cancel.") == 2) close;
+
+            // Deduct the 1.5B Zeny swap fee safely
+            Zeny -= .SwapPrice;
+
+            // Step 2: Grab the CURRENT data before it's overwritten
+            .@currentClassSaved = Class + 1; // Novice safety offset applied
+            .@currentBaseSaved  = BaseLevel;
+            .@currentJobSaved   = JobLevel;
+
+            // Step 3: Change the character profile over to the stored archive
+            sc_start SC_STRIP, 1000, 1; 
+            resetstatus;
+            resetskill;
+
+            jobchange .@restoreClass;
+            BaseLevel = .@targetBase;
+            JobLevel = .@targetJob;
+
+            // Step 4: Replace the slot with the old data instead of erasing it!
+            setd "#JobSlot_Class_" + .@choice, .@currentClassSaved;
+            setd "#JobSlot_BaseLvl_" + .@choice, .@currentBaseSaved;
+            setd "#JobSlot_JobLvl_" + .@choice, .@currentJobSaved;
+
+            mes "[Job Manager]";
+            mes "Swap complete!";
+            mes "Your previous data has been written back into Slot " + .@choice + ".";
+            close;
+
+        case 3: // PREVIEW ALL ARCHIVES
+            mes "[Job Manager]";
+            mes "--- Current Archives ---";
+            for (.@i = 1; .@i <= .SlotLimit; .@i++) {
+                .@storedValue = getd("#JobSlot_Class_" + .@i);
+                if (.@storedValue == 0) {
+                    mes "Slot " + .@i + ": ^777777[Empty]^000000";
+                } else {
+                    .@actualClass = .@storedValue - 1;
+                    mes "Slot " + .@i + ": ^0000FF" + jobname(.@actualClass) + "^000000 (Base: " + getd("#JobSlot_BaseLvl_" + .@i) + " / Job: " + getd("#JobSlot_JobLvl_" + .@i) + ")";
+                }
+            }
+            close;
+
+        case 4: // EXIT
+            mes "[Job Manager]";
+            mes "Safe travels, adventurer.";
+            close;
+    }
+}

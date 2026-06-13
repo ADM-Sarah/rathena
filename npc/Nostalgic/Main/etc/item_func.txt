@@ -1,0 +1,40 @@
+-	script	WeaponBoxNPC	-,{
+OnUse:
+    // Safe initialization block
+    .@choice = select(
+        "Book", "Violin", "Rope", "Waghnak", "Mace", 
+        "Blade", "Pike", "Main Gauche", "Axe", "Jur", 
+        "Rod", "Composite Bow", "Garrison"
+    );
+    
+    // Explicit selection routing
+    if (.@choice == 1)  { .@item_id = 1550;  .@name$ = "+10 Book"; }
+    if (.@choice == 2)  { .@item_id = 1902;  .@name$ = "+10 Violin"; }
+    if (.@choice == 3)  { .@item_id = 1951;  .@name$ = "+10 Rope"; }
+    if (.@choice == 4)  { .@item_id = 1802;  .@name$ = "+10 Waghnak"; }
+    if (.@choice == 5)  { .@item_id = 1505;  .@name$ = "+10 Mace"; }
+    if (.@choice == 6)  { .@item_id = 1108;  .@name$ = "+10 Blade"; }
+    if (.@choice == 7)  { .@item_id = 1408;  .@name$ = "+10 Pike"; }
+    if (.@choice == 8)  { .@item_id = 1208;  .@name$ = "+10 Main Gauche"; }
+    if (.@choice == 9)  { .@item_id = 1302;  .@name$ = "+10 Axe"; }
+    if (.@choice == 10) { .@item_id = 1251;  .@name$ = "+10 Jur"; }
+    if (.@choice == 11) { .@item_id = 1602;  .@name$ = "+10 Rod"; }
+    if (.@choice == 12) { .@item_id = 1705;  .@name$ = "+10 Composite Bow"; }
+    if (.@choice == 13) { .@item_id = 13015; .@name$ = "+10 Garrison"; }
+
+    next;
+    mes "[Box System]";
+    mes "Creating your weapon now...";
+    
+    // Create the item explicitly refined to +10
+    getitem2 .@item_id, 1, 1, 10, 0, 0, 0, 0, 0;
+    
+    // Delete exactly 1 box from inventory
+    delitem 30001, 1;
+    
+    next;
+    mes "[Box System]";
+    mes "Success! Your " + .@name$ + " has been added to your inventory.";
+    close;
+    end;
+}

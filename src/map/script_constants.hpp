@@ -536,6 +536,9 @@
 	export_constant(MF_SPECIALPOPUP);
 	export_constant(MF_NOMACROCHECKER);
 	export_constant(MF_INVINCIBLE_TIME);
+	export_constant(MF_KINGOFEMP);
+	export_constant(MF_MOBITEMGLOBALDROP);
+	export_constant(MF_NOAUTOATTACK);
 
 	/* setcell types */
 	export_constant(CELL_WALKABLE);
@@ -1847,6 +1850,7 @@
 	export_constant(SC_POISON_SHIELD);
 	export_constant(SC_POISON_SHIELD_OPTION);
 	export_constant(SC_SUB_WEAPONPROPERTY);
+	export_constant(SC_AUTOATTACK);
 	export_constant(SC_M_LIFEPOTION);
 	export_constant(SC_S_MANAPOTION);
 	export_constant(SC_ALMIGHTY);
@@ -3384,6 +3388,7 @@
 	export_constant(EFST_RUSH_QUAKE2);
 	export_constant(EFST_SBUNSHIN);
 	export_constant(EFST_MTP_W_POTION_100);
+	export_constant(EFST_AUTOATTACK);
 	export_constant(EFST_CHANGE_SIZE);
 	export_constant(EFST_CHANGE_SIZE_MONSTER);
 	export_constant(EFST_SHOW_EFFECT1);
@@ -3717,6 +3722,25 @@
 	export_constant(ET_YUT5);
 	export_constant(ET_YUT6);
 	export_constant(ET_YUT7);
+	export_constant(ET_CLICK_ME);
+	export_constant(ET_DAILY_QUEST);
+	export_constant(ET_EVENT);
+	export_constant(ET_JOB_QUEST);
+	export_constant(ET_TRAFFIC_LINE_QUEST);
+	export_constant(ET_CUSTOM_1);
+	export_constant(ET_CUSTOM_2);
+	export_constant(ET_CUSTOM_3);
+	export_constant(ET_CUSTOM_4);
+	export_constant(ET_CUSTOM_5);
+	export_constant(ET_CUSTOM_6);
+	export_constant(ET_CUSTOM_7);
+	export_constant(ET_CUSTOM_8);
+	export_constant(ET_CUSTOM_9);
+	export_constant(ET_CUSTOM_10);
+	export_constant(ET_CUSTOM_11);
+	export_constant(ET_CUSTOM_12);
+	export_constant(ET_CUSTOM_13);
+	export_constant(ET_CUSTOM_14);
 
 	/* send targets */
 	export_constant(ALL_CLIENT);
@@ -10174,34 +10198,62 @@
 	export_constant(FOOTPRINT_EF_BUTTERFLY_PURPLE);
 	export_constant(FOOTPRINT_EF_BUTTERFLY_YELLOW);
 	export_constant(HAT_EF_HANMAC_MUNCH);
-	export_constant(FOOTPRINT_EF_VICTORY2025);
-	export_constant(FOOTPRINT_EF_DRAGON_FACE_2D);
-	export_constant(FOOTPRINT_EF_DRAGON_FACE_3D);
-	export_constant(HAT_EF_C_OVER_CLOUD);
-	export_constant(HAT_EF_C_AURORA_ON_CLOUDS);
-	export_constant(HAT_EF_ROS_REDSPIRIT);
-	export_constant(HAT_EF_ROS_BLUESPIRIT);
-	export_constant(HAT_EF_DIVINE_SKY_INVITE);
-	export_constant(FOOTPRINT_EF_DIVINE);
-	export_constant(FOOTPRINT_EF_NYAR_BLUE);
-	export_constant(FOOTPRINT_EF_NYAR_PURPLE);
-	export_constant(HAT_EF_C_NIGHTMARE_CHAIN);
-	export_constant(HAT_EF_C_SPOT_MIKE);
-	export_constant(HAT_EF_C_SPOT_FLOWER);
-	export_constant(HAT_EF_C_2025ROSFESTA);
-	export_constant(HAT_EF_GOLDEN_AURA_TW);
-	export_constant(HAT_EF_C_S_BEELZEBUB_WING);
-	export_constant(FOOTPRINT_EF_FEATHER);
-	export_constant(HAT_EF_SOLID_STATE_RECOGNITION);
-	export_constant(HAT_EF_C_CURSED_SERPENT);
-	export_constant(FOOTPRINT_EF_BASIC);
-	export_constant(HAT_EF_C_GGH_ANNIVERSARY);
-	export_constant(FOOTPRINT_EF_DIVINE_BLUE);
-	export_constant(FOOTPRINT_EF_BLUESTAR);
-	export_constant(FOOTPRINT_EF_PHOENIX);
-	export_constant(HAT_EF_C_CLB_GAT_DOC);
-	export_constant(HAT_EF_C_EYE_OF_NECROMANCER);
-	export_constant(HAT_EF_C_JAOW_PIRUN);
+	// export_constant(FOOTPRINT_EF_VICTORY2025);
+	// export_constant(FOOTPRINT_EF_DRAGON_FACE_2D);
+	// export_constant(FOOTPRINT_EF_DRAGON_FACE_3D);
+	// export_constant(HAT_EF_C_OVER_CLOUD);
+	// export_constant(HAT_EF_C_AURORA_ON_CLOUDS);
+	// export_constant(HAT_EF_ROS_REDSPIRIT);
+	// export_constant(HAT_EF_ROS_BLUESPIRIT);
+	// export_constant(HAT_EF_DIVINE_SKY_INVITE);
+	// export_constant(FOOTPRINT_EF_DIVINE);
+	// export_constant(FOOTPRINT_EF_NYAR_BLUE);
+	// export_constant(FOOTPRINT_EF_NYAR_PURPLE);
+	// export_constant(HAT_EF_C_NIGHTMARE_CHAIN);
+	// export_constant(HAT_EF_C_SPOT_MIKE);
+	// export_constant(HAT_EF_C_SPOT_FLOWER);
+	// export_constant(HAT_EF_C_2025ROSFESTA);
+	// export_constant(HAT_EF_GOLDEN_AURA_TW);
+	// export_constant(HAT_EF_C_S_BEELZEBUB_WING);
+	// export_constant(FOOTPRINT_EF_FEATHER);
+	// export_constant(HAT_EF_SOLID_STATE_RECOGNITION);
+	// export_constant(HAT_EF_C_CURSED_SERPENT);
+	// export_constant(FOOTPRINT_EF_BASIC);
+	// export_constant(HAT_EF_C_GGH_ANNIVERSARY);
+	// export_constant(FOOTPRINT_EF_DIVINE_BLUE);
+	// export_constant(FOOTPRINT_EF_BLUESTAR);
+	// export_constant(FOOTPRINT_EF_PHOENIX);
+	// export_constant(HAT_EF_C_CLB_GAT_DOC);
+	// export_constant(HAT_EF_C_EYE_OF_NECROMANCER);
+	// export_constant(HAT_EF_C_JAOW_PIRUN);
+
+	/* Custom Hateffects */
+	export_constant(HAT_EF_demon_hunter_void_field);
+	export_constant(HAT_EF_efst_revance_aura);
+	export_constant(HAT_EF_efst_itachi_eye);
+	export_constant(HAT_EF_efst_liberty);
+	export_constant(HAT_EF_efst_demon);
+	export_constant(HAT_EF_BARYON_HATE_AURA);
+	export_constant(HAT_EF_efst_ice_revampdragon);
+	export_constant(HAT_EF_uchiha_madara_aura);
+	export_constant(HAT_EF_hellboy_devil_aura);
+	export_constant(HAT_EF_Titan_Blade_Aura);
+	export_constant(HAT_EF_Kyuubi_Chakra_01);
+	export_constant(HAT_EF_Kyuubi_Chakra_02);
+	export_constant(HAT_EF_efst_monarch_aura);
+	export_constant(HAT_EF_vip);
+	export_constant(HAT_EF_efst_Igris_aura);
+	export_constant(HAT_EF_efst_CDLordAura);	
+
+	export_constant(HAT_EF_REF_GLOW_3);
+	export_constant(HAT_EF_REF_GLOW_4);
+	export_constant(HAT_EF_REF_GLOW_5);
+	export_constant(HAT_EF_REF_GLOW_6);
+	export_constant(HAT_EF_REF_GLOW_7);
+	export_constant(HAT_EF_REF_GLOW_8);
+	export_constant(HAT_EF_REF_GLOW_9);
+	export_constant(HAT_EF_REF_GLOW_10);
+	export_constant(HAT_EF_REF_GLOW_10_2);
 
 	/* pet catch */
 	export_constant(PET_CATCH_UNIVERSAL_NO_BOSS);

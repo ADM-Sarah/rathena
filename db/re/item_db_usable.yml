@@ -1181,6 +1181,9 @@ Body:
     Weight: 100
     Flags:
       BuyingStore: true
+    NoUse:
+      Maps:
+        - Map: "guild_vs3"
     Script: |
       itemskill "ALL_RESURRECTION",1;
   - Id: 611

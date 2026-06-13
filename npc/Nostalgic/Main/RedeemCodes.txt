@@ -1,0 +1,881 @@
+//==============================================================
+// Redeem Code Final Version - Clean GM Menu + Pagination Fix
+//==============================================================
+// Fix:
+// - GM View Code List no more long scroll
+// - GM Logs no more long scroll
+// - Code details open one-by-one
+// - Cleaner GM menu navigation
+// - Claim log now stores IP address from login.last_ip
+// - GM Logs now display Account ID, Char ID, IP and Unique ID
+// - Anti-abuse: block same Account ID, Device/Unique ID, Current IP and Previous IP
+// - Fixed: IP block will be skipped if IP is UNKNOWN
+// - Previous IP check now uses previous IP from Account history and Device/Unique ID history
+//==============================================================
+
+function	script	RC_GenerateCode	{
+	.@len = getarg(0);
+	.@chars$ = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+	.@max = getstrlen(.@chars$);
+	.@code$ = "";
+
+	for (.@i = 0; .@i < .@len; .@i++) {
+		.@r = rand(.@max);
+		.@code$ += substr(.@chars$, .@r, 1);
+	}
+	return .@code$;
+}
+
+function	script	RC_CreateUniqueCode	{
+	for (.@try = 0; .@try < 200; .@try++) {
+		.@new_code$ = callfunc("RC_GenerateCode", getarg(0));
+		query_sql("SELECT COUNT(*) FROM `npc_redeem_codes_shared` WHERE `code` = '" + escape_sql(.@new_code$) + "'", .@count);
+		if (.@count == 0)
+			return .@new_code$;
+	}
+	return "";
+}
+
+function	script	RC_GetExpireText	{
+	.@code_id = getarg(0);
+	query_sql("SELECT IFNULL(DATE_FORMAT(`expire_at`, '%Y-%m-%d %H:%i:%s'), 'No Expiry') FROM `npc_redeem_codes_shared` WHERE `id` = " + .@code_id, .@txt$);
+	return .@txt$;
+}
+
+valmorra,187,155,6	script	Redeem Code NPC	10985,{
+
+Main_Menu:
+	mes "[Redeem Code]";
+	mes "Welcome.";
+	next;
+
+	if (getgmlevel() >= 99) {
+		switch(select("Redeem Code:GM Menu:Cancel")) {
+		case 1:
+			goto Redeem_Code;
+		case 2:
+			goto GM_Menu;
+		default:
+			close;
+		}
+	}
+	else {
+		switch(select("Redeem Code:Cancel")) {
+		case 1:
+			goto Redeem_Code;
+		default:
+			close;
+		}
+	}
+
+Redeem_Code:
+	mes "[Redeem Code]";
+	mes "Enter your promo code.";
+	input .@input_code$;
+
+	if (.@input_code$ == "") {
+		mes "Invalid code.";
+		close;
+	}
+
+	.@safe_code$ = escape_sql(.@input_code$);
+
+	query_sql(
+		"SELECT `id`,`is_deleted`,`claim_count`,`max_claims`,IF(`expire_at` IS NULL,0,IF(`expire_at`<=NOW(),1,0)) " +
+		"FROM `npc_redeem_codes_shared` WHERE `code` = '" + .@safe_code$ + "' LIMIT 1",
+		.@code_id, .@is_deleted, .@claim_count, .@max_claims, .@is_expired
+	);
+
+	if (!.@code_id) {
+		mes "[Redeem Code]";
+		mes "Code not found.";
+		close;
+	}
+
+	if (.@is_deleted) {
+		mes "[Redeem Code]";
+		mes "This code is no longer valid.";
+		close;
+	}
+
+	if (.@is_expired) {
+		mes "[Redeem Code]";
+		mes "This code has expired.";
+		close;
+	}
+
+	if (.@max_claims > 0 && .@claim_count >= .@max_claims) {
+		mes "[Redeem Code]";
+		mes "This code has reached the maximum number of claims.";
+		close;
+	}
+
+	.@rows = query_sql(
+		"SELECT `item_id`,`amount` FROM `npc_redeem_codes_shared_items` " +
+		"WHERE `code_id` = " + .@code_id + " ORDER BY `id` ASC",
+		.@item_id, .@amount
+	);
+
+	if (.@rows <= 0) {
+		mes "[Redeem Code]";
+		mes "This code has no reward items configured.";
+		close;
+	}
+
+	.@aid = getcharid(3);
+	.@cid = getcharid(0);
+	.@name$ = strcharinfo(0);
+
+	.@ip$ = "";
+	query_sql(
+		"SELECT IFNULL(`last_ip`,'') FROM `login` WHERE `account_id` = " + .@aid + " LIMIT 1",
+		.@ip$
+	);
+
+	if (.@ip$ == "")
+		.@ip$ = "UNKNOWN";
+
+	.@uid$ = get_unique_id();
+
+	if (.@uid$ == "" || .@uid$ == "0") {
+		mes "[Redeem Code]";
+		mes "Unable to verify your device.";
+		mes "Please relog and try again.";
+		close;
+	}
+
+	// Previous IP from this account's past redeem logs
+	.@prev_acc_ip$ = "";
+	query_sql(
+		"SELECT IFNULL(`ip`,'') FROM `npc_redeem_codes_shared_claims` " +
+		"WHERE `account_id` = " + .@aid + " AND `ip` <> '' AND `ip` <> 'UNKNOWN' " +
+		"ORDER BY `id` DESC LIMIT 1",
+		.@prev_acc_ip$
+	);
+
+	if (.@prev_acc_ip$ == "")
+		.@prev_acc_ip$ = "NONE";
+
+	// Previous IP from this device/unique ID past redeem logs
+	.@prev_uid_ip$ = "";
+	query_sql(
+		"SELECT IFNULL(`ip`,'') FROM `npc_redeem_codes_shared_claims` " +
+		"WHERE `unique_id` = '" + escape_sql(.@uid$) + "' AND `ip` <> '' AND `ip` <> 'UNKNOWN' " +
+		"ORDER BY `id` DESC LIMIT 1",
+		.@prev_uid_ip$
+	);
+
+	if (.@prev_uid_ip$ == "")
+		.@prev_uid_ip$ = "NONE";
+
+	query_sql(
+		"SELECT COUNT(*) FROM `npc_redeem_codes_shared_claims` " +
+		"WHERE `code_id` = " + .@code_id + " AND `account_id` = " + .@aid,
+		.@acc_count
+	);
+
+	if (.@acc_count > 0) {
+		mes "[Redeem Code]";
+		mes "This account has already claimed this code.";
+		close;
+	}
+
+	query_sql(
+		"SELECT COUNT(*) FROM `npc_redeem_codes_shared_claims` " +
+		"WHERE `code_id` = " + .@code_id + " AND `unique_id` = '" + escape_sql(.@uid$) + "'",
+		.@uid_count
+	);
+
+	if (.@uid_count > 0) {
+		mes "[Redeem Code]";
+		mes "This device has already claimed this code.";
+		close;
+	}
+
+	if (.@ip$ != "UNKNOWN") {
+		query_sql(
+			"SELECT COUNT(*) FROM `npc_redeem_codes_shared_claims` " +
+			"WHERE `code_id` = " + .@code_id + " AND `ip` = '" + escape_sql(.@ip$) + "'",
+			.@ip_count
+		);
+
+		if (.@ip_count > 0) {
+			mes "[Redeem Code]";
+			mes "This IP address has already claimed this code.";
+			close;
+		}
+	}
+
+	if (.@prev_acc_ip$ != "NONE") {
+		query_sql(
+			"SELECT COUNT(*) FROM `npc_redeem_codes_shared_claims` " +
+			"WHERE `code_id` = " + .@code_id + " AND `ip` = '" + escape_sql(.@prev_acc_ip$) + "'",
+			.@prev_acc_ip_count
+		);
+
+		if (.@prev_acc_ip_count > 0) {
+			mes "[Redeem Code]";
+			mes "Your previous account IP address has already claimed this code.";
+			close;
+		}
+	}
+
+	if (.@prev_uid_ip$ != "NONE") {
+		query_sql(
+			"SELECT COUNT(*) FROM `npc_redeem_codes_shared_claims` " +
+			"WHERE `code_id` = " + .@code_id + " AND `ip` = '" + escape_sql(.@prev_uid_ip$) + "'",
+			.@prev_uid_ip_count
+		);
+
+		if (.@prev_uid_ip_count > 0) {
+			mes "[Redeem Code]";
+			mes "Your previous device IP address has already claimed this code.";
+			close;
+		}
+	}
+
+	mes "[Enter Promo Code]";
+	mes "- ^FF0000" + .@input_code$ + "^000000";
+	mes "Current IP: ^0055FF" + .@ip$ + "^000000";
+	if (.@prev_acc_ip$ != "NONE")
+		mes "Previous Account IP: ^777777" + .@prev_acc_ip$ + "^000000";
+	if (.@prev_uid_ip$ != "NONE" && .@prev_uid_ip$ != .@prev_acc_ip$)
+		mes "Previous Device IP: ^777777" + .@prev_uid_ip$ + "^000000";
+	next;
+
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		if (getitemname(.@item_id[.@i]) == "null")
+			mes "> Invalid Item ID: " + .@item_id[.@i];
+		else
+			mes "> " + .@amount[.@i] + "x " + getitemname(.@item_id[.@i]);
+	}
+	next;
+
+	switch(select("Claim:Cancel")) {
+	case 1:
+		break;
+	default:
+		close;
+	}
+
+	query_sql(
+		"SELECT `is_deleted`,`claim_count`,`max_claims`,IF(`expire_at` IS NULL,0,IF(`expire_at`<=NOW(),1,0)) " +
+		"FROM `npc_redeem_codes_shared` WHERE `id` = " + .@code_id,
+		.@is_deleted2, .@claim_count2, .@max_claims2, .@is_expired2
+	);
+
+	if (.@is_deleted2 || .@is_expired2) {
+		mes "[Redeem Code]";
+		mes "This code is no longer redeemable.";
+		close;
+	}
+
+	if (.@max_claims2 > 0 && .@claim_count2 >= .@max_claims2) {
+		mes "[Redeem Code]";
+		mes "This code has reached the maximum number of claims.";
+		close;
+	}
+
+	query_sql(
+		"SELECT COUNT(*) FROM `npc_redeem_codes_shared_claims` " +
+		"WHERE `code_id` = " + .@code_id + " AND `account_id` = " + .@aid,
+		.@acc_count2
+	);
+
+	if (.@acc_count2 > 0) {
+		mes "[Redeem Code]";
+		mes "This account has already claimed this code.";
+		close;
+	}
+
+	query_sql(
+		"SELECT COUNT(*) FROM `npc_redeem_codes_shared_claims` " +
+		"WHERE `code_id` = " + .@code_id + " AND `unique_id` = '" + escape_sql(.@uid$) + "'",
+		.@uid_count2
+	);
+
+	if (.@uid_count2 > 0) {
+		mes "[Redeem Code]";
+		mes "This device has already claimed this code.";
+		close;
+	}
+
+	if (.@ip$ != "UNKNOWN") {
+		query_sql(
+			"SELECT COUNT(*) FROM `npc_redeem_codes_shared_claims` " +
+			"WHERE `code_id` = " + .@code_id + " AND `ip` = '" + escape_sql(.@ip$) + "'",
+			.@ip_count2
+		);
+
+		if (.@ip_count2 > 0) {
+			mes "[Redeem Code]";
+			mes "This IP address has already claimed this code.";
+			close;
+		}
+	}
+
+	if (.@prev_acc_ip$ != "NONE") {
+		query_sql(
+			"SELECT COUNT(*) FROM `npc_redeem_codes_shared_claims` " +
+			"WHERE `code_id` = " + .@code_id + " AND `ip` = '" + escape_sql(.@prev_acc_ip$) + "'",
+			.@prev_acc_ip_count2
+		);
+
+		if (.@prev_acc_ip_count2 > 0) {
+			mes "[Redeem Code]";
+			mes "Your previous account IP address has already claimed this code.";
+			close;
+		}
+	}
+
+	if (.@prev_uid_ip$ != "NONE") {
+		query_sql(
+			"SELECT COUNT(*) FROM `npc_redeem_codes_shared_claims` " +
+			"WHERE `code_id` = " + .@code_id + " AND `ip` = '" + escape_sql(.@prev_uid_ip$) + "'",
+			.@prev_uid_ip_count2
+		);
+
+		if (.@prev_uid_ip_count2 > 0) {
+			mes "[Redeem Code]";
+			mes "Your previous device IP address has already claimed this code.";
+			close;
+		}
+	}
+
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		if (getitemname(.@item_id[.@i]) == "null") {
+			mes "[Redeem Code]";
+			mes "One of the reward items is invalid.";
+			close;
+		}
+		if (!checkweight(.@item_id[.@i], .@amount[.@i])) {
+			mes "[Redeem Code]";
+			mes "Not enough inventory space or weight.";
+			close;
+		}
+	}
+
+	query_sql(
+		"INSERT INTO `npc_redeem_codes_shared_claims` " +
+		"(`code_id`,`code`,`account_id`,`char_id`,`char_name`,`ip`,`unique_id`,`claimed_at`) VALUES (" +
+		.@code_id + "," +
+		"'" + .@safe_code$ + "'," +
+		.@aid + "," +
+		.@cid + "," +
+		"'" + escape_sql(.@name$) + "'," +
+		"'" + escape_sql(.@ip$) + "'," +
+		"'" + escape_sql(.@uid$) + "'," +
+		"NOW())"
+	);
+
+	query_sql(
+		"UPDATE `npc_redeem_codes_shared` SET `claim_count` = `claim_count` + 1 " +
+		"WHERE `id` = " + .@code_id +
+		" AND (`max_claims` = 0 OR `claim_count` < `max_claims`)"
+	);
+
+	query_sql(
+		"SELECT COUNT(*) FROM `npc_redeem_codes_shared_claims` " +
+		"WHERE `code_id` = " + .@code_id +
+		" AND `account_id` = " + .@aid +
+		" AND `char_id` = " + .@cid +
+		" AND `unique_id` = '" + escape_sql(.@uid$) + "'",
+		.@claim_ok
+	);
+
+	if (.@claim_ok <= 0) {
+		mes "[Redeem Code]";
+		mes "Failed to register redeem claim.";
+		close;
+	}
+
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		getitem .@item_id[.@i], .@amount[.@i];
+	}
+
+	if (.AnnounceSuccess) {
+		announce "[Redeem Code] " + strcharinfo(0) + " has successfully redeemed code " + .@input_code$ + ".", bc_all;
+	}
+
+	mes "[Redeem Code]";
+	mes "Redeem successful!";
+	mes "All rewards have been added to your inventory.";
+	close;
+
+GM_Menu:
+	mes "[Redeem Code]";
+	mes "GM Menu";
+	next;
+
+	switch(select("Create New Code:View Code List:Delete Code:View Redeem Logs:Back:Cancel")) {
+	case 1:
+		goto GM_Create;
+	case 2:
+		.@page = 0;
+		goto GM_View;
+	case 3:
+		goto GM_Delete;
+	case 4:
+		.@log_page = 0;
+		goto GM_Logs;
+	case 5:
+		goto Main_Menu;
+	default:
+		close;
+	}
+
+GM_Create:
+	mes "[Redeem Code]";
+	mes "Create new code.";
+	next;
+
+	switch(select("Auto Generate Code:Manual Code:Cancel")) {
+	case 1:
+		.@code$ = callfunc("RC_CreateUniqueCode", .CodeLength);
+		if (.@code$ == "") {
+			mes "Failed to generate unique code.";
+			close;
+		}
+		break;
+
+	case 2:
+		mes "Enter the code you want.";
+		mes "Example: MAINT1201";
+		input .@code$;
+
+		if (.@code$ == "") {
+			mes "Invalid code.";
+			close;
+		}
+
+		.@code$ = escape_sql(.@code$);
+		query_sql("SELECT COUNT(*) FROM `npc_redeem_codes_shared` WHERE `code` = '" + .@code$ + "'", .@exists);
+
+		if (.@exists > 0) {
+			mes "This code already exists.";
+			close;
+		}
+		break;
+
+	default:
+		close;
+	}
+
+	mes "How many reward items for this code?";
+	mes "Maximum: " + .MaxItemsPerCode;
+	input .@count;
+
+	if (.@count < 1) {
+		mes "Invalid count.";
+		close;
+	}
+	if (.@count > .MaxItemsPerCode)
+		.@count = .MaxItemsPerCode;
+
+	for (.@i = 0; .@i < .@count; .@i++) {
+		mes "[Redeem Code]";
+		mes "Reward item " + (.@i + 1) + " / " + .@count;
+		mes "Enter Item ID.";
+		input .@item_id;
+
+		if (.@item_id <= 0 || getitemname(.@item_id) == "null") {
+			mes "Invalid item ID.";
+			close;
+		}
+
+		mes "Enter amount for " + getitemname(.@item_id) + ".";
+		input .@amount;
+
+		if (.@amount <= 0) {
+			mes "Invalid amount.";
+			close;
+		}
+
+		.@gm_item_id[.@i] = .@item_id;
+		.@gm_amount[.@i] = .@amount;
+	}
+
+	mes "[Redeem Code]";
+	mes "Set max global claim.";
+	mes "Enter 0 for unlimited claims.";
+	input .@max_claims;
+
+	if (.@max_claims < 0)
+		.@max_claims = 0;
+
+	mes "[Redeem Code]";
+	mes "Set expiry type.";
+	next;
+
+	switch(select("No Expiry:Expire in 1 Day:Expire in 7 Days:Custom Days")) {
+	case 1:
+		.@expire_sql$ = "NULL";
+		.@expire_txt$ = "No Expiry";
+		break;
+	case 2:
+		.@expire_sql$ = "DATE_ADD(NOW(), INTERVAL 1 DAY)";
+		.@expire_txt$ = "1 Day";
+		break;
+	case 3:
+		.@expire_sql$ = "DATE_ADD(NOW(), INTERVAL 7 DAY)";
+		.@expire_txt$ = "7 Days";
+		break;
+	case 4:
+		mes "Enter number of days.";
+		input .@custom_days;
+		if (.@custom_days < 1) {
+			mes "Invalid day amount.";
+			close;
+		}
+		.@expire_sql$ = "DATE_ADD(NOW(), INTERVAL " + .@custom_days + " DAY)";
+		.@expire_txt$ = .@custom_days + " Day(s)";
+		break;
+	}
+
+	mes "[Redeem Code]";
+	mes "Confirm create this code?";
+	mes "Code: ^FF0000" + .@code$ + "^000000";
+	mes "Max Claims: " + (.@max_claims == 0 ? "Unlimited" : .@max_claims);
+	mes "Expiry: " + .@expire_txt$;
+	next;
+
+	for (.@i = 0; .@i < .@count; .@i++) {
+		mes "> " + .@gm_amount[.@i] + "x " + getitemname(.@gm_item_id[.@i]);
+	}
+	next;
+
+	switch(select("Create Code:Cancel")) {
+	case 1:
+		break;
+	default:
+		close;
+	}
+
+	query_sql(
+		"INSERT INTO `npc_redeem_codes_shared` " +
+		"(`code`,`created_by_aid`,`created_by_name`,`created_at`,`expire_at`,`max_claims`,`claim_count`,`is_deleted`) VALUES (" +
+		"'" + escape_sql(.@code$) + "'," +
+		getcharid(3) + "," +
+		"'" + escape_sql(strcharinfo(0)) + "'," +
+		"NOW()," +
+		.@expire_sql$ + "," +
+		.@max_claims + "," +
+		"0," +
+		"0)"
+	);
+
+	query_sql("SELECT `id` FROM `npc_redeem_codes_shared` WHERE `code` = '" + escape_sql(.@code$) + "' LIMIT 1", .@new_code_id);
+
+	if (!.@new_code_id) {
+		mes "Failed to fetch created code ID.";
+		close;
+	}
+
+	for (.@i = 0; .@i < .@count; .@i++) {
+		query_sql(
+			"INSERT INTO `npc_redeem_codes_shared_items` (`code_id`,`item_id`,`amount`) VALUES (" +
+			.@new_code_id + "," +
+			.@gm_item_id[.@i] + "," +
+			.@gm_amount[.@i] + ")"
+		);
+	}
+
+	mes "[Redeem Code]";
+	mes "Code created successfully.";
+	mes "Code: ^FF0000" + .@code$ + "^000000";
+
+	if (.@max_claims == 0)
+		mes "Max Claims: Unlimited";
+	else
+		mes "Max Claims: " + .@max_claims;
+
+	mes "Expiry: " + .@expire_txt$;
+	close;
+
+GM_View:
+	.@per_page = 8;
+	.@offset = .@page * .@per_page;
+
+	query_sql("SELECT COUNT(*) FROM `npc_redeem_codes_shared` WHERE `is_deleted` = 0", .@total_codes);
+
+	if (.@total_codes <= 0) {
+		mes "[Redeem Code]";
+		mes "No active codes found.";
+		next;
+		goto GM_Menu;
+	}
+
+	.@max_page = (.@total_codes - 1) / .@per_page;
+
+	if (.@page < 0)
+		.@page = 0;
+	if (.@page > .@max_page)
+		.@page = .@max_page;
+
+	.@offset = .@page * .@per_page;
+
+	.@rows = query_sql(
+		"SELECT `id`,`code`,`claim_count`,`max_claims`,IF(`expire_at` IS NULL,0,IF(`expire_at`<=NOW(),1,0)) " +
+		"FROM `npc_redeem_codes_shared` " +
+		"WHERE `is_deleted` = 0 " +
+		"ORDER BY `id` DESC LIMIT " + .@offset + "," + .@per_page,
+		.@id, .@code$, .@claim_count, .@max_claims, .@is_expired
+	);
+
+	mes "[Redeem Code]";
+	mes "Code List";
+	mes "Page: " + (.@page + 1) + " / " + (.@max_page + 1);
+	mes "Select a code to view details.";
+	next;
+
+	.@menu$ = "";
+
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		if (.@is_expired[.@i])
+			.@status$ = "Expired";
+		else
+			.@status$ = "Active";
+
+		if (.@max_claims[.@i] == 0)
+			.@claim_text$ = .@claim_count[.@i] + "/Unlimited";
+		else
+			.@claim_text$ = .@claim_count[.@i] + "/" + .@max_claims[.@i];
+
+		.@menu$ += "ID " + .@id[.@i] + " - " + .@code$[.@i] + " [" + .@status$ + "] [" + .@claim_text$ + "]:";
+	}
+
+	if (.@page > 0)
+		.@menu$ += "Previous Page:";
+
+	if (.@page < .@max_page)
+		.@menu$ += "Next Page:";
+
+	.@menu$ += "Back to GM Menu:Cancel";
+
+	.@sel = select(.@menu$);
+
+	if (.@sel <= .@rows) {
+		.@view_id = .@id[.@sel - 1];
+		goto GM_View_Detail;
+	}
+
+	.@extra = .@sel - .@rows;
+
+	if (.@page > 0) {
+		if (.@extra == 1) {
+			.@page--;
+			goto GM_View;
+		}
+		.@extra--;
+	}
+
+	if (.@page < .@max_page) {
+		if (.@extra == 1) {
+			.@page++;
+			goto GM_View;
+		}
+		.@extra--;
+	}
+
+	if (.@extra == 1)
+		goto GM_Menu;
+
+	close;
+
+GM_View_Detail:
+	query_sql(
+		"SELECT `code`,`claim_count`,`max_claims`,IF(`expire_at` IS NULL,0,IF(`expire_at`<=NOW(),1,0)),`is_deleted` " +
+		"FROM `npc_redeem_codes_shared` WHERE `id` = " + .@view_id + " LIMIT 1",
+		.@d_code$, .@d_claim_count, .@d_max_claims, .@d_is_expired, .@d_deleted
+	);
+
+	if (.@d_code$ == "") {
+		mes "[Redeem Code]";
+		mes "Code not found.";
+		next;
+		goto GM_View;
+	}
+
+	mes "[Redeem Code]";
+	mes "Code Details";
+	mes "^0055FFID:^000000 " + .@view_id;
+	mes "^0055FFCode:^000000 ^FF0000" + .@d_code$ + "^000000";
+
+	if (.@d_deleted)
+		mes "Status: ^777777Deleted^000000";
+	else if (.@d_is_expired)
+		mes "Status: ^FF0000Expired^000000";
+	else
+		mes "Status: ^00AA00Active^000000";
+
+	if (.@d_max_claims == 0)
+		mes "Claims: " + .@d_claim_count + " / Unlimited";
+	else
+		mes "Claims: " + .@d_claim_count + " / " + .@d_max_claims;
+
+	mes "Expiry: " + callfunc("RC_GetExpireText", .@view_id);
+	next;
+
+	.@r2 = query_sql(
+		"SELECT `item_id`,`amount` FROM `npc_redeem_codes_shared_items` " +
+		"WHERE `code_id` = " + .@view_id + " ORDER BY `id` ASC",
+		.@v_item_id, .@v_amount
+	);
+
+	mes "[Reward Items]";
+
+	if (.@r2 <= 0) {
+		mes "No reward item configured.";
+	}
+	else {
+		for (.@j = 0; .@j < .@r2; .@j++) {
+			mes "> " + .@v_amount[.@j] + "x " + getitemname(.@v_item_id[.@j]);
+			if ((.@j + 1) % 6 == 0 && .@j < .@r2 - 1) {
+				next;
+				mes "[Reward Items]";
+			}
+		}
+	}
+	next;
+
+	switch(select("Back to Code List:Back to GM Menu:Cancel")) {
+	case 1:
+		goto GM_View;
+	case 2:
+		goto GM_Menu;
+	default:
+		close;
+	}
+
+GM_Delete:
+	mes "[Redeem Code]";
+	mes "Delete code by ID.";
+	next;
+
+	mes "Enter code ID.";
+	input .@del_id;
+
+	if (.@del_id <= 0) {
+		mes "Invalid ID.";
+		close;
+	}
+
+	query_sql(
+		"SELECT `code`,`is_deleted` FROM `npc_redeem_codes_shared` WHERE `id` = " + .@del_id,
+		.@del_code$, .@del_deleted
+	);
+
+	if (.@del_code$ == "") {
+		mes "Code ID not found.";
+		close;
+	}
+	if (.@del_deleted) {
+		mes "This code is already deleted.";
+		close;
+	}
+
+	mes "Delete this code?";
+	mes "^FF0000" + .@del_code$ + "^000000";
+	next;
+
+	switch(select("Yes:No")) {
+	case 1:
+		break;
+	default:
+		close;
+	}
+
+	query_sql("UPDATE `npc_redeem_codes_shared` SET `is_deleted` = 1 WHERE `id` = " + .@del_id);
+	mes "Code deleted.";
+	close;
+
+GM_Logs:
+	.@log_per_page = 8;
+	.@log_offset = .@log_page * .@log_per_page;
+
+	query_sql("SELECT COUNT(*) FROM `npc_redeem_codes_shared_claims`", .@total_logs);
+
+	if (.@total_logs <= 0) {
+		mes "[Redeem Code]";
+		mes "No logs found.";
+		next;
+		goto GM_Menu;
+	}
+
+	.@log_max_page = (.@total_logs - 1) / .@log_per_page;
+
+	if (.@log_page < 0)
+		.@log_page = 0;
+	if (.@log_page > .@log_max_page)
+		.@log_page = .@log_max_page;
+
+	.@log_offset = .@log_page * .@log_per_page;
+
+	.@rows = query_sql(
+		"SELECT `code`,`account_id`,`char_id`,`char_name`,`ip`,`unique_id`,DATE_FORMAT(`claimed_at`, '%Y-%m-%d %H:%i:%s') " +
+		"FROM `npc_redeem_codes_shared_claims` " +
+		"ORDER BY `id` DESC LIMIT " + .@log_offset + "," + .@log_per_page,
+		.@l_code$, .@l_aid, .@l_cid, .@l_name$, .@l_ip$, .@l_uid$, .@l_time$
+	);
+
+	mes "[Redeem Logs]";
+	mes "Page: " + (.@log_page + 1) + " / " + (.@log_max_page + 1);
+	next;
+
+	for (.@i = 0; .@i < .@rows; .@i++) {
+		mes "^FF0000Code:^000000 " + .@l_code$[.@i];
+		mes "By: " + .@l_name$[.@i];
+		mes "Account ID: " + .@l_aid[.@i];
+		mes "Char ID: " + .@l_cid[.@i];
+		mes "IP: " + .@l_ip$[.@i];
+		mes "Unique ID: " + .@l_uid$[.@i];
+		mes "At: " + .@l_time$[.@i];
+
+		if ((.@i + 1) % 4 == 0 && .@i < .@rows - 1) {
+			next;
+			mes "[Redeem Logs]";
+		}
+	}
+	next;
+
+	.@log_menu$ = "";
+
+	if (.@log_page > 0)
+		.@log_menu$ += "Previous Page:";
+
+	if (.@log_page < .@log_max_page)
+		.@log_menu$ += "Next Page:";
+
+	.@log_menu$ += "Back to GM Menu:Cancel";
+
+	.@log_sel = select(.@log_menu$);
+	.@log_extra = .@log_sel;
+
+	if (.@log_page > 0) {
+		if (.@log_extra == 1) {
+			.@log_page--;
+			goto GM_Logs;
+		}
+		.@log_extra--;
+	}
+
+	if (.@log_page < .@log_max_page) {
+		if (.@log_extra == 1) {
+			.@log_page++;
+			goto GM_Logs;
+		}
+		.@log_extra--;
+	}
+
+	if (.@log_extra == 1)
+		goto GM_Menu;
+
+	close;
+
+OnInit:
+	.AnnounceSuccess = 1;
+	.CodeLength = 10;
+	.MaxItemsPerCode = 10;
+
+	end;
+}

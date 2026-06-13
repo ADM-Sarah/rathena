@@ -1,0 +1,112 @@
+###########################################################################
+# Job bonus Database
+###########################################################################
+#
+# Job bonus Settings
+#
+###########################################################################
+# - Job : Use constant JOB_* from src/map/script_constants.hpp
+#   Script : Script like used for items
+#
+#   OR
+#
+# - Char : Put a char ID to give him specials bonus
+#   Script : Script like used for items
+#
+#   OR
+#
+# - Account : Put an account ID to give to all his chars specials bonus
+#   Script : Script like used for items
+#
+#   OR
+#
+# - Guild : Put a guild ID to give to all his chars specials bonus
+#   Script : Script like used for items
+###########################################################################
+
+Header:
+  Type: JOB_BONUS
+  Version: 1
+
+Body:
+#   For all jobs
+  - Id: 0
+    Job: All
+    Script: |
+      // VIP Bonus
+      if(vip_status(1)){
+        bonus bAddMaxWeight,5000;
+      }
+
+      // Card Deposit Bonus
+      if (#CardDep_NormalComplete) {
+        bonus bAllStats,5;
+        bonus bMagicDamageReturn,2;
+        bonus bLongAtkDef,2;
+        bonus bAddMaxWeight,2000;
+      }
+      if (#CardDep_RareComplete) {
+        bonus bAtk,30;
+        bonus bHit,100;
+        bonus2 bSubEle,Ele_Water,3;
+        bonus2 bSubEle,Ele_Earth,3;
+        bonus2 bSubEle,Ele_Fire,3;
+        bonus2 bSubEle,Ele_Wind,3;
+        bonus2 bSubEle,Ele_Poison,3;
+        bonus2 bSubEle,Ele_Holy,3;
+        bonus2 bSubEle,Ele_Dark,3;
+        bonus2 bSubEle,Ele_Ghost,3;
+        bonus2 bSubEle,Ele_Undead,3;
+        bonus2 bAddRace,RC_Boss,10;
+        bonus2 bSubRace,RC_Boss,10;
+        bonus2 bDropAddRace,RC_All,3;
+        bonus bAddMaxWeight,5000;
+      }
+
+      // Job MaxHP or Other Bonus
+      if (BaseJob == Job_Ninja)
+        bonus bMaxHPRate,50;
+
+      if (BaseJob == Job_Star_Gladiator)
+        bonus bMaxHPRate,50;
+
+      if (BaseJob == Job_Soul_Linker)
+        bonus bMaxHPRate,50;
+
+      if (BaseJob == Job_Wizard)
+        bonus bMaxHPRate,50;
+
+      if (BaseJob == Job_Hunter)
+        bonus bMaxHPRate,50;
+
+      if (BaseJob == Job_Gunslinger)
+        bonus bMaxHPRate,80;
+
+      if (BaseJob == Job_Monk)
+        bonus bMaxHPRate,50;
+
+      if (BaseJob == Job_Crusader)
+        bonus bMaxHPRate,200;
+
+      if (BaseJob == Job_Knight)
+        bonus bMaxHPRate,50;
+
+      if (BaseJob == Job_Priest)
+        bonus bMaxHPRate,50;
+
+      if (BaseJob == Job_Assasin)
+        bonus bMaxHPRate,50;
+
+      if (BaseJob == Job_Alchemist)
+        bonus bMaxHPRate,50;
+
+      if (BaseJob == Job_Rogue)
+        bonus bMaxHPRate,50;
+
+      if (BaseJob == Job_Sage)
+        bonus bMaxHPRate,47;
+
+    
+Footer:
+  Imports:
+  - Path: db/refine_set_bonus.yml
